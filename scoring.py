@@ -1,71 +1,93 @@
 """
-多时间框架评分引擎 — 对应 Strategy Engine v4 评分逻辑
+多时间框架评分引擎 — 复刻 Strategy Engine v4
 """
-from typing import Dict, Optional, Tuple
-from config import BacktestConfig
+from typing import Dict, Tuple, Optional
 
 
-def compute_score(tf_data: Dict[str, Dict], config: BacktestConfig) -> Tuple[int, int]:
+def compute_score(tf_data: Dict, weights: Dict[str, int]) -> Tuple[int, int, Dict]:
     """
-    计算多空评分
-    tf_data = {"15m": {dmi_dir, srsi, adx, st_near}, "1H": {...}, ...}
-
-    DMI方向分: 15m=1, 1H=2, 4H=3, 1D=4
-    StochRSI极端分: 1H超卖/买+1, 4H超卖/买+2, 1D超卖/买+3
+    计算多TF评分
+    tf_data: {"15m": {dmi_dir, srsi, st_dir, adx}, ...}
+    weights: {"15m": 1, "1H": 2, ...}
+    返回 (long_score, short_score, details)
     """
-    bull_score = 0
-    bear_score = 0
+    total_long = 0
+    total_short = 0
+    details = {}
 
-    for tf in config.timeframes:
-        if tf not in tf_data:
-            continue
-        data = tf_data[tf]
-        w = config.tf_weights.get(tf, 0)
+    for tf, data in tf_data.items():
+        weight = weights.get(tf, 1)
+        dmi_dir = data.get("dmi_dir", 0)
+        srsi_k = data.get("srsi", (50, 50))[0] if isinstance(data.get("srsi"), tuple) else data.get("srsi", 50)
+        st_dir = data.get("st_dir", 0)
+
+        tf_detail = {"dmi_dir": dmi_dir, "srsi": srsi_k, "st_dir": st_dir}
 
         # DMI方向分
-        dmi_dir = data.get("dmi_dir", 0)  # 1=多, -1=空, 0=N/A
         if dmi_dir == 1:
-            bull_score += w
+            tf_detail["dmi_score_long"] = weight
+            total_long += weight
         elif dmi_dir == -1:
-            bear_score += w
+            tf_detail["dmi_score_short"] = weight
+            total_short += weight
 
-        # StochRSI极端分
-        srsi = data.get("srsi")
-        if srsi is not None:
-            if srsi < config.srsi_oversold:
-                bull_score += (3 if tf == "1D" else w)
-            elif srsi < config.srsi_1d_bull_extra and tf == "1D":
-                bull_score += 1
-            if srsi > config.srsi_overbought:
-                bear_score += (3 if tf == "1D" else w)
-            elif srsi > 70 and tf == "1D":
-                bear_score += 1
+        # StochRSI极端加分
+        if isinstance(srsi_k, (int, float)):
+            if srsi_k < 20:
+                total_long += 2
+                tf_detail["srsi_bonus_long"] = 2
+            elif srsi_k > 80:
+                total_short += 2
+                tf_detail["srsi_bonus_short"] = 2
 
-    return bull_score, bear_score
+        # SuperTrend方向分
+        if st_dir == 1:
+            total_long += 1
+            tf_detail["st_score_long"] = 1
+        elif st_dir == -1:
+            total_short += 1
+            tf_detail["st_score_short"] = 1
+
+        details[tf] = tf_detail
+
+    return total_long, total_short, details
 
 
-def check_entry_conditions(tf_data: Dict[str, Dict], config: BacktestConfig,
-                           dmi_dir_1d: int, adx_primary: Optional[float],
-                           st_near_primary: bool, cooldown_ok: bool,
-                           has_position: bool) -> Tuple[bool, bool]:
+def check_entry_conditions(tf_data: Dict, config, dmi_dir_1d: int,
+                           adx_primary: Optional[float], st_near_primary: bool,
+                           cooldown_ok: bool, has_position: bool) -> Tuple[bool, bool]:
     """
     检查入场条件
-    返回: (long_signal, short_signal)
+    返回 (long_signal, short_signal)
     """
-    bull_score, bear_score = compute_score(tf_data, config)
+    long_sig = False
+    short_sig = False
+
+    if has_position or not cooldown_ok:
+        return False, False
+
+    # 计算评分
+    long_score, short_score, _ = compute_score(tf_data, config.tf_weights)
+
+    # ADX过滤器
+    adx_pass = True
+    if config.use_adx_filter and adx_primary is not None:
+        adx_pass = adx_primary >= config.adx_threshold
 
     # 1D DMI对齐
-    cond_1d_long = (not config.use_1d_align) or dmi_dir_1d == 1
-    cond_1d_short = (not config.use_1d_align) or dmi_dir_1d == -1
+    d1_pass_long = True
+    d1_pass_short = True
+    if config.use_1d_align:
+        d1_pass_long = dmi_dir_1d >= 0  # 1D不空
+        d1_pass_short = dmi_dir_1d <= 0  # 1D不多
 
-    # ADX过滤
-    cond_adx = (not config.use_adx_filter) or \
-               (adx_primary is not None and adx_primary >= config.adx_threshold)
+    # SuperTrend附近
+    st_pass = st_near_primary
 
-    # 综合信号
-    long_signal = (bull_score >= config.score_threshold and st_near_primary and
-                   cond_1d_long and cond_adx and not has_position and cooldown_ok)
-    short_signal = (bear_score >= config.score_threshold and st_near_primary and
-                    cond_1d_short and cond_adx and not has_position and cooldown_ok)
+    # 综合判断
+    if long_score >= config.score_threshold and adx_pass and d1_pass_long and st_pass:
+        long_sig = True
+    if short_score >= config.score_threshold and adx_pass and d1_pass_short and st_pass:
+        short_sig = True
 
-    return long_signal, short_signal
+    return long_sig, short_sig

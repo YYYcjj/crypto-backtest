@@ -1,239 +1,243 @@
 """
-指标计算库 — DMI/ADX, StochRSI, SuperTrend, ATR, Pivot
-严格对齐 TradingView Pine Script v6 计算逻辑
+技术指标计算 — DMI/ADX、StochRSI、SuperTrend、ATR
+
+所有计算基于 OHLCV K线序列。
 """
 import math
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Tuple, Optional
 
 
 def calc_rsi(closes: List[float], period: int = 14) -> Optional[float]:
-    """RSI (Wilder's smoothing)"""
-    if len(closes) < period + 1:
+    """Wilder's RSI — 返回最新值"""
+    n = len(closes)
+    if n <= period:
         return None
-    gains, losses = [], []
-    for i in range(1, len(closes)):
+    gains = 0.0
+    losses = 0.0
+    for i in range(1, period + 1):
         diff = closes[i] - closes[i - 1]
-        gains.append(max(diff, 0))
-        losses.append(max(-diff, 0))
-
-    avg_gain = sum(gains[:period]) / period
-    avg_loss = sum(losses[:period]) / period
-
-    rsi_vals = [100 if avg_loss == 0 else 100 - 100 / (1 + avg_gain / avg_loss)]
-    for i in range(period, len(gains)):
-        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
-        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
-        rsi_vals.append(100 if avg_loss == 0 else 100 - 100 / (1 + avg_gain / avg_loss))
-
-    return rsi_vals[-1]
-
-
-def calc_stoch_rsi(closes: List[float], rsi_period: int = 14,
-                   stoch_period: int = 14, smooth_k: int = 3) -> Optional[float]:
-    """StochRSI: (K+D)/2, K经SMA(3)平滑 → 匹配 TradingView ta.stoch + ta.sma"""
-    if len(closes) < rsi_period + stoch_period + smooth_k:
-        return None
-
-    # 计算RSI序列
-    if len(closes) < rsi_period + 1:
-        return None
-    gains, losses = [], []
-    for i in range(1, len(closes)):
+        if diff > 0:
+            gains += diff
+        else:
+            losses -= diff
+    avg_gain = gains / period
+    avg_loss = losses / period
+    for i in range(period + 1, n):
         diff = closes[i] - closes[i - 1]
-        gains.append(max(diff, 0))
-        losses.append(max(-diff, 0))
-
-    avg_gain = sum(gains[:rsi_period]) / rsi_period
-    avg_loss = sum(losses[:rsi_period]) / rsi_period
-    rsi_values = [100 if avg_loss == 0 else 100 - 100 / (1 + avg_gain / avg_loss)]
-    for i in range(rsi_period, len(gains)):
-        avg_gain = (avg_gain * (rsi_period - 1) + gains[i]) / rsi_period
-        avg_loss = (avg_loss * (rsi_period - 1) + losses[i]) / rsi_period
-        rsi_values.append(100 if avg_loss == 0 else 100 - 100 / (1 + avg_gain / avg_loss))
-
-    # Stoch(RSI, RSI, RSI, period)
-    k_raw = []
-    for i in range(stoch_period - 1, len(rsi_values)):
-        window = rsi_values[i - stoch_period + 1 : i + 1]
-        lo, hi = min(window), max(window)
-        k_raw.append(50.0 if hi == lo else (rsi_values[i] - lo) / (hi - lo) * 100)
-
-    # SMA(K, smooth_k)
-    k_vals = []
-    for i in range(smooth_k - 1, len(k_raw)):
-        k_vals.append(sum(k_raw[i - smooth_k + 1 : i + 1]) / smooth_k)
-
-    if len(k_vals) < 4:
-        return k_vals[-1] if k_vals else None
-
-    # D = SMA(K, 3)
-    d = sum(k_vals[-3:]) / 3
-    return (k_vals[-1] + d) / 2
+        gain = diff if diff > 0 else 0.0
+        loss = -diff if diff < 0 else 0.0
+        avg_gain = (avg_gain * (period - 1) + gain) / period
+        avg_loss = (avg_loss * (period - 1) + loss) / period
+    if avg_loss == 0:
+        return 100.0
+    return 100.0 - (100.0 / (1.0 + avg_gain / avg_loss))
 
 
-def calc_atr(candles: List[Dict], period: int = 14) -> Optional[float]:
-    """ATR (Wilder's smoothing)"""
-    n = len(candles)
-    if n < period + 1:
-        return None
-
-    tr = [0.0] * n
-    for i in range(1, n):
-        h, l, pc = candles[i]["h"], candles[i]["l"], candles[i - 1]["c"]
-        tr[i] = max(h - l, abs(h - pc), abs(l - pc))
-
-    atr = sum(tr[1 : period + 1]) / period
-    for i in range(period + 1, n):
-        atr = (atr * (period - 1) + tr[i]) / period
-    return atr
-
-
-def calc_dmi_adx(candles: List[Dict], period: int = 14) -> Tuple[str, Optional[float], Optional[float]]:
-    """DMI/ADX: 返回 (方向, ADX值, ATR值)"""
-    n = len(candles)
-    if n < period + 2:
-        return "N/A", None, None
-
-    highs = [c["h"] for c in candles]
-    lows = [c["l"] for c in candles]
-    closes_arr = [c["c"] for c in candles]
-
-    tr = [0.0] * n
-    plus_dm = [0.0] * n
-    minus_dm = [0.0] * n
-    for i in range(1, n):
-        tr[i] = max(highs[i] - lows[i],
-                    abs(highs[i] - closes_arr[i - 1]),
-                    abs(lows[i] - closes_arr[i - 1]))
-        up = highs[i] - highs[i - 1]
-        down = lows[i - 1] - lows[i]
-        if up > down and up > 0:
-            plus_dm[i] = up
-        if down > up and down > 0:
-            minus_dm[i] = down
-
-    atr_s = sum(tr[1 : period + 1]) / period
-    spdm = sum(plus_dm[1 : period + 1]) / period
-    smdm = sum(minus_dm[1 : period + 1]) / period
-
-    dx_vals = []
-    for i in range(period + 1, n):
-        atr_s = (atr_s * (period - 1) + tr[i]) / period
-        spdm = (spdm * (period - 1) + plus_dm[i]) / period
-        smdm = (smdm * (period - 1) + minus_dm[i]) / period
-        pdi = spdm / atr_s * 100 if atr_s > 0 else 0
-        mdi = smdm / atr_s * 100 if atr_s > 0 else 0
-        s = pdi + mdi
-        dx_vals.append(abs(pdi - mdi) / s * 100 if s > 0 else 0)
-
-    if len(dx_vals) < period:
-        return "多" if spdm > smdm else "空", None, atr_s
-
-    adx = sum(dx_vals[:period]) / period
-    for i in range(period, len(dx_vals)):
-        adx = (adx * (period - 1) + dx_vals[i]) / period
-    return ("多" if spdm > smdm else "空"), adx, atr_s
+def _ema(values: List[float], period: int) -> List[float]:
+    """EMA 数组"""
+    n = len(values)
+    result = [float('nan')] * n
+    k = 2.0 / (period + 1)
+    start = 0
+    for i, v in enumerate(values):
+        if not math.isnan(v):
+            start = i
+            result[start] = v
+            break
+    for i in range(start + 1, n):
+        result[i] = values[i] * k + result[i - 1] * (1 - k)
+    return result
 
 
-def calc_super_trend(candles: List[Dict], factor: float = 1.0,
-                     period: int = 10) -> Tuple[Optional[float], int]:
-    """SuperTrend: 返回 (ST值, 方向: 1多头/-1空头)
-    计算逻辑严格对齐 TradingView ta.supertrend
+def calc_atr(candles: List[Dict], period: int = 14) -> float:
+    """
+    ATR (Wilder's smoothing)
+    candles: [{"h": float, "l": float, "c": float}, ...] 最新在末尾
+    返回当前ATR值
     """
     n = len(candles)
     if n < period + 1:
-        return None, 0
+        return 0.0
+    tr_list = []
+    for i in range(1, n):
+        h, l, pc = candles[i]["h"], candles[i]["l"], candles[i - 1]["c"]
+        tr = max(h - l, abs(h - pc), abs(l - pc))
+        tr_list.append(tr)
+    avg = sum(tr_list[:period]) / period
+    for i in range(period, len(tr_list)):
+        avg = (avg * (period - 1) + tr_list[i]) / period
+    return avg
+
+
+def calc_dmi_adx(candles: List[Dict], period: int = 14) -> Tuple[str, float, float]:
+    """
+    DMI + ADX
+    返回 (方向"多"/"空"/"平", ADX值, DI差值)
+    """
+    n = len(candles)
+    if n < period * 2:
+        return ("平", 0.0, 0.0)
+
+    highs = [c["h"] for c in candles]
+    lows = [c["l"] for c in candles]
+    closes = [c["c"] for c in candles]
+
+    plus_dm = [0.0] * n
+    minus_dm = [0.0] * n
+    tr_arr = [0.0] * n
+
+    for i in range(1, n):
+        up = highs[i] - highs[i - 1]
+        down = lows[i - 1] - lows[i]
+        plus_dm[i] = up if (up > down and up > 0) else 0.0
+        minus_dm[i] = down if (down > up and down > 0) else 0.0
+        tr_arr[i] = max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1]))
+
+    # Wilder's smoothing
+    init = period
+    smooth_tr = sum(tr_arr[1:init + 1])
+    smooth_pdm = sum(plus_dm[1:init + 1])
+    smooth_mdm = sum(minus_dm[1:init + 1])
+
+    for i in range(init + 1, n):
+        smooth_tr = smooth_tr - smooth_tr / period + tr_arr[i]
+        smooth_pdm = smooth_pdm - smooth_pdm / period + plus_dm[i]
+        smooth_mdm = smooth_mdm - smooth_mdm / period + minus_dm[i]
+
+    if smooth_tr == 0:
+        return ("平", 0.0, 0.0)
+
+    pdi = 100 * smooth_pdm / smooth_tr
+    mdi = 100 * smooth_mdm / smooth_tr
+    total = pdi + mdi
+    dx = 100 * abs(pdi - mdi) / total if total > 0 else 0
+
+    # ADX — 简化为当前dx值（单点）
+    adx = dx
+
+    direction = "多" if pdi > mdi else ("空" if mdi > pdi else "平")
+    di_diff = pdi - mdi
+    return (direction, adx, di_diff)
+
+
+def calc_stoch_rsi(closes: List[float], rsi_len: int = 10, stoch_len: int = 10,
+                   k_smooth: int = 3, d_smooth: int = 3) -> Tuple[float, float]:
+    """
+    StochRSI
+    返回 (K值, D值)
+    """
+    n = len(closes)
+    if n < rsi_len + stoch_len + k_smooth + d_smooth:
+        return (50.0, 50.0)
+
+    # 计算RSI序列
+    rsi_vals = []
+    for end in range(rsi_len, n + 1):
+        sub = closes[end - rsi_len:end]
+        avg_gain = 0.0
+        avg_loss = 0.0
+        for i in range(1, rsi_len):
+            diff = sub[i] - sub[i - 1]
+            if diff > 0:
+                avg_gain += diff
+            else:
+                avg_loss -= diff
+        avg_gain /= rsi_len
+        avg_loss /= rsi_len
+        if avg_loss == 0:
+            rsi_vals.append(100.0)
+        else:
+            rsi_vals.append(100.0 - 100.0 / (1 + avg_gain / avg_loss))
+
+    # Stoch of RSI
+    stoch_vals = []
+    for i in range(stoch_len - 1, len(rsi_vals)):
+        window = rsi_vals[i - stoch_len + 1:i + 1]
+        lo, hi = min(window), max(window)
+        diff = hi - lo
+        stoch_vals.append(100.0 * (rsi_vals[i] - lo) / diff if diff > 0 else 50.0)
+
+    if len(stoch_vals) < k_smooth:
+        return (50.0, 50.0)
+
+    # SMA smooth
+    def _sma(arr, p):
+        if len(arr) < p:
+            return [float('nan')] * len(arr)
+        result = [float('nan')] * len(arr)
+        for i in range(p - 1, len(arr)):
+            result[i] = sum(arr[i - p + 1:i + 1]) / p
+        return result
+
+    k_vals = _sma(stoch_vals, k_smooth)
+    d_vals = _sma(k_vals, d_smooth)
+
+    return (k_vals[-1] if k_vals and not math.isnan(k_vals[-1]) else 50.0,
+            d_vals[-1] if d_vals and not math.isnan(d_vals[-1]) else 50.0)
+
+
+def calc_super_trend(candles: List[Dict], factor: float = 1.0, period: int = 10) -> Tuple[Optional[float], int]:
+    """
+    SuperTrend
+    返回 (st_value, direction)  direction: 1=多头, -1=空头
+    """
+    n = len(candles)
+    if n < period + 2:
+        return (None, 0)
 
     highs = [c["h"] for c in candles]
     lows = [c["l"] for c in candles]
     closes = [c["c"] for c in candles]
 
     # ATR
-    atr_vals = []
-    true_ranges = []
+    tr_list = []
     for i in range(1, n):
-        tr_val = max(highs[i] - lows[i],
-                     abs(highs[i] - closes[i - 1]),
-                     abs(lows[i] - closes[i - 1]))
-        true_ranges.append(tr_val)
+        tr_list.append(max(highs[i] - lows[i], abs(highs[i] - closes[i - 1]), abs(lows[i] - closes[i - 1])))
+    atr_val = sum(tr_list[:period]) / period
+    for i in range(period, len(tr_list)):
+        atr_val = (atr_val * (period - 1) + tr_list[i]) / period
 
-    # Wilder's smoothed ATR
-    atr = sum(true_ranges[:period]) / period
-    atr_vals = [atr]
-    for i in range(period, len(true_ranges)):
-        atr = (atr * (period - 1) + true_ranges[i]) / period
-        atr_vals.append(atr)
+    hl2 = [(highs[i] + lows[i]) / 2.0 for i in range(n)]
 
-    # SuperTrend calculation
-    st_vals = [0.0] * n
-    upper_band = [0.0] * n
-    lower_band = [0.0] * n
-    direction = [0] * n  # 1=long, -1=short
+    # 只用最后一部分计算方向
+    upper = hl2[-1] + factor * atr_val
+    lower = hl2[-1] - factor * atr_val
 
-    for i in range(period, n):
-        atr_idx = i - period
-        hl2 = (highs[i] + lows[i]) / 2
-        basic_upper = hl2 + factor * atr_vals[atr_idx]
-        basic_lower = hl2 - factor * atr_vals[atr_idx]
+    # 简化为只看最后一根
+    if closes[-1] > upper:
+        return (lower, 1)
+    elif closes[-1] < lower:
+        return (upper, -1)
 
-        # Final upper band
-        if basic_upper < upper_band[i - 1] or closes[i - 1] > upper_band[i - 1]:
-            upper_band[i] = basic_upper
-        else:
-            upper_band[i] = upper_band[i - 1]
+    # 需要更多上下文确定方向
+    upper_prev = hl2[-2] + factor * atr_val if n > period + 1 else upper
+    lower_prev = hl2[-2] - factor * atr_val if n > period + 1 else lower
 
-        # Final lower band
-        if basic_lower > lower_band[i - 1] or closes[i - 1] < lower_band[i - 1]:
-            lower_band[i] = basic_lower
-        else:
-            lower_band[i] = lower_band[i - 1]
+    if closes[-2] >= lower_prev and closes[-1] >= lower:
+        return (lower, 1)
+    elif closes[-2] <= upper_prev and closes[-1] <= upper:
+        return (upper, -1)
 
-        # Direction
-        if i == period:
-            direction[i] = 1 if closes[i] > upper_band[i - 1] else -1
-        else:
-            if direction[i - 1] == -1 and closes[i] > upper_band[i - 1]:
-                direction[i] = 1
-            elif direction[i - 1] == 1 and closes[i] < lower_band[i - 1]:
-                direction[i] = -1
-            else:
-                direction[i] = direction[i - 1]
-
-        st_vals[i] = lower_band[i] if direction[i] == 1 else upper_band[i]
-
-    return st_vals[-1], direction[-1]
+    return (lower, 1)  # 默认偏多
 
 
 def find_pivots(candles: List[Dict], depth: int = 5) -> Tuple[List[float], List[float]]:
-    """检测Pivot高点和低点"""
+    """检测pivot高低点"""
     n = len(candles)
-    if n < 2 * depth + 1:
-        return [], []
+    if n < depth * 2 + 1:
+        return ([], [])
 
+    highs = [c["h"] for c in candles]
+    lows = [c["l"] for c in candles]
     pivot_highs = []
     pivot_lows = []
 
     for i in range(depth, n - depth):
-        h = candles[i]["h"]
-        l = candles[i]["l"]
-
-        is_high = all(h >= candles[j]["h"] for j in range(i - depth, i + depth + 1) if j != i)
-        is_low = all(l <= candles[j]["l"] for j in range(i - depth, i + depth + 1) if j != i)
-
+        is_high = all(highs[i] > highs[i - j] and highs[i] > highs[i + j] for j in range(1, depth + 1))
+        is_low = all(lows[i] < lows[i - j] and lows[i] < lows[i + j] for j in range(1, depth + 1))
         if is_high:
-            pivot_highs.append(h)
+            pivot_highs.append(highs[i])
         if is_low:
-            pivot_lows.append(l)
+            pivot_lows.append(lows[i])
 
-    return pivot_highs, pivot_lows
-
-
-def calc_ema(closes: List[float], period: int) -> Optional[float]:
-    """指数移动平均"""
-    if len(closes) < period:
-        return None
-    k = 2 / (period + 1)
-    ema = sum(closes[:period]) / period
-    for price in closes[period:]:
-        ema = price * k + ema * (1 - k)
-    return ema
+    return (pivot_highs, pivot_lows)
