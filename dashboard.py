@@ -37,9 +37,17 @@ def build_dashboard(json_path: str = "results/entry_analysis.json",
 
 
 def _render_html(symbols, sl_pcts):
-    sl_opts = ''.join(f'<option value="{p}">{p*100:.1f}%</option>' for p in sl_pcts)
-    sym_chk = ''.join(f'<label class="chk"><input type="checkbox" value="{s}" checked onchange="refilter()">{s}</label>' for s in symbols)
-    sl_chk = ''.join(f'<label class="chk"><input type="checkbox" value="{p}" checked onchange="refilter()">{p*100:.1f}%</label>' for p in sl_pcts)
+    # Coin groups
+    mainstream = ['BTC-USDT', 'ETH-USDT', 'SOL-USDT']
+    altcoins = [s for s in symbols if s not in mainstream]
+    sym_label = {s: s.replace('-USDT','') for s in symbols}
+    sym_grouped = mainstream if altcoins else symbols
+    sym_alt = altcoins
+
+    sym_chk_main = ''.join(f'<label class="chk" data-group="main"><input type="checkbox" value="{s}" checked onchange="refilter()"><span class="ticker">{sym_label[s]}</span></label>' for s in sym_grouped if s in symbols)
+    sym_chk_alt = ''.join(f'<label class="chk" data-group="alt"><input type="checkbox" value="{s}" checked onchange="refilter()"><span class="ticker">{sym_label[s]}</span></label>' for s in sym_alt if s in symbols) if sym_alt else ''
+
+    sl_chk = ''.join(f'<label class="chk"><input type="checkbox" value="{p}" checked onchange="refilter()"><span>{p*100:.1f}%</span></label>' for p in sl_pcts)
     return f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -53,6 +61,20 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans
 .sidebar{{width:240px;background:var(--card);border-right:1px solid var(--border);padding:16px;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}}
 .sidebar h3{{font-size:13px;color:var(--muted);margin:14px 0 6px;text-transform:uppercase;letter-spacing:1px}}
 .sidebar h3:first-child{{margin-top:0}}
+.chk{{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer;color:var(--text);transition:.1s}}
+.chk:hover{{color:var(--accent)}}
+.chk input{{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}}
+.chk .ticker{{font-weight:600;letter-spacing:.5px}}
+.chk-group{{margin-bottom:4px}}
+.sidebar-hdr{{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}}
+.sidebar-hdr .s-logo{{font-size:16px}}
+.sidebar-hdr span{{font-size:13px;font-weight:600}}
+.s-count{{margin-left:auto;background:var(--accent);color:#080d16;font-size:10px!important;padding:2px 8px;border-radius:8px}}
+.s-btn{{background:var(--bg);color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;transition:.15s}}
+.s-btn:hover{{color:var(--accent);border-color:var(--accent)}}
+.s-btn-xs{{margin-left:4px}}
+.s-stat{{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);padding:2px 0}}
+.s-dot{{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0}}
 .chk{{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer;color:var(--text)}}
 .chk input{{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}}
 .main{{flex:1;padding:16px 20px;overflow-y:auto}}
@@ -99,15 +121,45 @@ tr:hover{{background:rgba(77,168,247,.05)}}
 <body>
 
 <div class="sidebar">
-    <h3>🎯 品种</h3>
-    {sym_chk}
-    <h3>📏 止损档位</h3>
+    <div class="sidebar-hdr">
+        <span class="s-logo">&#9776;</span>
+        <span>筛选面板</span>
+        <span class="s-count" id="totalItems">0</span>
+    </div>
+    <h3>&#128314; 品种
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('main',true)">全选</button>
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('main',false)">清空</button>
+    </h3>
+    <div class="chk-group" id="groupMain">
+    {sym_chk_main}
+    </div>
+    <h3>&#127760; 山寨
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('alt',true)">全选</button>
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('alt',false)">清空</button>
+    </h3>
+    <div class="chk-group" id="groupAlt">
+    {sym_chk_alt}
+    </div>
+    <h3>&#128207; 止损档位
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('sl',true)">全选</button>
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('sl',false)">清空</button>
+    </h3>
+    <div class="chk-group" id="groupSL">
     {sl_chk}
-    <h3>🔄 方向</h3>
+    </div>
+    <h3>&#128260; 方向</h3>
     <label class="chk"><input type="checkbox" value="LONG" checked onchange="refilter()">做多</label>
     <label class="chk"><input type="checkbox" value="SHORT" checked onchange="refilter()">做空</label>
-    <div style="margin-top:20px">
-        <button class="btn outline" onclick="exportCSV()" style="width:100%">📥 导出 CSV</button>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">
+        <div class="s-stat"><span class="s-dot" style="background:var(--green)"></span>存活 ≥70%</div>
+        <div class="s-stat"><span class="s-dot" style="background:var(--yellow)"></span>存活 45-70%</div>
+        <div class="s-stat"><span class="s-dot" style="background:var(--red)"></span>存活 &lt;45%</div>
+    </div>
+    <div style="margin-top:14px">
+        <button class="btn outline" onclick="exportCSV()" style="width:100%">&#128229; 导出 CSV</button>
+    </div>
+    <div style="margin-top:8px">
+        <button class="btn outline" onclick="resetFilters()" style="width:100%">&#128260; 重置筛选</button>
     </div>
 </div>
 
@@ -154,7 +206,33 @@ function getFiltered(){{
     return D.filter(d=>syms.has(d.symbol)&&sls.has(d.sl_pct)&&dirs.has(d.direction||'LONG'));
 }}
 
-function refilter(){{updateCards();redraw();if(curTab==='data')renderTable();if(curTab==='heatmap')drawHeatmap();if(curTab==='picks')drawPicks();}}
+function refilter(){{updateCards();redraw();if(curTab==='data')renderTable();if(curTab==='heatmap')drawHeatmap();if(curTab==='picks')drawPicks();
+    // Update total count
+    var f=getFiltered();
+    document.getElementById('totalItems').textContent=f.length;
+}}
+
+function toggleGroup(grp,on){{
+    var sel=grp==='main'?'#groupMain':grp==='alt'?'#groupAlt':'#groupSL';
+    document.querySelectorAll(sel+' input').forEach(cb=>{{cb.checked=on;}});
+    refilter();
+}}
+
+function resetFilters(){{
+    document.querySelectorAll('.sidebar input[type=checkbox]').forEach(cb=>cb.checked=true);
+    refilter();
+}}
+
+function filterCell(sym,sl){{
+    // Uncheck all, then check only this sym+sl
+    document.querySelectorAll('.sidebar input[type=checkbox]').forEach(cb=>cb.checked=false);
+    document.querySelectorAll('.sidebar input[value="'+sym+'"]').forEach(cb=>cb.checked=true);
+    document.querySelectorAll('.sidebar input[value="'+sl+'"]').forEach(cb=>cb.checked=true);
+    document.querySelector('.sidebar input[value="LONG"]').checked=true;
+    document.querySelector('.sidebar input[value="SHORT"]').checked=true;
+    refilter();
+    switchTab('picks');
+}}
 
 function updateCards(){{
     var f=getFiltered(),el=document.getElementById('summaryCards');
@@ -192,7 +270,7 @@ function drawHeatmap(){{
             // Color: red(0) -> yellow(50) -> green(100)
             var h=(r/100)*120; // hue: 0=red, 60=yellow, 120=green
             var bg='hsl('+h.toFixed(0)+',70%,25%)';
-            html+='<div class="cell" style="background:'+bg+'" title="'+sym+' '+sl*100+'% | 存活:'+r.toFixed(1)+'% | 均盈:'+d.avg_max_profit.toFixed(2)+'% | '+d.total_signals+'信号">'+r.toFixed(0)+'%</div>';
+            html+='<div class="cell" style="background:'+bg+'" title="'+sym+' '+sl*100+'% | 存活:'+r.toFixed(1)+'% | 均盈:'+d.avg_max_profit.toFixed(2)+'% | '+d.total_signals+'信号" onclick="filterCell(\''+sym+'\','+sl+')">'+r.toFixed(0)+'%</div>';
         }});
     }});
     html+='</div>';
