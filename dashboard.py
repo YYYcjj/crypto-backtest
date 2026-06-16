@@ -202,7 +202,12 @@ fetch('dashboard_data.json').then(r=>r.json()).then(d=>{{D=d;refilter();}}).catc
 function getFiltered(){{
     var chkS=[...document.querySelectorAll('.sidebar input[value]:checked')];
     var syms=new Set(),sls=new Set(),dirs=new Set();
-    chkS.forEach(cb=>{{var v=cb.value;if(v.includes('-'))syms.add(v);else if(parseFloat(v)<1)sls.add(parseFloat(v));else dirs.add(v);}});
+    chkS.forEach(cb=>{{
+        var v=cb.value;
+        if(v.includes('-'))syms.add(v);
+        else if(!isNaN(parseFloat(v)))sls.add(parseFloat(v));
+        else dirs.add(v);
+    }});
     return D.filter(d=>syms.has(d.symbol)&&sls.has(d.sl_pct)&&dirs.has(d.direction||'LONG'));
 }}
 
