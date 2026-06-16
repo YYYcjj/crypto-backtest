@@ -254,10 +254,14 @@ class EntryAnalyzer:
 
         return result
 
-    def run_analysis(self, sym: str, days: int = 90, cache_dir: str = "cache"):
-        """跑完整分析流程"""
+    def run_analysis(self, sym: str, days: int = 90, cache_dir: str = "cache",
+                     direction: bool = True):
+        """跑完整分析流程
+        direction: True=做多, False=做空
+        """
+        dir_label = "做多" if direction else "做空"
         print(f"\n{'='*60}")
-        print(f"🔍 {sym} 入场精度分析 (止损={self.sl_pct*100:.0f}%)")
+        print(f"🔍 {sym} 入场精度分析 (止损={self.sl_pct*100:.1f}%, {dir_label})")
         print(f"{'='*60}")
 
         # 1. 拉取所有TF数据
@@ -271,8 +275,9 @@ class EntryAnalyzer:
 
         # 2. 扫描入场信号
         print("  [2/3] 扫描入场信号...")
-        signals = self.find_entries_15m(candles_15m, higher_trends, require_bull=True)
-        print(f"    发现 {len(signals)} 个做多信号")
+        require_bull = direction
+        signals = self.find_entries_15m(candles_15m, higher_trends, require_bull=require_bull)
+        print(f"    发现 {len(signals)} 个{dir_label}信号")
 
         if not signals:
             print("    ⚠️ 无信号，检查数据是否足够")
@@ -366,7 +371,7 @@ class EntryAnalyzer:
         }
 
         # 打印
-        print(f"\n  📊 {sym} 分析结果 (止损{self.sl_pct*100:.0f}%)")
+        print(f"\n  📊 {sym} 分析结果 (止损{self.sl_pct*100:.1f}%)")
         print(f"  {'─' * 40}")
         print(f"  总信号: {total}  止损出局: {len(stopped)}({stop_rate:.1f}%)  "
               f"存活: {len(survived)}({survive_rate:.1f}%)")
@@ -407,28 +412,33 @@ class EntryAnalyzer:
 
 def main():
     symbols = ["BTC-USDT", "ETH-USDT", "SOL-USDT"]
-    sl_percentages = [0.02]  # 2%
+    sl_percentages = [0.005, 0.01, 0.015, 0.02]  # 0.5%, 1%, 1.5%, 2%
+    directions = [("LONG", True), ("SHORT", False)]
 
     all_summaries = []
 
     for sl in sl_percentages:
-        print(f"\n{'#'*60}")
-        print(f"# 止损宽度: {sl*100:.0f}%")
-        print(f"{'#'*60}")
+        for dir_label, is_bull in directions:
+            print(f"\n{'#'*60}")
+            print(f"# 止损: {sl*100:.1f}% | 方向: {dir_label}")
+            print(f"{'#'*60}")
 
-        analyzer = EntryAnalyzer(sl_pct=sl, forward_bars=96)  # 24h = 96 × 15m
+            analyzer = EntryAnalyzer(sl_pct=sl, forward_bars=96)
 
-        for sym in symbols:
-            summary = analyzer.run_analysis(sym, days=90)
-            if summary:
-                all_summaries.append(summary)
+            for sym in symbols:
+                summary = analyzer.run_analysis(sym, days=90, direction=is_bull)
+                if summary:
+                    summary["direction"] = dir_label
+                    all_summaries.append(summary)
 
     # 保存结果
     os.makedirs("results", exist_ok=True)
     path = "results/entry_analysis.json"
     with open(path, "w") as f:
         json.dump(all_summaries, f, ensure_ascii=False, indent=2, default=str)
-    print(f"\n✅ 结果已保存: {path}")
+    print(f"\n✅ 结果已保存: {path} ({len(all_summaries)} 条)")
+    print(f"   档位: {[f'{p*100:.1f}%' for p in sl_percentages]}")
+    print(f"   方向: LONG + SHORT")
 
     # 生成HTML报告
     _generate_html_report(all_summaries)
