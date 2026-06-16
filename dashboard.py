@@ -27,16 +27,21 @@ def build_dashboard(json_path: str = "results/entry_analysis.json",
 
     symbols = sorted(set(s["symbol"] for s in summaries))
     sl_pcts = sorted(set(s["sl_pct"] for s in summaries))
-    output_path = os.path.join(output_dir, "dashboard.html")
+    # Embed summary data (without sample_results) directly for reliability
+    inline_summaries = [{k:v for k,v in s.items() if k != 'sample_results'} for s in summaries]
+    inline_json = json.dumps(inline_summaries, ensure_ascii=False, default=str)
+    # Escape any </script> in the data
+    inline_json = inline_json.replace('</', '<\\/')
 
+    output_path = os.path.join(output_dir, "dashboard.html")
     with open(output_path, "w") as f:
-        f.write(_render_html(symbols, sl_pcts))
+        f.write(_render_html(symbols, sl_pcts, inline_json))
 
     print(f"✅ 仪表盘: {output_path}")
     return output_path
 
 
-def _render_html(symbols, sl_pcts):
+def _render_html(symbols, sl_pcts, inline_data):
     # Coin groups
     mainstream = ['BTC-USDT', 'ETH-USDT', 'SOL-USDT']
     altcoins = [s for s in symbols if s not in mainstream]
@@ -194,10 +199,12 @@ tr:hover{{background:rgba(77,168,247,.05)}}
 </div>
 
 <script>
-var D=[],curTab='heatmap',charts={{}},sortK='',sortAsc=true,allRows=[];
+var D=""" + inline_data + """;
 var C=['#4da8f7','#2dd47c','#f5a623','#f5475d','#9b6dff','#ff7849','#e040fb','#00e5ff'];
 
-fetch('dashboard_data.json').then(r=>r.json()).then(d=>{{D=d;refilter();}}).catch(e=>{{document.getElementById('summaryCards').innerHTML='<div class="panel"><span class="red">加载失败: '+e.message+'</span></div>';}});
+// Init with embedded data, then try to refresh from JSON
+D=D;refilter();
+fetch('dashboard_data.json').then(r=>r.json()).then(d=>{{if(d&&d.length)D=d;refilter();}}).catch(()=>{{}});
 
 function getFiltered(){{
     var chkS=[...document.querySelectorAll('.sidebar input[value]:checked')];
