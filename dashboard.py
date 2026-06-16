@@ -1,5 +1,5 @@
 """
-入场精度可视化仪表盘生成器 — 数据与HTML分离版
+入场精度可视化仪表盘生成器 v2 — 热度图 + 最优推荐 + 评分矩阵
 """
 import json
 import os
@@ -8,437 +8,317 @@ from typing import List, Dict
 
 def build_dashboard(json_path: str = "results/entry_analysis.json",
                     output_dir: str = "results"):
-    """生成交互式可视化仪表盘"""
-
     with open(json_path, "r") as f:
         data = json.load(f)
-
     if not data:
         print("No data found")
         return
 
-    # 提取摘要数据
     summaries = []
     for item in data:
         s = {k: v for k, v in item.items() if k != "results"}
-        s["sample_results"] = item.get("results", [])[:20]
+        s["sample_results"] = item.get("results", [])[:15]
         summaries.append(s)
 
-    # 保存瘦身数据
     data_json_path = os.path.join(output_dir, "dashboard_data.json")
     with open(data_json_path, "w") as f:
         json.dump(summaries, f, ensure_ascii=False, default=str)
-    print(f"📦 数据已保存: {data_json_path} ({len(summaries)} 条)")
+    print(f"📦 数据: {data_json_path} ({len(summaries)} 条)")
 
-    # 收集元信息
     symbols = sorted(set(s["symbol"] for s in summaries))
     sl_pcts = sorted(set(s["sl_pct"] for s in summaries))
-
-    # 生成纯HTML（数据从外部JSON加载）
-    html = _render_html(symbols, sl_pcts)
-
     output_path = os.path.join(output_dir, "dashboard.html")
-    with open(output_path, "w") as f:
-        f.write(html)
 
-    print(f"✅ 仪表盘已生成: {output_path}")
+    with open(output_path, "w") as f:
+        f.write(_render_html(symbols, sl_pcts))
+
+    print(f"✅ 仪表盘: {output_path}")
     return output_path
 
 
-def _render_html(symbols: List[str], sl_pcts: List[float]) -> str:
-    sl_options = ''.join(f'<option value="{p}">{p:.1f}%</option>' for p in sl_pcts)
-    sym_options = ''.join(f'<option value="{s}">{s}</option>' for s in symbols)
-
-    return """<!DOCTYPE html>
+def _render_html(symbols, sl_pcts):
+    sl_opts = ''.join(f'<option value="{p}">{p*100:.1f}%</option>' for p in sl_pcts)
+    sym_chk = ''.join(f'<label class="chk"><input type="checkbox" value="{s}" checked onchange="refilter()">{s}</label>' for s in symbols)
+    sl_chk = ''.join(f'<label class="chk"><input type="checkbox" value="{p}" checked onchange="refilter()">{p*100:.1f}%</label>' for p in sl_pcts)
+    return f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>入场精度分析仪表盘</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>入场精度分析仪表盘 v2</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-:root { --bg:#0b1120; --card:#111827; --border:#1e293b; --text:#e2e8f0; --muted:#64748b; --accent:#38bdf8; --green:#22c55e; --red:#ef4444; --yellow:#f59e0b; --purple:#a855f7; }
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-.header { background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom:1px solid var(--border); padding:16px 24px; position:sticky; top:0; z-index:100; display:flex; justify-content:space-between; align-items:center; }
-.header h1 { font-size:18px; }
-.header .sub { color:var(--muted); font-size:12px; }
-.controls { display:flex; gap:12px; flex-wrap:wrap; padding:12px 24px; background:var(--card); border-bottom:1px solid var(--border); align-items:center; }
-.control-group { display:flex; align-items:center; gap:6px; }
-.control-group label { font-size:11px; color:var(--muted); white-space:nowrap; text-transform:uppercase; letter-spacing:.5px; }
-select, .btn { background:#1e293b; color:var(--text); border:1px solid var(--border); padding:5px 10px; border-radius:5px; font-size:12px; cursor:pointer; outline:none; transition: border-color .2s; }
-select:focus { border-color:var(--accent); }
-.btn { font-size:11px; }
-.btn:hover { background:#334155; }
-.btn.export { background:var(--green); color:#0b1120; border-color:var(--green); font-weight:600; }
-.metric-tabs { display:flex; gap:2px; padding:0 24px; margin:12px 0 8px; flex-wrap:wrap; }
-.tab { padding:7px 14px; font-size:12px; cursor:pointer; border:1px solid var(--border); border-bottom:none; border-radius:6px 6px 0 0; background:#0f172a; color:var(--muted); transition:all .2s; }
-.tab:hover { color:var(--text); }
-.tab.active { background:var(--card); color:var(--accent); border-bottom-color:var(--card); }
-.cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; padding:0 24px; margin-bottom:12px; }
-.card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px; }
-.card .label { font-size:11px; color:var(--muted); margin-bottom:2px; }
-.card .value { font-size:26px; font-weight:700; }
-.card .sub { font-size:11px; color:var(--muted); margin-top:2px; }
-.main-content { padding:0 24px 24px; }
-.chart-panel { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:14px; }
-.chart-panel h3 { font-size:14px; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
-.chart-wrap { position:relative; height:320px; }
-.chart-wrap canvas { width:100% !important; }
-.data-table { width:100%; border-collapse:collapse; font-size:12px; }
-.data-table th { background:#0f172a; padding:8px 10px; text-align:left; border-bottom:2px solid var(--border); color:var(--muted); font-weight:600; position:sticky; top:0; cursor:pointer; user-select:none; }
-.data-table th:hover { color:var(--accent); }
-.data-table td { padding:6px 10px; border-bottom:1px solid var(--border); }
-.data-table tr:hover { background:rgba(56,189,248,0.05); }
-.pos { color:var(--green); }
-.neg { color:var(--red); }
-.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-@media (max-width:768px) { .grid-2 { grid-template-columns:1fr; } .controls { flex-direction:column; align-items:flex-start; } }
-.empty { text-align:center; padding:40px; color:var(--muted); }
-.toolbar { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
-.toolbar input { background:#1e293b; border:1px solid var(--border); color:var(--text); padding:5px 10px; border-radius:5px; font-size:12px; outline:none; width:200px; }
-.toolbar input:focus { border-color:var(--accent); }
-.page-info { font-size:11px; color:var(--muted); margin-left:auto; }
+:root{{--bg:#080d16;--card:#0f1623;--border:#1a2436;--text:#dce5f0;--muted:#5e6d82;--accent:#4da8f7;--green:#2dd47c;--red:#f5475d;--yellow:#f5a623;--purple:#9b6dff;--orange:#ff7849}}
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}}
+.sidebar{{width:240px;background:var(--card);border-right:1px solid var(--border);padding:16px;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}}
+.sidebar h3{{font-size:13px;color:var(--muted);margin:14px 0 6px;text-transform:uppercase;letter-spacing:1px}}
+.sidebar h3:first-child{{margin-top:0}}
+.chk{{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer;color:var(--text)}}
+.chk input{{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}}
+.main{{flex:1;padding:16px 20px;overflow-y:auto}}
+.header{{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}}
+.header h1{{font-size:20px;font-weight:700}}
+.header .badge{{font-size:11px;background:var(--accent);color:#080d16;padding:3px 10px;border-radius:10px;font-weight:600}}
+.tabs{{display:flex;gap:2px;margin-bottom:12px;flex-wrap:wrap}}
+.tab{{padding:7px 14px;font-size:12px;cursor:pointer;border:1px solid var(--border);border-radius:6px 6px 0 0;background:var(--bg);color:var(--muted);transition:.15s}}
+.tab:hover{{color:var(--text)}}
+.tab.active{{background:var(--card);color:var(--accent);font-weight:600}}
+.panel{{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px}}
+.panel h3{{font-size:14px;margin-bottom:10px;color:var(--text);display:flex;align-items:center;gap:8px}}
+.panel h3 .tag{{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--accent);color:#080d16;font-weight:600}}
+.chart-wrap{{position:relative;height:340px}}
+.chart-wrap canvas{{width:100%!important}}
+.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}}
+.card{{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px}}
+.card .l{{font-size:11px;color:var(--muted);margin-bottom:2px}}
+.card .v{{font-size:22px;font-weight:700}}
+.card .s{{font-size:11px;color:var(--muted);margin-top:2px}}
+.heatmap{{display:grid;gap:2px;font-size:12px;overflow-x:auto}}
+.heatmap .hdr{{font-weight:600;text-align:center;padding:6px 10px;color:var(--muted)}}
+.heatmap .cell{{text-align:center;padding:10px 12px;border-radius:4px;cursor:pointer;transition:.2s;font-weight:600}}
+.heatmap .cell:hover{{transform:scale(1.05);z-index:2;box-shadow:0 0 12px rgba(0,0,0,.4)}}
+.heatmap .rowlabel{{display:flex;align-items:center;padding:6px 10px;font-weight:600;white-space:nowrap}}
+table{{width:100%;border-collapse:collapse;font-size:12px}}
+th{{background:var(--bg);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);color:var(--muted);font-weight:600;cursor:pointer}}
+th:hover{{color:var(--accent)}}
+td{{padding:6px 10px;border-bottom:1px solid var(--border)}}
+tr:hover{{background:rgba(77,168,247,.05)}}
+.green{{color:var(--green)}}.red{{color:var(--red)}}.yellow{{color:var(--yellow)}}
+.rec-badge{{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}}
+.rec-a{{background:rgba(45,212,124,.15);color:var(--green);border:1px solid rgba(45,212,124,.3)}}
+.rec-b{{background:rgba(245,166,35,.15);color:var(--yellow);border:1px solid rgba(245,166,35,.3)}}
+.rec-c{{background:rgba(245,71,93,.15);color:var(--red);border:1px solid rgba(245,71,93,.3)}}
+.toolbar{{display:flex;gap:8px;margin-bottom:8px;align-items:center}}
+.toolbar input{{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:5px;font-size:12px;outline:none;width:180px}}
+.toolbar input:focus{{border-color:var(--accent)}}
+.btn{{background:var(--accent);color:#080d16;border:none;padding:5px 12px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:600}}
+.btn.outline{{background:transparent;border:1px solid var(--border);color:var(--text)}}
+.score-dot{{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}}
 </style>
 </head>
 <body>
 
-<div class="header">
-    <div><h1>&#128202; 入场精度分析仪表盘</h1><p class="sub">15m 精确入场 &middot; 高位周期趋势确认 &middot; 多档位止损对比</p></div>
-    <button class="btn export" onclick="exportCSV()">&#128229; 导出CSV</button>
-</div>
-
-<div class="controls">
-    <div class="control-group">
-        <label>止损</label>
-        <select id="slSelect" onchange="filterData()">""" + sl_options + """</select>
-    </div>
-    <div class="control-group">
-        <label>品种</label>
-        <select id="symbolSelect" onchange="filterData()">
-            <option value="all">全部</option>""" + sym_options + """</select>
-    </div>
-    <div class="control-group">
-        <label>触发</label>
-        <select id="triggerSelect" onchange="filterData()">
-            <option value="all">全部</option>
-            <option value="dmi_flip">DMI翻多</option>
-            <option value="srsi_bounce">超卖反弹</option>
-            <option value="support_touch">支撑触碰</option>
-        </select>
-    </div>
-    <div class="control-group">
-        <label>方向</label>
-        <select id="dirSelect" onchange="filterData()">
-            <option value="all">全部</option>
-            <option value="LONG">做多</option>
-            <option value="SHORT">做空</option>
-        </select>
+<div class="sidebar">
+    <h3>🎯 品种</h3>
+    {sym_chk}
+    <h3>📏 止损档位</h3>
+    {sl_chk}
+    <h3>🔄 方向</h3>
+    <label class="chk"><input type="checkbox" value="LONG" checked onchange="refilter()">做多</label>
+    <label class="chk"><input type="checkbox" value="SHORT" checked onchange="refilter()">做空</label>
+    <div style="margin-top:20px">
+        <button class="btn outline" onclick="exportCSV()" style="width:100%">📥 导出 CSV</button>
     </div>
 </div>
 
-<div class="metric-tabs">
-    <div class="tab active" onclick="switchTab('survival')">存活率 &amp; 盈亏</div>
-    <div class="tab" onclick="switchTab('curve')">存活率曲线</div>
-    <div class="tab" onclick="switchTab('distribution')">盈利分布</div>
-    <div class="tab" onclick="switchTab('triggers')">触发对比</div>
-    <div class="tab" onclick="switchTab('stoptime')">止损时机</div>
-    <div class="tab" onclick="switchTab('data')">明细</div>
-</div>
+<div class="main">
+    <div class="header">
+        <h1>📊 入场精度分析 <span class="badge">v2</span></h1>
+    </div>
 
-<div class="cards" id="cardsRow"></div>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('heatmap')">🔥 热度图</div>
+        <div class="tab" onclick="switchTab('picks')">⭐ 最优推荐</div>
+        <div class="tab" onclick="switchTab('curve')">📈 存活曲线</div>
+        <div class="tab" onclick="switchTab('distribution')">📊 盈利分布</div>
+        <div class="tab" onclick="switchTab('triggers')">🎯 触发对比</div>
+        <div class="tab" onclick="switchTab('stoptime')">⏱ 止损时机</div>
+        <div class="tab" onclick="switchTab('data')">📋 明细</div>
+    </div>
 
-<div class="main-content">
-    <div id="tab-survival" class="chart-panel">
-        <h3>&#128200; 存活率 &amp; 均盈对比</h3>
-        <div class="chart-wrap"><canvas id="chartSurvival"></canvas></div>
-    </div>
-    <div id="tab-curve" class="chart-panel" style="display:none">
-        <h3>&#128201; 存活率 vs 止损宽度</h3>
-        <div class="chart-wrap"><canvas id="chartCurve"></canvas></div>
-    </div>
-    <div id="tab-distribution" class="chart-panel" style="display:none">
-        <h3>&#128202; 盈利区间分布</h3>
-        <div class="chart-wrap"><canvas id="chartDistribution"></canvas></div>
-    </div>
-    <div id="tab-triggers" class="chart-panel" style="display:none">
-        <h3>&#127919; 触发类型对比</h3>
-        <div class="grid-2">
-            <div class="chart-wrap"><canvas id="chartTriggerStop"></canvas></div>
-            <div class="chart-wrap"><canvas id="chartTriggerProfit"></canvas></div>
-        </div>
-    </div>
-    <div id="tab-stoptime" class="chart-panel" style="display:none">
-        <h3>&#9201; 止损发生时间分布</h3>
-        <div class="chart-wrap"><canvas id="chartStopTime"></canvas></div>
-    </div>
-    <div id="tab-data" class="chart-panel" style="display:none">
-        <h3>&#128203; 信号明细</h3>
-        <div class="toolbar">
-            <input type="text" id="tableSearch" placeholder="搜索..." oninput="renderTable()">
-            <span class="page-info" id="tableInfo"></span>
-        </div>
-        <div style="max-height:420px;overflow-y:auto;">
-            <table class="data-table" id="dataTable">
-                <thead><tr>
-                    <th onclick="sortTable('symbol')">品种 &#8693;</th>
-                    <th onclick="sortTable('price')">入场价 &#8693;</th>
-                    <th onclick="sortTable('trigger')">触发 &#8693;</th>
-                    <th onclick="sortTable('sl_pct')">止损 &#8693;</th>
-                    <th>1H</th><th>4H</th><th>1D</th>
-                    <th>SRSI K</th>
-                    <th onclick="sortTable('stopped')">结果 &#8693;</th>
-                    <th onclick="sortTable('profit')">最大浮盈 &#8693;</th>
-                </tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
+    <div class="cards" id="summaryCards"></div>
+
+    <div id="tab-heatmap" class="panel"><h3>🔥 存活率热度图 <span class="tag">核心</span></h3><div id="heatmapContainer"></div></div>
+    <div id="tab-picks" class="panel" style="display:none"><h3>⭐ 各品种最优止损推荐</h3><div style="overflow-x:auto"><table id="picksTable"><thead><tr><th>品种</th><th>推荐止损</th><th>存活率</th><th>均盈</th><th>综合评分</th><th>等级</th><th>建议仓位</th></tr></thead><tbody></tbody></table></div></div>
+    <div id="tab-curve" class="panel" style="display:none"><h3>📈 存活率 vs 止损宽度</h3><div class="chart-wrap"><canvas id="chartCurve"></canvas></div></div>
+    <div id="tab-distribution" class="panel" style="display:none"><h3>📊 盈利区间分布</h3><div class="chart-wrap"><canvas id="chartDist"></canvas></div></div>
+    <div id="tab-triggers" class="panel" style="display:none"><h3>🎯 触发类型对比</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px"><div class="chart-wrap"><canvas id="chartTrigStop"></canvas></div><div class="chart-wrap"><canvas id="chartTrigProfit"></canvas></div></div></div>
+    <div id="tab-stoptime" class="panel" style="display:none"><h3>⏱ 止损发生时间分布</h3><div class="chart-wrap"><canvas id="chartStopTime"></canvas></div></div>
+    <div id="tab-data" class="panel" style="display:none">
+        <h3>📋 信号明细</h3>
+        <div class="toolbar"><input type="text" id="tblSearch" placeholder="搜索..." oninput="renderTable()"><span style="font-size:11px;color:var(--muted);margin-left:auto" id="tblInfo"></span></div>
+        <div style="max-height:450px;overflow:auto"><table id="dataTable"><thead><tr><th onclick="sortTable('symbol')">品种↕</th><th onclick="sortTable('sl_pct')">止损↕</th><th onclick="sortTable('trigger')">触发↕</th><th>1H</th><th>4H</th><th>1D</th><th>SRSI K</th><th onclick="sortTable('stopped')">结果↕</th><th onclick="sortTable('profit')">浮盈↕</th></tr></thead><tbody></tbody></table></div>
     </div>
 </div>
 
 <script>
-var ALL_DATA = [];
-var currentTab = 'survival';
-var charts = {};
-var sortKey = '', sortAsc = true;
-var tableRows = [];
+var D=[],curTab='heatmap',charts={{}},sortK='',sortAsc=true,allRows=[];
+var C=['#4da8f7','#2dd47c','#f5a623','#f5475d','#9b6dff','#ff7849','#e040fb','#00e5ff'];
 
-fetch('dashboard_data.json').then(r=>r.json()).then(data=>{
-    ALL_DATA = data;
-    updateCards(); drawSurvivalChart();
-}).catch(e=>{document.getElementById('cardsRow').innerHTML='<div class="empty" style="color:var(--red)">&#9888; 加载失败: '+e.message+'</div>';});
+fetch('dashboard_data.json').then(r=>r.json()).then(d=>{{D=d;refilter();}}).catch(e=>{{document.getElementById('summaryCards').innerHTML='<div class="panel"><span class="red">加载失败: '+e.message+'</span></div>';}});
 
-function getFilteredData(){
-    var sl=parseFloat(document.getElementById('slSelect').value);
-    var sym=document.getElementById('symbolSelect').value;
-    var trig=document.getElementById('triggerSelect').value;
-    var dir=document.getElementById('dirSelect').value;
-    return ALL_DATA.filter(function(item){
-        if(sl && item.sl_pct!==sl) return false;
-        if(sym!=='all' && item.symbol!==sym) return false;
-        if(dir!=='all' && item.direction!==dir) return false;
-        return true;
-    });
-}
+function getFiltered(){{
+    var chkS=[...document.querySelectorAll('.sidebar input[value]:checked')];
+    var syms=new Set(),sls=new Set(),dirs=new Set();
+    chkS.forEach(cb=>{{var v=cb.value;if(v.includes('-'))syms.add(v);else if(parseFloat(v)<1)sls.add(parseFloat(v));else dirs.add(v);}});
+    return D.filter(d=>syms.has(d.symbol)&&sls.has(d.sl_pct)&&dirs.has(d.direction||'LONG'));
+}}
 
-function filterData(){ updateCards(); refreshCharts(); if(currentTab==='data') renderTable(); }
+function refilter(){{updateCards();redraw();if(curTab==='data')renderTable();if(curTab==='heatmap')drawHeatmap();if(curTab==='picks')drawPicks();}}
 
-function updateCards(){
-    var f=getFilteredData(), row=document.getElementById('cardsRow');
-    if(!f.length){ row.innerHTML='<div class="empty">无匹配数据</div>'; return; }
-    var s=0, st=0, wp=0, sv=0, best='', bs=0, avgSL=0;
-    f.forEach(function(x){
-        s+=x.total_signals; st+=x.stopped; sv+=x.survived;
-        wp+=x.avg_max_profit*x.survived; avgSL+=x.sl_pct;
-        if(x.survive_rate>bs){ bs=x.survive_rate; best=x.symbol; }
-    });
-    var os=sv/s*100, ap=sv>0?wp/sv:0;
-    var sc=os>=70?'var(--green)':(os>=50?'var(--yellow)':'var(--red)');
-    var pc=ap>=2?'var(--green)':(ap>=1?'var(--yellow)':'var(--muted)');
-    row.innerHTML='<div class="card"><div class="label">总信号</div><div class="value" style="color:var(--accent)">'+s.toLocaleString()+'</div><div class="sub">'+f.length+'组数据</div></div>'+
-        '<div class="card"><div class="label">存活率</div><div class="value" style="color:'+sc+'">'+os.toFixed(1)+'%</div><div class="sub">'+sv+'/'+s+' 未止损</div></div>'+
-        '<div class="card"><div class="label">均盈</div><div class="value" style="color:'+pc+'">'+ap.toFixed(2)+'%</div><div class="sub">最佳:'+best+'('+bs.toFixed(0)+'%)</div></div>'+
-        '<div class="card"><div class="label">止损扫出</div><div class="value" style="color:var(--red)">'+st.toLocaleString()+'</div><div class="sub">'+(st/s*100).toFixed(1)+'%</div></div>';
-}
+function updateCards(){{
+    var f=getFiltered(),el=document.getElementById('summaryCards');
+    if(!f.length){{el.innerHTML='<div class="panel empty">无匹配数据</div>';return;}}
+    var total=0,stopped=0,wtProfit=0,surv=0,bestSym='',bestSc=0,avgSL=0;
+    f.forEach(x=>{{total+=x.total_signals;stopped+=x.stopped;surv+=x.survived;wtProfit+=x.avg_max_profit*x.survived;avgSL+=x.sl_pct;}});
+    var rate=surv/total*100,avgP=surv>0?wtProfit/surv:0;
+    // Composite score for best pick
+    f.forEach(x=>{{var sc=x.survive_rate*x.avg_max_profit/100;if(sc>bestSc){{bestSc=sc;bestSym=x.symbol+' '+x.sl_pct.toFixed(3)*100;}}}});
+    el.innerHTML='<div class="card"><div class="l">总信号</div><div class="v" style="color:var(--accent)">'+total.toLocaleString()+'</div><div class="s">'+f.length+' 组数据</div></div>'+
+        '<div class="card"><div class="l">存活率</div><div class="v" style="color:'+(rate>=70?'var(--green)':rate>=45?'var(--yellow)':'var(--red)')+'">'+rate.toFixed(1)+'%</div><div class="s">'+surv+'/'+total+'</div></div>'+
+        '<div class="card"><div class="l">均盈</div><div class="v" style="color:'+(avgP>=2?'var(--green)':avgP>=1?'var(--yellow)':'var(--muted)')+'">'+avgP.toFixed(2)+'%</div><div class="s">最佳组合: '+bestSym+'</div></div>'+
+        '<div class="card"><div class="l">止损扫出</div><div class="v" style="color:var(--red)">'+stopped.toLocaleString()+'</div><div class="s">'+(stopped/total*100).toFixed(1)+'% 被扫</div></div>';
+}}
 
-function destroyCharts(){ for(var k in charts){ charts[k].destroy(); } charts={}; }
+// ── HEATMAP ──
+function drawHeatmap(){{
+    var f=getFiltered(),el=document.getElementById('heatmapContainer');
+    if(!f.length){{el.innerHTML='<div class="empty">无数据</div>';return;}}
+    var syms=[...new Set(f.map(d=>d.symbol))].sort();
+    var sls=[...new Set(f.map(d=>d.sl_pct))].sort((a,b)=>a-b);
+    // Build matrix
+    var matrix={{}};
+    f.forEach(d=>{{if(!matrix[d.symbol])matrix[d.symbol]={{}};matrix[d.symbol][d.sl_pct]=d;}});
+    var cols=sls.length+1;
+    var html='<div class="heatmap" style="grid-template-columns:100px repeat('+sls.length+',1fr)">';
+    html+='<div class="hdr">品种</div>';
+    sls.forEach(s=>html+='<div class="hdr">'+(s*100).toFixed(1)+'%</div>');
+    syms.forEach(sym=>{{
+        html+='<div class="rowlabel">'+sym+'</div>';
+        sls.forEach(sl=>{{
+            var d=matrix[sym]?matrix[sym][sl]:null;
+            if(!d){{html+='<div class="cell" style="background:var(--bg);color:var(--muted)">-</div>';return;}}
+            var r=d.survive_rate;
+            // Color: red(0) -> yellow(50) -> green(100)
+            var h=(r/100)*120; // hue: 0=red, 60=yellow, 120=green
+            var bg='hsl('+h.toFixed(0)+',70%,25%)';
+            html+='<div class="cell" style="background:'+bg+'" title="'+sym+' '+sl*100+'% | 存活:'+r.toFixed(1)+'% | 均盈:'+d.avg_max_profit.toFixed(2)+'% | '+d.total_signals+'信号">'+r.toFixed(0)+'%</div>';
+        }});
+    }});
+    html+='</div>';
+    el.innerHTML=html;
+}}
 
-function refreshCharts(){
-    destroyCharts();
-    switch(currentTab){
-        case'survival': drawSurvivalChart(); break;
-        case'curve': drawCurveChart(); break;
-        case'distribution': drawDistributionChart(); break;
-        case'triggers': drawTriggerStopChart(); drawTriggerProfitChart(); break;
-        case'stoptime': drawStopTimeChart(); break;
-    }
-}
+// ── OPTIMAL PICKS ──
+function drawPicks(){{
+    var f=getFiltered(),tb=document.querySelector('#picksTable tbody');
+    tb.innerHTML='';
+    var bySym={{}};
+    f.forEach(d=>{{if(!bySym[d.symbol])bySym[d.symbol]=[];bySym[d.symbol].push(d);}});
+    var rows=[];
+    Object.entries(bySym).forEach(([sym,arr])=>{{
+        arr.forEach(d=>{{
+            // Composite: survival_rate% * avg_profit% / 100 = risk-adjusted return expectation
+            var score=d.survive_rate*d.avg_max_profit/100;
+            var grade=score>=1.5?'A':score>=0.8?'B':'C';
+            var cls=grade==='A'?'rec-a':grade==='B'?'rec-b':'rec-c';
+            var posPct=grade==='A'?'80-95%':grade==='B'?'50-70%':'<40%';
+            rows.push({{sym:sym,sl:d.sl_pct,survive:d.survive_rate,profit:d.avg_max_profit,score:score,grade:grade,cls:cls,posPct:posPct}});
+        }});
+    }});
+    rows.sort((a,b)=>b.score-a.score);
+    rows.forEach(r=>tb.innerHTML+='<tr><td><strong>'+r.sym+'</strong></td><td>'+(r.sl*100).toFixed(1)+'%</td><td class="'+(r.survive>=70?'green':r.survive>=45?'yellow':'red')+'">'+r.survive.toFixed(1)+'%</td><td class="'+(r.profit>=2?'green':'')+'">'+r.profit.toFixed(2)+'%</td><td>'+r.score.toFixed(2)+'</td><td><span class="rec-badge '+r.cls+'">'+r.grade+'</span></td><td>'+r.posPct+'</td></tr>');
+}}
 
-function mkChart(id,type,data,opt){
+// ── CHARTS ──
+function destroyCharts(){{for(var k in charts)charts[k].destroy();charts={{}};}}
+
+function mkChart(id,type,data,opt){{
     var ctx=document.getElementById(id).getContext('2d');
-    charts[id]=new Chart(ctx,{type:type,data:data,options:opt});
-}
+    charts[id]=new Chart(ctx,{{type:type,data:data,options:opt}});
+}}
 
-var C=['#38bdf8','#22c55e','#f59e0b','#ef4444','#a855f7','#ec4899'];
-
-function drawSurvivalChart(){
-    var d=getFilteredData(); if(!d.length) return;
-    d.sort(function(a,b){ return a.sl_pct-b.sl_pct||a.symbol.localeCompare(b.symbol); });
-    mkChart('chartSurvival','bar',{
-        labels:d.map(function(x){return x.symbol+' ('+x.direction+') '+x.sl_pct.toFixed(1)+'%';}),
-        datasets:[
-            {label:'存活率 %',data:d.map(function(x){return x.survive_rate;}), yAxisID:'y',
-             backgroundColor:d.map(function(x){return x.survive_rate>=70?'rgba(34,197,94,.6)':(x.survive_rate>=50?'rgba(245,158,11,.6)':'rgba(239,68,68,.6)');}),
-             borderColor:d.map(function(x){return x.survive_rate>=70?'#22c55e':(x.survive_rate>=50?'#f59e0b':'#ef4444');}),
-             borderWidth:2,borderRadius:6},
-            {label:'均盈 %',data:d.map(function(x){return x.avg_max_profit;}), type:'line', yAxisID:'y1',
-             borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.1)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#38bdf8',tension:.3}
-        ]
-    },{responsive:true,maintainAspectRatio:false,
-       plugins:{legend:{labels:{color:'#94a3b8',usePointStyle:true}},tooltip:{backgroundColor:'#1e293b'}},
-       scales:{
-           x:{ticks:{color:'#64748b',maxRotation:60,font:{size:10}}},
-           y:{type:'linear',position:'left',min:0,max:100,ticks:{color:'#64748b',callback:function(v){return v+'%';}},title:{display:true,text:'存活率',color:'#64748b'}},
-           y1:{type:'linear',position:'right',min:0,ticks:{color:'#38bdf8',callback:function(v){return v+'%';}},title:{display:true,text:'均盈',color:'#38bdf8'},grid:{display:false}}
-       }});
-}
-
-function drawCurveChart(){
-    var f=getFilteredData(); if(!f.length) return;
-    // Group by symbol+dir, x=SL, y=survive_rate
-    var groups={};
-    f.forEach(function(x){
-        var key=x.symbol+' '+x.direction;
-        if(!groups[key]) groups[key]={label:key,data:{},profits:{}};
-        groups[key].data[x.sl_pct]=x.survive_rate;
-        groups[key].profits[x.sl_pct]=x.avg_max_profit;
-    });
-    var slValues=[0.005,0.01,0.015,0.02];
-    var datasets=[];
-    Object.keys(groups).forEach(function(g,i){
-        var grp=groups[g];
-        datasets.push({
-            label:grp.label,data:slValues.map(function(s){return grp.data[s]||null;}),
-            borderColor:C[i%C.length],backgroundColor:'transparent',borderWidth:2,pointRadius:5,tension:.3,
-        });
-    });
-    mkChart('chartCurve','line',{
-        labels:slValues.map(function(v){return (v*100).toFixed(1)+'%';}),
-        datasets:datasets
-    },{responsive:true,maintainAspectRatio:false,
-       plugins:{legend:{labels:{color:'#94a3b8',usePointStyle:true}},tooltip:{backgroundColor:'#1e293b',callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.y.toFixed(1)+'%存活';}}}},
-       scales:{
-           x:{ticks:{color:'#64748b'},title:{display:true,text:'止损宽度',color:'#64748b'}},
-           y:{min:0,max:100,ticks:{color:'#64748b',callback:function(v){return v+'%';}},title:{display:true,text:'存活率',color:'#64748b'}}
-       }});
-}
-
-function drawDistributionChart(){
-    var d=getFilteredData(); if(!d.length) return;
-    var buckets=['<0%','0-2%','2-5%','5-10%','>10%'];
-    mkChart('chartDistribution','bar',{
-        labels:buckets,
-        datasets:d.map(function(x,i){return{
-            label:x.symbol+' ('+x.sl_pct.toFixed(1)+'%)',data:buckets.map(function(b){return x.profit_buckets[b]||0;}),
-            backgroundColor:C[i%C.length]+'99',borderColor:C[i%C.length],borderWidth:1,borderRadius:4
-        };})
-    },{responsive:true,maintainAspectRatio:false,
-       plugins:{legend:{labels:{color:'#94a3b8',usePointStyle:true}},tooltip:{backgroundColor:'#1e293b'}},
-       scales:{x:{ticks:{color:'#64748b'}},y:{ticks:{color:'#64748b'},title:{display:true,text:'交易数',color:'#64748b'}}}});
-}
-
-function drawTriggerStopChart(){
-    var d=getFilteredData(),names={dmi_flip:'DMI翻多',srsi_bounce:'超卖反弹',support_touch:'支撑触碰'};
-    if(!d.length) return;
-    var triggers=Object.keys(d[0].trigger_stats||{});
-    if(!triggers.length) return;
-    mkChart('chartTriggerStop','bar',{
-        labels:triggers.map(function(t){return names[t]||t;}),
-        datasets:d.map(function(x,i){return{
-            label:x.symbol+'('+x.sl_pct.toFixed(1)+'%)',data:triggers.map(function(t){return x.trigger_stats[t]?x.trigger_stats[t].stop_rate:0;}),
-            backgroundColor:C[i%C.length]+'99',borderColor:C[i%C.length],borderWidth:1,borderRadius:4
-        };})
-    },{responsive:true,maintainAspectRatio:false,
-       plugins:{legend:{labels:{color:'#94a3b8',usePointStyle:true}},title:{display:true,text:'止损率 %',color:'#e2e8f0',font:{size:13}}},
-       scales:{x:{ticks:{color:'#64748b'}},y:{ticks:{color:'#64748b',callback:function(v){return v+'%';}},min:0,max:100}}});
-}
-
-function drawTriggerProfitChart(){
-    var d=getFilteredData(),names={dmi_flip:'DMI翻多',srsi_bounce:'超卖反弹',support_touch:'支撑触碰'};
-    if(!d.length) return;
-    var triggers=Object.keys(d[0].trigger_stats||{});
-    if(!triggers.length) return;
-    mkChart('chartTriggerProfit','bar',{
-        labels:triggers.map(function(t){return names[t]||t;}),
-        datasets:d.map(function(x,i){return{
-            label:x.symbol+'('+x.sl_pct.toFixed(1)+'%)',data:triggers.map(function(t){return x.trigger_stats[t]?x.trigger_stats[t].avg_profit:0;}),
-            backgroundColor:C[(i+3)%C.length]+'99',borderColor:C[(i+3)%C.length],borderWidth:1,borderRadius:4
-        };})
-    },{responsive:true,maintainAspectRatio:false,
-       plugins:{legend:{labels:{color:'#94a3b8',usePointStyle:true}},title:{display:true,text:'均盈 %',color:'#e2e8f0',font:{size:13}}},
-       scales:{x:{ticks:{color:'#64748b'}},y:{ticks:{color:'#64748b',callback:function(v){return v+'%';}}},}});
-}
-
-function drawStopTimeChart(){
-    var d=getFilteredData(),merged={};
-    if(!d.length) return;
-    d.forEach(function(x){Object.entries(x.stop_bar_dist||{}).forEach(function(e){merged[e[0]]=(merged[e[0]]||0)+e[1];});});
-    var sorted=Object.entries(merged).sort(function(a,b){var na=parseInt(a[0].replace(/[^0-9]/g,''))||999,nb=parseInt(b[0].replace(/[^0-9]/g,''))||999;return na-nb;});
-    mkChart('chartStopTime','bar',{
-        labels:sorted.map(function(s){return s[0];}),
-        datasets:[{label:'止损次数',data:sorted.map(function(s){return s[1];}),
-            backgroundColor:sorted.map(function(_,i){return i<sorted.length-1?'rgba(239,68,68,.5)':'rgba(245,158,11,.7)';}),
-            borderColor:sorted.map(function(_,i){return i<sorted.length-1?'#ef4444':'#f59e0b';}),
-            borderWidth:1,borderRadius:4}]
-    },{responsive:true,maintainAspectRatio:false,
-       plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e293b'}},
-       scales:{x:{ticks:{color:'#64748b'},title:{display:true,text:'入场后第N根K线',color:'#64748b'}},y:{ticks:{color:'#64748b'},title:{display:true,text:'次数',color:'#64748b'}}}});
-}
-
-function switchTab(tab){
-    document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-    event.target.classList.add('active'); currentTab=tab;
-    ['survival','curve','distribution','triggers','stoptime','data'].forEach(function(t){
-        var el=document.getElementById('tab-'+t); if(el) el.style.display=t===tab?'':'none';
-    });
+function redraw(){{
     destroyCharts();
-    if(tab==='survival') drawSurvivalChart();
-    else if(tab==='curve') drawCurveChart();
-    else if(tab==='distribution') drawDistributionChart();
-    else if(tab==='triggers'){drawTriggerStopChart();drawTriggerProfitChart();}
-    else if(tab==='stoptime') drawStopTimeChart();
-    else if(tab==='data') renderTable();
-}
+    switch(curTab){{
+        case'curve':drawCurve();break;
+        case'distribution':drawDist();break;
+        case'triggers':drawTrigStop();drawTrigProfit();break;
+        case'stoptime':drawStopT();break;
+    }}
+}}
 
-// -- Table with sort+search --
-function buildTableRows(){
-    var f=getFilteredData(), rows=[], names={dmi_flip:'DMI翻多',srsi_bounce:'超卖反弹',support_touch:'支撑触碰'};
-    f.forEach(function(item){
-        (item.sample_results||[]).forEach(function(r){
-            rows.push({
-                symbol:item.symbol, price:r.price||0, trigger:names[r.trigger]||r.trigger||'',
-                sl_pct:item.sl_pct, dir:item.direction||'LONG', trend1h:r.trend_1h||'-', trend4h:r.trend_4h||'-',
-                trend1d:r.trend_1d||'-', srsi:(r.srs_k||0).toFixed(1), stopped:r.stopped, profit:r.max_profit||0
-            });
-        });
-    });
+function drawCurve(){{
+    var f=getFiltered();if(!f.length)return;
+    var groups={{}};
+    f.forEach(d=>{{var k=d.symbol+' '+d.direction;if(!groups[k])groups[k]={{}};groups[k][d.sl_pct]=d.survive_rate;}});
+    var slVals=[...new Set(f.map(d=>d.sl_pct))].sort((a,b)=>a-b);
+    mkChart('chartCurve','line',{{
+        labels:slVals.map(s=>(s*100).toFixed(1)+'%'),
+        datasets:Object.entries(groups).map(([k,v],i)=>({{label:k,data:slVals.map(s=>v[s]||null),borderColor:C[i%8],backgroundColor:'transparent',borderWidth:2.5,pointRadius:5,tension:.3}}))
+    }},{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{labels:{{color:'#5e6d82',usePointStyle:true}}}},tooltip:{{backgroundColor:'#0f1623',callbacks:{{label:c=>c.dataset.label+': '+c.parsed.y.toFixed(1)+'%'}}}}}},scales:{{x:{{ticks:{{color:'#5e6d82'}},title:{{display:true,text:'止损宽度',color:'#5e6d82'}}}},y:{{min:0,max:100,ticks:{{color:'#5e6d82',callback:v=>v+'%'}},title:{{display:true,text:'存活率',color:'#5e6d82'}}}}}}}});
+}}
+
+function drawDist(){{
+    var f=getFiltered();if(!f.length)return;
+    var bks=['<0%','0-2%','2-5%','5-10%','>10%'];
+    mkChart('chartDist','bar',{{
+        labels:bks,
+        datasets:f.map((d,i)=>({{label:d.symbol+'('+(d.sl_pct*100).toFixed(1)+'%)',data:bks.map(b=>d.profit_buckets[b]||0),backgroundColor:C[i%8]+'88',borderColor:C[i%8],borderWidth:1,borderRadius:4}}))
+    }},{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{labels:{{color:'#5e6d82',usePointStyle:true}}}}}},scales:{{x:{{ticks:{{color:'#5e6d82'}}}},y:{{ticks:{{color:'#5e6d82'}},title:{{display:true,text:'交易数',color:'#5e6d82'}}}}}}}});
+}}
+
+function drawTrigStop(){{
+    var f=getFiltered(),n={{dmi_flip:'DMI翻多',srsi_bounce:'超卖反弹',support_touch:'支撑触碰'}};
+    if(!f.length||!f[0].trigger_stats)return;
+    var tk=Object.keys(f[0].trigger_stats);
+    mkChart('chartTrigStop','bar',{{labels:tk.map(t=>n[t]||t),datasets:f.map((d,i)=>({{label:d.symbol+'('+(d.sl_pct*100).toFixed(1)+'%)',data:tk.map(t=>d.trigger_stats[t]?d.trigger_stats[t].stop_rate:0),backgroundColor:C[i%8]+'88',borderColor:C[i%8],borderWidth:1,borderRadius:4}}))}},{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{labels:{{color:'#5e6d82',usePointStyle:true}}}},title:{{display:true,text:'止损率 %',color:'var(--text)',font:{{size:13}}}}}},scales:{{x:{{ticks:{{color:'#5e6d82'}}}},y:{{ticks:{{color:'#5e6d82',callback:v=>v+'%'}},min:0,max:100}}}}}});
+}}
+
+function drawTrigProfit(){{
+    var f=getFiltered(),n={{dmi_flip:'DMI翻多',srsi_bounce:'超卖反弹',support_touch:'支撑触碰'}};
+    if(!f.length||!f[0].trigger_stats)return;
+    var tk=Object.keys(f[0].trigger_stats);
+    mkChart('chartTrigProfit','bar',{{labels:tk.map(t=>n[t]||t),datasets:f.map((d,i)=>({{label:d.symbol+'('+(d.sl_pct*100).toFixed(1)+'%)',data:tk.map(t=>d.trigger_stats[t]?d.trigger_stats[t].avg_profit:0),backgroundColor:C[(i+4)%8]+'88',borderColor:C[(i+4)%8],borderWidth:1,borderRadius:4}}))}},{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{labels:{{color:'#5e6d82',usePointStyle:true}}}},title:{{display:true,text:'均盈 %',color:'var(--text)',font:{{size:13}}}}}},scales:{{x:{{ticks:{{color:'#5e6d82'}}}},y:{{ticks:{{color:'#5e6d82',callback:v=>v+'%'}}}}}}}});
+}}
+
+function drawStopT(){{
+    var f=getFiltered(),m={{}};if(!f.length)return;
+    f.forEach(d=>Object.entries(d.stop_bar_dist||{{}}).forEach(e=>m[e[0]]=(m[e[0]]||0)+e[1]));
+    var s=Object.entries(m).sort((a,b)=>(parseInt(a[0].replace(/[^0-9]/g,''))||999)-(parseInt(b[0].replace(/[^0-9]/g,''))||999));
+    mkChart('chartStopTime','bar',{{labels:s.map(e=>e[0]),datasets:[{{label:'次数',data:s.map(e=>e[1]),backgroundColor:s.map((_,i)=>i<s.length-1?'rgba(245,71,93,.5)':'rgba(245,166,35,.7)'),borderColor:s.map((_,i)=>i<s.length-1?'#f5475d':'#f5a623'),borderWidth:1,borderRadius:4}}]}},{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}}}},scales:{{x:{{ticks:{{color:'#5e6d82'}},title:{{display:true,text:'入场后第N根K线',color:'#5e6d82'}}}},y:{{ticks:{{color:'#5e6d82'}},title:{{display:true,text:'次数',color:'#5e6d82'}}}}}}}});
+}}
+
+// ── TAB ──
+function switchTab(t){{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    event.target.classList.add('active');curTab=t;
+    ['heatmap','picks','curve','distribution','triggers','stoptime','data'].forEach(t=>{{var e=document.getElementById('tab-'+t);if(e)e.style.display=t===curTab?'':'none';}});
+    destroyCharts();
+    if(curTab==='heatmap')drawHeatmap();
+    else if(curTab==='picks')drawPicks();
+    else if(curTab==='curve')drawCurve();
+    else if(curTab==='distribution')drawDist();
+    else if(curTab==='triggers'){{drawTrigStop();drawTrigProfit();}}
+    else if(curTab==='stoptime')drawStopT();
+    else if(curTab==='data')renderTable();
+}}
+
+// ── TABLE ──
+function buildRows(){{
+    var f=getFiltered(),rows=[],n={{dmi_flip:'DMI翻多',srsi_bounce:'超卖反弹',support_touch:'支撑触碰'}};
+    f.forEach(d=>(d.sample_results||[]).forEach(r=>rows.push({{symbol:d.symbol,sl_pct:d.sl_pct,trigger:n[r.trigger]||r.trigger,trend1h:r.trend_1h||'-',trend4h:r.trend_4h||'-',trend1d:r.trend_1d||'-',srsi:(r.srs_k||0).toFixed(1),stopped:r.stopped,profit:r.max_profit||0}})));
     return rows;
-}
+}}
 
-function sortTable(key){
-    if(sortKey===key) sortAsc=!sortAsc; else{sortKey=key;sortAsc=true;}
-    renderTable();
-}
+function sortTable(k){{if(sortK===k)sortAsc=!sortAsc;else{{sortK=k;sortAsc=true;}}renderTable();}}
 
-function renderTable(){
-    var rows=buildTableRows(), search=document.getElementById('tableSearch').value.toLowerCase();
-    if(search) rows=rows.filter(function(r){return JSON.stringify(r).toLowerCase().indexOf(search)>=0;});
-    if(sortKey){
-        rows.sort(function(a,b){
-            var va=a[sortKey],vb=b[sortKey];
-            if(typeof va==='string') va=va.toLowerCase();
-            if(typeof vb==='string') vb=vb.toLowerCase();
-            if(va<vb) return sortAsc?-1:1; if(va>vb) return sortAsc?1:-1; return 0;
-        });
-    }
-    var tbody=document.querySelector('#dataTable tbody');
-    tbody.innerHTML='';
-    var limit=Math.min(rows.length,200);
-    for(var i=0;i<limit;i++){
-        var r=rows[i], sc=r.stopped?'neg':'pos', pc=r.profit>=2?'pos':(r.profit>=0?'':'neg');
-        tbody.innerHTML+='<tr><td>'+r.symbol+'</td><td>'+r.price.toFixed(2)+'</td><td>'+r.trigger+'</td><td>'+(r.sl_pct*100).toFixed(1)+'%</td><td>'+r.trend1h+'</td><td>'+r.trend4h+'</td><td>'+r.trend1d+'</td><td>'+r.srsi+'</td><td class="'+sc+'">'+(r.stopped?'&#10007; 止损':'&#10003; 存活')+'</td><td class="'+pc+'">'+r.profit.toFixed(2)+'%</td></tr>';
-    }
-    document.getElementById('tableInfo').textContent='显示 '+limit+'/'+rows.length+' 条';
-}
+function renderTable(){{
+    var rows=buildRows(),s=document.getElementById('tblSearch').value.toLowerCase();
+    if(s)rows=rows.filter(r=>JSON.stringify(r).toLowerCase().indexOf(s)>=0);
+    if(sortK)rows.sort((a,b)=>{{var va=a[sortK],vb=b[sortK];if(typeof va==='string')va=va.toLowerCase();if(typeof vb==='string')vb=vb.toLowerCase();return va<vb?(sortAsc?-1:1):va>vb?(sortAsc?1:-1):0;}});
+    var tb=document.querySelector('#dataTable tbody');tb.innerHTML='';
+    var lim=Math.min(rows.length,300);
+    for(var i=0;i<lim;i++){{var r=rows[i];tb.innerHTML+='<tr><td>'+r.symbol+'</td><td>'+(r.sl_pct*100).toFixed(1)+'%</td><td>'+r.trigger+'</td><td>'+r.trend1h+'</td><td>'+r.trend4h+'</td><td>'+r.trend1d+'</td><td>'+r.srsi+'</td><td class="'+(r.stopped?'red':'green')+'">'+(r.stopped?'✗止损':'✓存活')+'</td><td class="'+(r.profit>=2?'green':r.profit>=0?'':'red')+'">'+r.profit.toFixed(2)+'%</td></tr>';}}
+    document.getElementById('tblInfo').textContent='显示 '+lim+'/'+rows.length+' 条';
+}}
 
-function exportCSV(){
-    var rows=buildTableRows(), csv='品种,入场价,触发,止损%,方向,1H,4H,1D,SRSI_K,结果,最大浮盈%\\n';
-    rows.forEach(function(r){
-        csv+=[r.symbol,r.price.toFixed(2),r.trigger,(r.sl_pct*100).toFixed(1),r.dir,r.trend1h,r.trend4h,r.trend1d,r.srsi,r.stopped?'止损':'存活',r.profit.toFixed(2)].join(',')+'\\n';
-    });
-    var blob=new Blob(['\\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
-    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='entry_analysis.csv'; a.click();
-}
+function exportCSV(){{
+    var rows=buildRows(),csv='品种,止损%,触发,1H,4H,1D,SRSI_K,结果,最大浮盈%\\n';
+    rows.forEach(r=>csv+=[r.symbol,(r.sl_pct*100).toFixed(1),r.trigger,r.trend1h,r.trend4h,r.trend1d,r.srsi,r.stopped?'止损':'存活',r.profit.toFixed(2)].join(',')+'\\n');
+    var b=new Blob(['\\uFEFF'+csv],{{type:'text/csv;charset=utf-8;'}}),a=document.createElement('a');
+    a.href=URL.createObjectURL(b);a.download='entry_analysis.csv';a.click();
+}}
 </script>
 </body>
 </html>"""

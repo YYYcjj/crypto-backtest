@@ -10,7 +10,8 @@ class BacktestConfig:
     # ── 交易品种 ──
     symbols: List[str] = field(default_factory=lambda: [
         "BTC-USDT", "ETH-USDT", "SOL-USDT",
-        "APT-USDT", "ORDI-USDT", "DOGE-USDT"
+        "APT-USDT", "ORDI-USDT", "DOGE-USDT",
+        "PUMP-USDT", "HUMA-USDT", "APR-USDT",
     ])
 
     # ── 时间框架 ──

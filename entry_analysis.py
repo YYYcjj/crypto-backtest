@@ -411,7 +411,8 @@ class EntryAnalyzer:
 
 
 def main():
-    symbols = ["BTC-USDT", "ETH-USDT", "SOL-USDT"]
+    symbols = ["BTC-USDT", "ETH-USDT", "SOL-USDT", "APT-USDT", "ORDI-USDT",
+               "DOGE-USDT", "PUMP-USDT", "HUMA-USDT"]
     sl_percentages = [0.005, 0.01, 0.015, 0.02]  # 0.5%, 1%, 1.5%, 2%
     directions = [("LONG", True), ("SHORT", False)]
 
