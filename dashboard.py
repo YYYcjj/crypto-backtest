@@ -29,9 +29,10 @@ def build_dashboard(json_path: str = "results/entry_analysis.json",
     sl_pcts = sorted(set(s["sl_pct"] for s in summaries))
     # Embed summary data (without sample_results) directly for reliability
     inline_summaries = [{k:v for k,v in s.items() if k != 'sample_results'} for s in summaries]
-    inline_data = json.dumps(inline_summaries, ensure_ascii=False, default=str)
-    # Escape any </script> in the data
-    inline_data = inline_data.replace('</', '<\\/')
+    # Embed as base64-encoded JSON → JS decode for maximum safety
+    inline_json = json.dumps(inline_summaries, ensure_ascii=True)
+    inline_data = inline_json  # ASCII-safe, only need to escape single quotes
+    inline_data = inline_data.replace("'", "\\'")
 
     output_path = os.path.join(output_dir, "dashboard.html")
     with open(output_path, "w") as f:
@@ -201,7 +202,7 @@ tr:hover{{background:rgba(77,168,247,.05)}}
 </div>
 
 <script>
-var D=__DATA_PLACEHOLDER__;
+var D=JSON.parse('__DATA_PLACEHOLDER__'),curTab='heatmap',charts={{}},sortK='',sortAsc=true;
 var C=['#4da8f7','#2dd47c','#f5a623','#f5475d','#9b6dff','#ff7849','#e040fb','#00e5ff'];
 
 // Init with embedded data, then try to refresh from JSON
@@ -250,44 +251,41 @@ function filterCell(sym,sl){{
 
 function updateCards(){{
     var f=getFiltered(),el=document.getElementById('summaryCards');
-    if(!f.length){{el.innerHTML='<div class="panel empty">无匹配数据</div>';return;}}
-    var total=0,stopped=0,wtProfit=0,surv=0,bestSym='',bestSc=0,avgSL=0;
-    f.forEach(x=>{{total+=x.total_signals;stopped+=x.stopped;surv+=x.survived;wtProfit+=x.avg_max_profit*x.survived;avgSL+=x.sl_pct;}});
+    if(!f.length){{el.innerHTML=`<div class="panel empty">无匹配数据</div>`;return;}}
+    var total=0,stopped=0,wtProfit=0,surv=0,bestSym='',bestSc=0;
+    f.forEach(x=>{{total+=x.total_signals;stopped+=x.stopped;surv+=x.survived;wtProfit+=x.avg_max_profit*x.survived;}});
     var rate=surv/total*100,avgP=surv>0?wtProfit/surv:0;
-    // Composite score for best pick
-    f.forEach(x=>{{var sc=x.survive_rate*x.avg_max_profit/100;if(sc>bestSc){{bestSc=sc;bestSym=x.symbol+' '+x.sl_pct.toFixed(3)*100;}}}});
-    el.innerHTML='<div class="card"><div class="l">总信号</div><div class="v" style="color:var(--accent)">'+total.toLocaleString()+'</div><div class="s">'+f.length+' 组数据</div></div>'+
-        '<div class="card"><div class="l">存活率</div><div class="v" style="color:'+(rate>=70?'var(--green)':rate>=45?'var(--yellow)':'var(--red)')+'">'+rate.toFixed(1)+'%</div><div class="s">'+surv+'/'+total+'</div></div>'+
-        '<div class="card"><div class="l">均盈</div><div class="v" style="color:'+(avgP>=2?'var(--green)':avgP>=1?'var(--yellow)':'var(--muted)')+'">'+avgP.toFixed(2)+'%</div><div class="s">最佳组合: '+bestSym+'</div></div>'+
-        '<div class="card"><div class="l">止损扫出</div><div class="v" style="color:var(--red)">'+stopped.toLocaleString()+'</div><div class="s">'+(stopped/total*100).toFixed(1)+'% 被扫</div></div>';
+    f.forEach(x=>{{var sc=x.survive_rate*x.avg_max_profit/100;if(sc>bestSc){{bestSc=sc;bestSym=x.symbol+' '+ (x.sl_pct*100).toFixed(1)+'%';}}}});
+    var c1=rate>=70?`var(--green)`:rate>=45?`var(--yellow)`:`var(--red)`;
+    var c2=avgP>=2?`var(--green)`:avgP>=1?`var(--yellow)`:`var(--muted)`;
+    el.innerHTML=`<div class="card"><div class="l">总信号</div><div class="v" style="color:var(--accent)">${{total.toLocaleString()}}</div><div class="s">${{f.length}} 组数据</div></div>`+
+        `<div class="card"><div class="l">存活率</div><div class="v" style="color:${{c1}}">${{rate.toFixed(1)}}%</div><div class="s">${{surv}}/${{total}}</div></div>`+
+        `<div class="card"><div class="l">均盈</div><div class="v" style="color:${{c2}}">${{avgP.toFixed(2)}}%</div><div class="s">最佳: ${{bestSym}}</div></div>`+
+        `<div class="card"><div class="l">止损扫出</div><div class="v" style="color:var(--red)">${{stopped.toLocaleString()}}</div><div class="s">${{(stopped/total*100).toFixed(1)}}%</div></div>`;
 }}
 
 // ── HEATMAP ──
 function drawHeatmap(){{
     var f=getFiltered(),el=document.getElementById('heatmapContainer');
-    if(!f.length){{el.innerHTML='<div class="empty">无数据</div>';return;}}
+    if(!f.length){{el.innerHTML=`<div class="empty">无数据</div>`;return;}}
     var syms=[...new Set(f.map(d=>d.symbol))].sort();
     var sls=[...new Set(f.map(d=>d.sl_pct))].sort((a,b)=>a-b);
-    // Build matrix
     var matrix={{}};
     f.forEach(d=>{{if(!matrix[d.symbol])matrix[d.symbol]={{}};matrix[d.symbol][d.sl_pct]=d;}});
-    var cols=sls.length+1;
-    var html='<div class="heatmap" style="grid-template-columns:100px repeat('+sls.length+',1fr)">';
-    html+='<div class="hdr">品种</div>';
-    sls.forEach(s=>html+='<div class="hdr">'+(s*100).toFixed(1)+'%</div>');
+    var html=`<div class="heatmap" style="grid-template-columns:100px repeat(${{sls.length}},1fr)">`;
+    html+=`<div class="hdr">品种</div>`;
+    sls.forEach(s=>html+=`<div class="hdr">${{(s*100).toFixed(1)}}%</div>`);
     syms.forEach(sym=>{{
-        html+='<div class="rowlabel">'+sym+'</div>';
+        html+=`<div class="rowlabel">${{sym}}</div>`;
         sls.forEach(sl=>{{
             var d=matrix[sym]?matrix[sym][sl]:null;
-            if(!d){{html+='<div class="cell" style="background:var(--bg);color:var(--muted)">-</div>';return;}}
-            var r=d.survive_rate;
-            // Color: red(0) -> yellow(50) -> green(100)
-            var h=(r/100)*120; // hue: 0=red, 60=yellow, 120=green
-            var bg='hsl('+h.toFixed(0)+',70%,25%)';
-            html+='<div class="cell" style="background:'+bg+'" title="'+sym+' '+sl*100+'% | 存活:'+r.toFixed(1)+'% | 均盈:'+d.avg_max_profit.toFixed(2)+'% | '+d.total_signals+'信号" onclick="filterCell(\''+sym+'\','+sl+')">'+r.toFixed(0)+'%</div>';
+            if(!d){{html+=`<div class="cell" style="background:var(--bg);color:var(--muted)">-</div>`;return;}}
+            var r=d.survive_rate,h=(r/100)*120;
+            var bg=`hsl(${{h.toFixed(0)}},70%,25%)`;
+            html+=`<div class="cell" style="background:${{bg}}" title="${{sym}} ${{sl*100}}% | 存活:${{r.toFixed(1)}}% | 均盈:${{d.avg_max_profit.toFixed(2)}}% | ${{d.total_signals}}信号" onclick="filterCell('${{sym}}',${{sl}})">${{r.toFixed(0)}}%</div>`;
         }});
     }});
-    html+='</div>';
+    html+=`</div>`;
     el.innerHTML=html;
 }}
 
@@ -300,16 +298,17 @@ function drawPicks(){{
     var rows=[];
     Object.entries(bySym).forEach(([sym,arr])=>{{
         arr.forEach(d=>{{
-            // Composite: survival_rate% * avg_profit% / 100 = risk-adjusted return expectation
             var score=d.survive_rate*d.avg_max_profit/100;
             var grade=score>=1.5?'A':score>=0.8?'B':'C';
             var cls=grade==='A'?'rec-a':grade==='B'?'rec-b':'rec-c';
             var posPct=grade==='A'?'80-95%':grade==='B'?'50-70%':'<40%';
-            rows.push({{sym:sym,sl:d.sl_pct,survive:d.survive_rate,profit:d.avg_max_profit,score:score,grade:grade,cls:cls,posPct:posPct}});
+            var sc=d.survive_rate>=70?'green':d.survive_rate>=45?'yellow':'red';
+            var pc=d.avg_max_profit>=2?'green':'';
+            rows.push({{sym:sym,sl:d.sl_pct,survive:d.survive_rate,profit:d.avg_max_profit,score:score,grade:grade,cls:cls,posPct:posPct,sc:sc,pc:pc}});
         }});
     }});
     rows.sort((a,b)=>b.score-a.score);
-    rows.forEach(r=>tb.innerHTML+='<tr><td><strong>'+r.sym+'</strong></td><td>'+(r.sl*100).toFixed(1)+'%</td><td class="'+(r.survive>=70?'green':r.survive>=45?'yellow':'red')+'">'+r.survive.toFixed(1)+'%</td><td class="'+(r.profit>=2?'green':'')+'">'+r.profit.toFixed(2)+'%</td><td>'+r.score.toFixed(2)+'</td><td><span class="rec-badge '+r.cls+'">'+r.grade+'</span></td><td>'+r.posPct+'</td></tr>');
+    rows.forEach(r=>tb.innerHTML+=`<tr><td><strong>${{r.sym}}</strong></td><td>${{(r.sl*100).toFixed(1)}}%</td><td class="${{r.sc}}">${{r.survive.toFixed(1)}}%</td><td class="${{r.pc}}">${{r.profit.toFixed(2)}}%</td><td>${{r.score.toFixed(2)}}</td><td><span class="rec-badge ${{r.cls}}">${{r.grade}}</span></td><td>${{r.posPct}}</td></tr>`);
 }}
 
 // ── CHARTS ──
