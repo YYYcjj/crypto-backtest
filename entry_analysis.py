@@ -121,10 +121,10 @@ class EntryAnalyzer:
 
         bull_score, bear_score = self.compute_direction_score(trends)
 
-        # 不满足趋势要求
-        if require_bull and bull_score < 4:
+        # 不满足趋势要求 (0=不过滤, 用于全面扫描)
+        if require_bull and bull_score < 0:
             return []
-        if not require_bull and bear_score < 4:
+        if not require_bull and bear_score < 0:
             return []
 
         signals = []
