@@ -29,19 +29,21 @@ def build_dashboard(json_path: str = "results/entry_analysis.json",
     sl_pcts = sorted(set(s["sl_pct"] for s in summaries))
     # Embed summary data (without sample_results) directly for reliability
     inline_summaries = [{k:v for k,v in s.items() if k != 'sample_results'} for s in summaries]
-    inline_json = json.dumps(inline_summaries, ensure_ascii=False, default=str)
+    inline_data = json.dumps(inline_summaries, ensure_ascii=False, default=str)
     # Escape any </script> in the data
-    inline_json = inline_json.replace('</', '<\\/')
+    inline_data = inline_data.replace('</', '<\\/')
 
     output_path = os.path.join(output_dir, "dashboard.html")
     with open(output_path, "w") as f:
-        f.write(_render_html(symbols, sl_pcts, inline_json))
+        html = _render_html(symbols, sl_pcts)
+        html = html.replace('__DATA_PLACEHOLDER__', inline_data)
+        f.write(html)
 
     print(f"✅ 仪表盘: {output_path}")
     return output_path
 
 
-def _render_html(symbols, sl_pcts, inline_data):
+def _render_html(symbols, sl_pcts):
     # Coin groups
     mainstream = ['BTC-USDT', 'ETH-USDT', 'SOL-USDT']
     altcoins = [s for s in symbols if s not in mainstream]
@@ -58,7 +60,7 @@ def _render_html(symbols, sl_pcts, inline_data):
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>入场精度分析仪表盘 v2</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
 <style>
 :root{{--bg:#080d16;--card:#0f1623;--border:#1a2436;--text:#dce5f0;--muted:#5e6d82;--accent:#4da8f7;--green:#2dd47c;--red:#f5475d;--yellow:#f5a623;--purple:#9b6dff;--orange:#ff7849}}
 *{{margin:0;padding:0;box-sizing:border-box}}
@@ -199,7 +201,7 @@ tr:hover{{background:rgba(77,168,247,.05)}}
 </div>
 
 <script>
-var D=""" + inline_data + """;
+var D=__DATA_PLACEHOLDER__;
 var C=['#4da8f7','#2dd47c','#f5a623','#f5475d','#9b6dff','#ff7849','#e040fb','#00e5ff'];
 
 // Init with embedded data, then try to refresh from JSON
@@ -409,6 +411,8 @@ function exportCSV(){{
     var b=new Blob(['\\uFEFF'+csv],{{type:'text/csv;charset=utf-8;'}}),a=document.createElement('a');
     a.href=URL.createObjectURL(b);a.download='entry_analysis.csv';a.click();
 }}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
 </script>
 </body>
 </html>"""
