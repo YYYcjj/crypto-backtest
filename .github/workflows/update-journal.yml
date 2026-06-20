@@ -45,10 +45,28 @@ jobs:
           retention-days: 90
 
       - name: Deploy to Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: results
-          publish_branch: pages
-          force_orphan: true
-          commit_message: "📊 更新 ${{ github.run_number }}"
+        run: |
+          # Show what we have
+          ls -la results/
+          
+          # Deploy to pages branch
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          
+          # Copy results to a temp dir
+          mkdir -p /tmp/pages
+          cp results/*.xlsx /tmp/pages/
+          
+          # Checkout pages branch
+          git fetch origin pages
+          git checkout pages
+          
+          # Copy files in
+          cp /tmp/pages/*.xlsx .
+          
+          # Commit and push
+          git add *.xlsx
+          git diff --cached --stat
+          git commit -m "📊 更新 $(date +%Y-%m-%d)" || echo "No changes"
+          git push origin pages
+
