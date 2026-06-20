@@ -387,6 +387,11 @@ def generate_excel(trades, output_path, month_label):
     _build_price_paths(ws3, trades)
 
     wb.save(output_path)
+
+    # Also generate web dashboard
+    html_path = os.path.join(os.path.dirname(output_path), "index.html")
+    _generate_html(trades, month_label, html_path)
+
     return output_path
 
 
@@ -743,6 +748,182 @@ def _build_price_paths(ws, trades):
         for j in range(r+2, data_end+1):
             for c in range(1, 4):
                 ws.cell(j, c).value = None
+
+def _generate_html(trades, month_label, output_path):
+    """生成网页版仪表盘"""
+    import json as _json
+    from collections import defaultdict as _dd
+
+    data = _json.dumps(trades, ensure_ascii=False)
+    total = len(trades)
+    wins = sum(1 for t in trades if t["pnl_usdt"] > 0)
+    total_pnl = sum(t["pnl_usdt"] for t in trades)
+    win_rate = round(wins / total * 100) if total else 0
+
+    coin_stats = _dd(lambda: {"pnl": 0, "count": 0})
+    for t in trades:
+        coin_stats[t["coin"]]["pnl"] += t["pnl_usdt"]
+        coin_stats[t["coin"]]["count"] += 1
+
+    daily_pnl = _dd(float)
+    for t in trades:
+        daily_pnl[t["entry_time"][:10]] += t["pnl_usdt"]
+    daily_data = []
+    cum = 0
+    for day, pnl in sorted(daily_pnl.items()):
+        cum += pnl
+        daily_data.append({"day": day[5:], "pnl": round(pnl, 1), "cum": round(cum, 1)})
+
+    mae_vals = [t.get("mae_pct", 0) for t in trades]
+    mfe_vals = [t.get("mfe_pct", 0) for t in trades]
+    avg_mae = sum(abs(v) for v in mae_vals) / len(mae_vals)
+    avg_mfe = sum(mfe_vals) / len(mfe_vals)
+
+    coins = [{"name": k, "pnl": round(v["pnl"], 1), "count": v["count"]} for k, v in coin_stats.items()]
+    coins.sort(key=lambda x: x["pnl"], reverse=True)
+    coins_json = _json.dumps(coins, ensure_ascii=False)
+    daily_json = _json.dumps(daily_data, ensure_ascii=False)
+    excel_name = f"交易记录_{month_label:02s}.xlsx" if len(str(month_label)) <= 2 else f"交易记录_{month_label}.xlsx"
+
+    GREEN = "#198754"; RED = "#dc3545"; BLUE = "#0d6efd"
+
+    html = f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>交易日记 · {month_label}月</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{{--bg:#f8f9fa;--card:#fff;--text:#212529;--muted:#6c757d;--green:{GREEN};--red:{RED};--blue:{BLUE};--border:#dee2e6;--hover:#f1f3f5}}
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;background:var(--bg);color:var(--text);padding:16px;max-width:1200px;margin:0 auto}}
+h1{{font-size:22px;margin-bottom:4px}}
+.sub{{color:var(--muted);font-size:13px;margin-bottom:16px}}
+.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}}
+.card{{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}}
+.card .label{{font-size:11px;color:var(--muted);margin-bottom:4px}}
+.card .value{{font-size:24px;font-weight:700}}
+.card .sub{{font-size:11px;color:var(--muted);margin-top:2px}}
+.green{{color:var(--green)}}.red{{color:var(--red)}}.blue{{color:var(--blue)}}
+.charts{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}}
+@media(max-width:768px){{.charts{{grid-template-columns:1fr}}}}
+.chart-box{{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px}}
+.chart-box h3{{font-size:13px;margin-bottom:8px;color:var(--muted)}}
+.chart-wrap{{position:relative;height:240px;width:100%}}
+canvas{{width:100%!important;height:100%!important}}
+table{{width:100%;border-collapse:collapse;font-size:12px;background:var(--card);border-radius:8px;overflow:hidden;border:1px solid var(--border)}}
+th{{background:#e9ecef;padding:8px 10px;text-align:left;font-weight:600;color:var(--muted);border-bottom:2px solid var(--blue);font-size:11px;white-space:nowrap}}
+td{{padding:6px 10px;border-bottom:1px solid var(--border)}}
+tr:hover td{{background:var(--hover)}}
+tr:nth-child(even) td{{background:var(--bg)}}
+tr:nth-child(even):hover td{{background:var(--hover)}}
+.badge{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}}
+.badge-win{{background:#d1e7dd;color:var(--green)}}.badge-lose{{background:#f8d7da;color:var(--red)}}
+.badge-long{{background:#d1e7dd;color:var(--green)}}.badge-short{{background:#f8d7da;color:var(--red)}}
+.btn{{display:inline-block;padding:8px 18px;border-radius:6px;font-size:13px;font-weight:600;text-decoration:none;margin-right:8px;cursor:pointer}}
+.btn-down{{background:var(--green);color:#fff}}.btn-down:hover{{opacity:.9}}
+.toolbar{{display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;flex-wrap:wrap;gap:8px}}
+.toolbar input{{padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;width:200px}}
+.toolbar input:focus{{border-color:var(--blue)}}
+.toolbar select{{padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;background:var(--card)}}
+</style>
+</head>
+<body>
+
+<h1>📊 {month_label}月交易记录</h1>
+<div class="sub">OKX 永续合约 · 2x杠杆逐仓 · 自动更新 · {total}笔</div>
+
+<div class="cards">
+    <div class="card"><div class="label">总交易</div><div class="value">{total}</div><div class="sub">笔</div></div>
+    <div class="card"><div class="label">胜率</div><div class="value {"green" if win_rate>=50 else "red"}">{win_rate}%</div><div class="sub">{wins}赢/{total-wins}负</div></div>
+    <div class="card"><div class="label">净P&L</div><div class="value {"green" if total_pnl>0 else "red"}">{total_pnl:+.1f}</div><div class="sub">USDT</div></div>
+    <div class="card"><div class="label">平均MAE</div><div class="value red">{avg_mae:.1f}%</div><div class="sub">最大不利偏移</div></div>
+    <div class="card"><div class="label">平均MFE</div><div class="value green">{avg_mfe:.1f}%</div><div class="sub">最大有利偏移</div></div>
+</div>
+
+<div style="margin-bottom:12px">
+    <a href="{excel_name}" class="btn btn-down" download>⬇ 下载 Excel</a>
+</div>
+
+<div class="charts">
+    <div class="chart-box"><h3>累计 P&L 走势</h3><div class="chart-wrap"><canvas id="chartCum"></canvas></div></div>
+    <div class="chart-box"><h3>品种 P&L</h3><div class="chart-wrap"><canvas id="chartCoin"></canvas></div></div>
+    <div class="chart-box"><h3>MAE vs MFE 散点</h3><div class="chart-wrap"><canvas id="chartMAE"></canvas></div></div>
+    <div class="chart-box"><h3>日盈亏</h3><div class="chart-wrap"><canvas id="chartDay"></canvas></div></div>
+</div>
+
+<div class="toolbar">
+    <input type="text" id="search" placeholder="搜索品种..." oninput="renderTable()">
+    <select id="filterDir" onchange="renderTable()"><option value="all">全部方向</option><option value="做多">做多</option><option value="做空">做空</option></select>
+    <select id="filterResult" onchange="renderTable()"><option value="all">全部结果</option><option value="win">盈利</option><option value="lose">亏损</option></select>
+    <span style="font-size:11px;color:var(--muted)" id="rowCount"></span>
+</div>
+
+<table><thead><tr>
+<th>日期</th><th>Coin</th><th>方向</th><th>1H</th><th>4H</th><th>1D</th><th>S1H</th><th>S4H</th><th>S1D</th>
+<th>入场</th><th>离场</th><th>P&L%</th><th>P&L(U)</th><th>MAE</th><th>MFE</th><th>结果</th>
+</tr></thead><tbody></tbody></table>
+
+<script>
+var D={data};
+(function(){{
+    var C=document.getElementById('chartCum').getContext('2d');
+    var d={daily_json};
+    new Chart(C,{{type:'line',data:{{labels:d.map(function(x){{return x.day}}),datasets:[{{label:'累计',data:d.map(function(x){{return x.cum}}),borderColor:'#0d6efd',backgroundColor:'rgba(13,110,253,.1)',fill:true,tension:.3,pointRadius:0}}]}},options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}}}},scales:{{x:{{ticks:{{maxTicksLimit:15,color:'#6c757d'}}}},y:{{ticks:{{color:'#6c757d',callback:function(v){{return v+'U'}}}}}}}}}});
+
+    var C2=document.getElementById('chartCoin').getContext('2d');
+    var coins={coins_json};
+    coins.sort(function(a,b){{return b.pnl-a.pnl}});
+    new Chart(C2,{{type:'bar',data:{{labels:coins.map(function(c){{return c.name+' ('+c.count+')'}}),datasets:[{{label:'P&L USDT',data:coins.map(function(c){{return c.pnl}}),backgroundColor:coins.map(function(c){{return c.pnl>0?'rgba(25,135,84,.7)':'rgba(220,53,69,.7)'}}),borderColor:coins.map(function(c){{return c.pnl>0?'#198754':'#dc3545'}}),borderWidth:1,borderRadius:3}}]}},options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}}}},scales:{{x:{{ticks:{{color:'#6c757d'}}}},y:{{ticks:{{color:'#6c757d',callback:function(v){{return v+'U'}}}}}}}}}});
+
+    var C3=document.getElementById('chartMAE').getContext('2d');
+    var m=D.map(function(t){{return{{x:t.mae_pct||0,y:t.mfe_pct||0,coin:t.coin}}}});
+    new Chart(C3,{{type:'scatter',data:{{datasets:[{{label:'',data:m,backgroundColor:m.map(function(d){{return d.y>0?'rgba(25,135,84,.5)':'rgba(220,53,69,.5)'}}),pointRadius:5}}]}},options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}},tooltip:{{callbacks:{{label:function(c){{return c.raw.coin+' MAE:'+c.raw.x+'% MFE:'+c.raw.y+'%'}}}}}}}},scales:{{x:{{title:{{display:true,text:'MAE %',color:'#6c757d'}},ticks:{{color:'#6c757d',callback:function(v){{return v+'%'}}}}}},y:{{title:{{display:true,text:'MFE %',color:'#6c757d'}},ticks:{{color:'#6c757d',callback:function(v){{return v+'%'}}}}}}}}}});
+
+    var C4=document.getElementById('chartDay').getContext('2d');
+    new Chart(C4,{{type:'bar',data:{{labels:d.map(function(x){{return x.day}}),datasets:[{{label:'日P&L',data:d.map(function(x){{return x.pnl}}),backgroundColor:d.map(function(x){{return x.pnl>0?'rgba(25,135,84,.6)':'rgba(220,53,69,.6)'}}),borderWidth:1,borderRadius:3}}]}},options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}}}},scales:{{x:{{ticks:{{maxTicksLimit:12,color:'#6c757d'}}}},y:{{ticks:{{color:'#6c757d',callback:function(v){{return v+'U'}}}}}}}}}});
+}})();
+
+function renderTable(){{
+    var q=document.getElementById('search').value.toLowerCase();
+    var d=document.getElementById('filterDir').value;
+    var r=document.getElementById('filterResult').value;
+    var f=D.filter(function(t){{
+        if(q&&!t.coin.toLowerCase().includes(q))return false;
+        if(d!=='all'&&t.direction!==d)return false;
+        if(r==='win'&&t.pnl_usdt<=0)return false;
+        if(r==='lose'&&t.pnl_usdt>=0)return false;
+        return true;
+    }});
+    document.getElementById('rowCount').textContent=f.length+'/'+D.length+'笔';
+    var h='';
+    f.forEach(function(t){{
+        var db=t.direction==='做多'?'badge-long':'badge-short';
+        var rb=t.pnl_usdt>0?'badge-win':'badge-lose';
+        h+='<tr><td>'+t.entry_time.substr(0,16)+'</td>'
+          +'<td><strong>'+t.coin+'</strong></td>'
+          +'<td><span class="badge '+db+'">'+t.direction+'</span></td>'
+          +'<td class="'+(t.trend_1h==='多'?'green':'red')+'">'+t.trend_1h+'</td>'
+          +'<td class="'+(t.trend_4h==='多'?'green':'red')+'">'+t.trend_4h+'</td>'
+          +'<td class="'+(t.trend_1d==='多'?'green':'red')+'">'+t.trend_1d+'</td>'
+          +'<td>'+t.srsi_1h+'</td><td>'+t.srsi_4h+'</td><td>'+t.srsi_1d+'</td>'
+          +'<td>'+t.entry_price+'</td><td>'+t.exit_price+'</td>'
+          +'<td class="'+(t.pnl_usdt>0?'green':'red')+'">'+t.pnl_pct.toFixed(1)+'%</td>'
+          +'<td class="'+(t.pnl_usdt>0?'green':'red')+'">'+t.pnl_usdt.toFixed(2)+'</td>'
+          +'<td class="red">'+(t.mae_pct||0).toFixed(1)+'%</td>'
+          +'<td class="green">'+(t.mfe_pct||0).toFixed(1)+'%</td>'
+          +'<td><span class="badge '+rb+'">'+(t.pnl_usdt>0?'盈利':'亏损')+'</span></td></tr>';
+    }});
+    document.querySelector('table tbody').innerHTML=h;
+}}
+renderTable();
+</script>
+</body>
+</html>"""
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html)
+
 
 def main():
     now = datetime.now(timezone.utc) + timedelta(hours=8)  # CST
