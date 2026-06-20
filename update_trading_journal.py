@@ -285,12 +285,21 @@ def main():
     year = now.year if month <= now.month else now.year
 
     print(f"🔄 拉取 {year}年{month}月交易记录...")
-    start_ts, end_ts = get_month_range(year, month)
-    new_trades = fetch_trades(start_ts, end_ts)
+    try:
+        start_ts, end_ts = get_month_range(year, month)
+        new_trades = fetch_trades(start_ts, end_ts)
+    except Exception as e:
+        print(f"❌ OKX API 拉取失败: {e}")
+        # Try to continue with existing data
+        new_trades = []
     print(f"   OKX返回 {len(new_trades)} 笔已平仓交易")
 
-    # 补充指标
-    new_trades = enrich_with_indicators(new_trades)
+    # 补充指标 (失败不影响主流程)
+    if new_trades:
+        try:
+            new_trades = enrich_with_indicators(new_trades)
+        except Exception as e:
+            print(f"⚠️ 指标计算失败: {e}，将跳过指标列")
 
     # 合并已有
     existing = load_existing(DATA_FILE)
