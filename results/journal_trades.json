@@ -14,7 +14,9 @@
     "trend_4h": "多",
     "srsi_4h": 6.5,
     "trend_1d": "多",
-    "srsi_1d": 59.0
+    "srsi_1d": 59.0,
+    "mae_pct": -10.8,
+    "mfe_pct": 2.7
   },
   {
     "coin": "APR-USDT",
@@ -31,7 +33,9 @@
     "trend_4h": "多",
     "srsi_4h": 77.5,
     "trend_1d": "多",
-    "srsi_1d": 31.6
+    "srsi_1d": 31.6,
+    "mae_pct": -1.0,
+    "mfe_pct": 53.7
   },
   {
     "coin": "DASH-USDT",
@@ -48,7 +52,9 @@
     "trend_4h": "多",
     "srsi_4h": 42.5,
     "trend_1d": "空",
-    "srsi_1d": 5.3
+    "srsi_1d": 5.3,
+    "mae_pct": -16.1,
+    "mfe_pct": 2.7
   },
   {
     "coin": "HMSTR-USDT",
@@ -65,7 +71,9 @@
     "trend_4h": "空",
     "srsi_4h": 8.2,
     "trend_1d": "多",
-    "srsi_1d": 58.7
+    "srsi_1d": 58.7,
+    "mae_pct": -20.4,
+    "mfe_pct": 12.8
   },
   {
     "coin": "DASH-USDT",
@@ -82,7 +90,9 @@
     "trend_4h": "空",
     "srsi_4h": 39.9,
     "trend_1d": "空",
-    "srsi_1d": 7.2
+    "srsi_1d": 7.2,
+    "mae_pct": -23.5,
+    "mfe_pct": 5.1
   },
   {
     "coin": "GMT-USDT",
@@ -99,7 +109,9 @@
     "trend_4h": "空",
     "srsi_4h": 13.8,
     "trend_1d": "多",
-    "srsi_1d": 15.9
+    "srsi_1d": 15.9,
+    "mae_pct": -23.0,
+    "mfe_pct": 0.5
   },
   {
     "coin": "MERL-USDT",
@@ -116,7 +128,9 @@
     "trend_4h": "空",
     "srsi_4h": 40.6,
     "trend_1d": "空",
-    "srsi_1d": 44.8
+    "srsi_1d": 44.8,
+    "mae_pct": -21.9,
+    "mfe_pct": 2.8
   },
   {
     "coin": "HMSTR-USDT",
@@ -133,7 +147,9 @@
     "trend_4h": "空",
     "srsi_4h": 54.9,
     "trend_1d": "空",
-    "srsi_1d": 10.9
+    "srsi_1d": 10.9,
+    "mae_pct": -2.7,
+    "mfe_pct": 19.1
   },
   {
     "coin": "HOME-USDT",
@@ -150,7 +166,9 @@
     "trend_4h": "多",
     "srsi_4h": 91.2,
     "trend_1d": "多",
-    "srsi_1d": 2.0
+    "srsi_1d": 2.0,
+    "mae_pct": -41.0,
+    "mfe_pct": 7.1
   },
   {
     "coin": "HUMA-USDT",
@@ -167,7 +185,9 @@
     "trend_4h": "空",
     "srsi_4h": 0.1,
     "trend_1d": "空",
-    "srsi_1d": 5.8
+    "srsi_1d": 5.8,
+    "mae_pct": -11.8,
+    "mfe_pct": 6.7
   },
   {
     "coin": "WLD-USDT",
@@ -184,7 +204,9 @@
     "trend_4h": "多",
     "srsi_4h": 11.9,
     "trend_1d": "多",
-    "srsi_1d": 43.7
+    "srsi_1d": 43.7,
+    "mae_pct": -25.1,
+    "mfe_pct": 6.8
   },
   {
     "coin": "DASH-USDT",
@@ -201,7 +223,9 @@
     "trend_4h": "多",
     "srsi_4h": 99.6,
     "trend_1d": "空",
-    "srsi_1d": 79.4
+    "srsi_1d": 79.4,
+    "mae_pct": -2.2,
+    "mfe_pct": 5.2
   },
   {
     "coin": "HOME-USDT",
@@ -218,7 +242,9 @@
     "trend_4h": "空",
     "srsi_4h": 32.2,
     "trend_1d": "多",
-    "srsi_1d": 3.4
+    "srsi_1d": 3.4,
+    "mae_pct": -31.6,
+    "mfe_pct": 7.1
   },
   {
     "coin": "YGG-USDT",
@@ -235,7 +261,9 @@
     "trend_4h": "空",
     "srsi_4h": 84.0,
     "trend_1d": "空",
-    "srsi_1d": 14.9
+    "srsi_1d": 14.9,
+    "mae_pct": -4.5,
+    "mfe_pct": 4.1
   },
   {
     "coin": "APR-USDT",
@@ -252,7 +280,9 @@
     "trend_4h": "多",
     "srsi_4h": 34.4,
     "trend_1d": "多",
-    "srsi_1d": 57.7
+    "srsi_1d": 57.7,
+    "mae_pct": -17.7,
+    "mfe_pct": 0.8
   },
   {
     "coin": "APT-USDT",
@@ -269,7 +299,9 @@
     "trend_4h": "空",
     "srsi_4h": 71.1,
     "trend_1d": "空",
-    "srsi_1d": 5.3
+    "srsi_1d": 5.3,
+    "mae_pct": -11.1,
+    "mfe_pct": 1.3
   },
   {
     "coin": "APR-USDT",
@@ -286,7 +318,9 @@
     "trend_4h": "空",
     "srsi_4h": 65.0,
     "trend_1d": "多",
-    "srsi_1d": 29.4
+    "srsi_1d": 29.4,
+    "mae_pct": -16.9,
+    "mfe_pct": 6.7
   },
   {
     "coin": "BERA-USDT",
@@ -303,7 +337,9 @@
     "trend_4h": "空",
     "srsi_4h": 42.9,
     "trend_1d": "空",
-    "srsi_1d": 48.4
+    "srsi_1d": 48.4,
+    "mae_pct": -8.7,
+    "mfe_pct": 6.1
   },
   {
     "coin": "PUMP-USDT",
@@ -320,7 +356,9 @@
     "trend_4h": "空",
     "srsi_4h": 23.9,
     "trend_1d": "空",
-    "srsi_1d": 41.4
+    "srsi_1d": 41.4,
+    "mae_pct": -0.6,
+    "mfe_pct": 17.9
   },
   {
     "coin": "HOME-USDT",
@@ -337,7 +375,9 @@
     "trend_4h": "多",
     "srsi_4h": 78.8,
     "trend_1d": "多",
-    "srsi_1d": 4.0
+    "srsi_1d": 4.0,
+    "mae_pct": -20.5,
+    "mfe_pct": 14.7
   },
   {
     "coin": "HOME-USDT",
@@ -354,7 +394,9 @@
     "trend_4h": "多",
     "srsi_4h": 62.0,
     "trend_1d": "多",
-    "srsi_1d": 4.0
+    "srsi_1d": 4.0,
+    "mae_pct": -26.2,
+    "mfe_pct": 3.5
   },
   {
     "coin": "HOME-USDT",
@@ -371,7 +413,9 @@
     "trend_4h": "多",
     "srsi_4h": 62.0,
     "trend_1d": "多",
-    "srsi_1d": 4.0
+    "srsi_1d": 4.0,
+    "mae_pct": -19.4,
+    "mfe_pct": 8.8
   },
   {
     "coin": "APR-USDT",
@@ -388,7 +432,9 @@
     "trend_4h": "空",
     "srsi_4h": 20.1,
     "trend_1d": "多",
-    "srsi_1d": 0.0
+    "srsi_1d": 0.0,
+    "mae_pct": -3.5,
+    "mfe_pct": 11.3
   },
   {
     "coin": "HOME-USDT",
@@ -405,7 +451,9 @@
     "trend_4h": "多",
     "srsi_4h": 25.5,
     "trend_1d": "多",
-    "srsi_1d": 4.0
+    "srsi_1d": 4.0,
+    "mae_pct": -17.5,
+    "mfe_pct": 2.4
   },
   {
     "coin": "APT-USDT",
@@ -422,7 +470,9 @@
     "trend_4h": "空",
     "srsi_4h": 85.6,
     "trend_1d": "空",
-    "srsi_1d": 33.4
+    "srsi_1d": 33.4,
+    "mae_pct": -2.8,
+    "mfe_pct": 5.3
   },
   {
     "coin": "ORDI-USDT",
@@ -439,7 +489,9 @@
     "trend_4h": "多",
     "srsi_4h": 80.6,
     "trend_1d": "多",
-    "srsi_1d": 85.5
+    "srsi_1d": 85.5,
+    "mae_pct": -2.8,
+    "mfe_pct": 6.2
   },
   {
     "coin": "APT-USDT",
@@ -456,7 +508,9 @@
     "trend_4h": "空",
     "srsi_4h": 69.8,
     "trend_1d": "空",
-    "srsi_1d": 63.4
+    "srsi_1d": 63.4,
+    "mae_pct": -2.4,
+    "mfe_pct": 9.9
   },
   {
     "coin": "ORDI-USDT",
@@ -473,7 +527,9 @@
     "trend_4h": "多",
     "srsi_4h": 71.2,
     "trend_1d": "多",
-    "srsi_1d": 85.5
+    "srsi_1d": 85.5,
+    "mae_pct": -4.2,
+    "mfe_pct": 7.9
   },
   {
     "coin": "HUMA-USDT",
@@ -490,7 +546,9 @@
     "trend_4h": "多",
     "srsi_4h": 72.1,
     "trend_1d": "多",
-    "srsi_1d": 70.7
+    "srsi_1d": 70.7,
+    "mae_pct": -3.1,
+    "mfe_pct": 11.9
   },
   {
     "coin": "APR-USDT",
@@ -507,7 +565,9 @@
     "trend_4h": "空",
     "srsi_4h": 68.1,
     "trend_1d": "多",
-    "srsi_1d": 7.0
+    "srsi_1d": 7.0,
+    "mae_pct": -2.4,
+    "mfe_pct": 19.2
   },
   {
     "coin": "ORDI-USDT",
@@ -524,7 +584,9 @@
     "trend_4h": "多",
     "srsi_4h": 84.9,
     "trend_1d": "多",
-    "srsi_1d": 100.0
+    "srsi_1d": 100.0,
+    "mae_pct": -9.2,
+    "mfe_pct": 5.6
   },
   {
     "coin": "ORDI-USDT",
@@ -541,7 +603,9 @@
     "trend_4h": "多",
     "srsi_4h": 32.9,
     "trend_1d": "空",
-    "srsi_1d": 62.2
+    "srsi_1d": 62.2,
+    "mae_pct": -12.6,
+    "mfe_pct": 7.6
   },
   {
     "coin": "ORDI-USDT",
@@ -558,6 +622,8 @@
     "trend_4h": "空",
     "srsi_4h": 40.0,
     "trend_1d": "空",
-    "srsi_1d": 62.2
+    "srsi_1d": 62.2,
+    "mae_pct": -13.5,
+    "mfe_pct": 7.2
   }
 ]

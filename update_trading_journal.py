@@ -356,6 +356,22 @@ def generate_excel(trades, output_path, month_label):
 
         ws.cell(row, 16).fill = PatternFill("solid", fgColor=SUCCESS_BG if pnl>0 else DANGER_BG)
 
+        # Add MAE/MFE columns (cols 18, 19)
+        mae = t.get("mae_pct", 0)
+        mfe = t.get("mfe_pct", 0)
+        ws.cell(row, 18, f"{mae:+.1f}%").font = Font(size=9, color=LOSE_RED)
+        ws.cell(row, 19, f"{mfe:+.1f}%").font = Font(size=9, color=WIN_GREEN)
+
+    # Add MAE/MFE to header
+    ws.cell(TS, 18, "MAE").font = Font(bold=True, color=TEXT_MUTED, size=9)
+    ws.cell(TS, 18).fill = hdr_fill
+    ws.cell(TS, 18).alignment = center
+    ws.cell(TS, 18).border = hdr_border
+    ws.cell(TS, 19, "MFE").font = Font(bold=True, color=TEXT_MUTED, size=9)
+    ws.cell(TS, 19).fill = hdr_fill
+    ws.cell(TS, 19).alignment = center
+    ws.cell(TS, 19).border = hdr_border
+
     # Column widths
     for col, w in {1:16,2:10,3:5,4:5,5:5,6:6,7:6,8:6,9:6,16:10,17:10}.items():
         ws.column_dimensions[get_column_letter(col)].width = w
@@ -366,6 +382,10 @@ def generate_excel(trades, output_path, month_label):
     ws2 = wb.create_sheet("可视化")
     _build_viz_sheet(ws2, trades, month_label)
 
+    # ═══════════ Sheet 3: 走势图 ═══════════
+    ws3 = wb.create_sheet("走势图")
+    _build_price_paths(ws3, trades)
+
     wb.save(output_path)
     return output_path
 
@@ -374,7 +394,7 @@ def _build_viz_sheet(ws, trades, month_label):
     """第二页：多图表可视化"""
     import openpyxl
     from openpyxl.styles import Font
-    from openpyxl.chart import BarChart, PieChart, LineChart, Reference
+    from openpyxl.chart import BarChart, PieChart, LineChart, Reference, ScatterChart
     from openpyxl.chart.series import DataPoint
     from openpyxl.chart.label import DataLabelList
     from openpyxl.utils import get_column_letter
@@ -583,9 +603,146 @@ def _build_viz_sheet(ws, trades, month_label):
         for c in range(1, 3):
             ws.cell(r, c).value = None
 
-    # Column widths for viz sheet
+    # ── Add MAE vs MFE scatter ──
+    MAE_ROW = DIST_ROW + 8
+    ws.cell(MAE_ROW, 1, "MAE%").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(MAE_ROW, 2, "MFE%").font = Font(size=9, color=TEXT_MUTED)
+    for i, t in enumerate(trades):
+        ws.cell(MAE_ROW+1+i, 1, t.get("mae_pct", 0)).font = Font(size=9)
+        ws.cell(MAE_ROW+1+i, 2, t.get("mfe_pct", 0)).font = Font(size=9)
+
+    scatter = ScatterChart()
+    scatter.title = "MAE vs MFE (每笔交易)"
+    scatter.x_axis.title = "最大亏损 (%)"
+    scatter.y_axis.title = "最大盈利 (%)"
+    scatter.width = 16
+    scatter.height = 12
+    sref = Reference(ws, min_col=1, min_row=MAE_ROW, max_col=2, max_row=MAE_ROW+len(trades))
+    scatter.add_data(sref, titles_from_data=True)
+    s1 = scatter.series[0]
+    s1.graphicalProperties.solidFill = LOSE_RED
+    s2 = scatter.series[1]
+    s2.graphicalProperties.solidFill = WIN_GREEN
+    ws.add_chart(scatter, f"E{MAE_ROW}")
+
+    for r in range(MAE_ROW, MAE_ROW+len(trades)+1):
+        ws.cell(r, 1).value = None; ws.cell(r, 2).value = None
+
+    # ── Column widths ──
     for c in range(1, 5):
         ws.column_dimensions[get_column_letter(c)].width = 12
+
+def _build_price_paths(ws, trades):
+    """第三页：关键交易的持仓期间价格走势"""
+    import sys, os
+    from openpyxl.styles import Font
+    from openpyxl.chart import LineChart, Reference
+    from openpyxl.utils import get_column_letter
+    from datetime import datetime, timezone
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from data_fetcher import fetch_historical
+
+    WS = "FFFFFF"
+    WIN_GREEN = "198754"
+    LOSE_RED = "dc3545"
+    TEXT_MAIN = "212529"
+    TEXT_MUTED = "6c757d"
+
+    ws.sheet_properties.tabColor = "198754"
+    ws.merge_cells("A1:I1")
+    ws.cell(1, 1, "📈 持仓期间价格走势").font = Font(bold=True, size=16, color=TEXT_MAIN)
+    ws.row_dimensions[1].height = 30
+
+    # Pick 4 key trades: best win, worst loss, worst MAE, most recent
+    best_win = max(trades, key=lambda t: t["pnl_usdt"])
+    worst_loss = min(trades, key=lambda t: t["pnl_usdt"])
+    worst_mae = min(trades, key=lambda t: t.get("mae_pct", 0))
+    picks = [
+        (best_win, f"最大盈利 {best_win['coin']} +{best_win['pnl_usdt']:.1f}U"),
+        (min(trades, key=lambda t: t.get("mae_pct", 0)), f"最深回撤 {worst_mae['coin']} MAE={worst_mae.get('mae_pct',0):.1f}%"),
+        (worst_loss, f"最大亏损 {worst_loss['coin']} {worst_loss['pnl_usdt']:.1f}U"),
+        (trades[-1], f"最近 {trades[-1]['coin']} {trades[-1]['entry_time'][:10]}"),
+    ]
+
+    cache = {}
+    ROW_START = 3
+    for pi, (trade, title) in enumerate(picks):
+        r = ROW_START + pi * 22
+
+        ws.cell(r, 1, title).font = Font(bold=True, size=12, color=TEXT_MAIN)
+        ws.cell(r+1, 1, f"入场: {trade['entry_price']} | 离场: {trade['exit_price']} | "
+                    f"PnL: {trade['pnl_usdt']:+}U | MAE: {trade.get('mae_pct',0)}% | MFE: {trade.get('mfe_pct',0)}%")
+        ws.cell(r+1, 1).font = Font(size=9, color=TEXT_MUTED)
+
+        # Fetch 15m price data
+        sym = trade["coin"] + "-SWAP"
+        if sym not in cache:
+            cache[sym] = fetch_historical(sym, "15m", 30)
+        candles = cache.get(sym, [])
+
+        if not candles:
+            ws.cell(r+2, 1, "数据不可用").font = Font(size=9, color=LOSE_RED)
+            continue
+
+        ets = trade["entry_ts"]
+        exit_dt = datetime.strptime(trade["exit_time"], "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+        xts = int(exit_dt.timestamp() * 1000)
+
+        ei = xi = None
+        for j, c in enumerate(candles):
+            if ei is None and int(c["ts"]) >= ets: ei = j
+            if int(c["ts"]) >= xts: xi = j; break
+        if ei is None: continue
+
+        ep = candles[ei]["c"]
+        # Extend 48 bars before and 96 bars after exit
+        start_i = max(0, ei - 48)
+        end_i = min(len(candles), (xi or ei+96) + 96)
+
+        ws.cell(r+2, 1, "K线").font = Font(size=8, color=TEXT_MUTED)
+        ws.cell(r+2, 2, "价格").font = Font(size=8, color=TEXT_MUTED)
+        ws.cell(r+2, 3, "归一化%").font = Font(size=8, color=TEXT_MUTED)
+
+        for j in range(start_i, end_i):
+            idx = j - start_i
+            cdl = candles[j]
+            price = cdl["c"]
+            norm = (price / ep - 1) * 100
+            ws.cell(r+3+idx, 1, idx).font = Font(size=7, color=TEXT_MUTED)
+            ws.cell(r+3+idx, 2, round(price, 8)).font = Font(size=7)
+            ws.cell(r+3+idx, 3, round(norm, 2)).font = Font(size=7)
+
+        data_end = r + 3 + (end_i - start_i) - 1
+
+        chart = LineChart()
+        chart.title = None
+        chart.style = 2
+        chart.width = 20
+        chart.height = 10
+        chart.legend = None
+
+        dref = Reference(ws, min_col=3, min_row=r+2, max_col=3, max_row=data_end)
+        cref = Reference(ws, min_col=1, min_row=r+3, max_row=data_end)
+        chart.add_data(dref, titles_from_data=True)
+        chart.set_categories(cref)
+
+        # Color: green if profitable
+        color = WIN_GREEN if trade["pnl_usdt"] > 0 else LOSE_RED
+        chart.series[0].graphicalProperties.line.solidFill = color
+
+        # Entry and exit markers
+        ei_rel = ei - start_i
+        ws.cell(r+3+ei_rel, 4, "←入场").font = Font(size=7, color="0d6efd", bold=True)
+        if xi:
+            xi_rel = xi - start_i
+            ws.cell(r+3+xi_rel, 4, "←离场").font = Font(size=7, color=LOSE_RED, bold=True)
+
+        ws.add_chart(chart, f"F{r}")
+
+        # Hide price data
+        for j in range(r+2, data_end+1):
+            for c in range(1, 4):
+                ws.cell(j, c).value = None
 
 def main():
     now = datetime.now(timezone.utc) + timedelta(hours=8)  # CST
