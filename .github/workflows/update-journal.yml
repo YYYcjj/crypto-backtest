@@ -1,6 +1,9 @@
 name: 每日更新交易日记
 
 on:
+  push:
+    paths:
+      - "results/**"
   workflow_dispatch:
 
 jobs:
