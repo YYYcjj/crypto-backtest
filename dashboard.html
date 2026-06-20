@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>入场精度分析仪表盘 v2</title>
+</head>
+<style>
+:root{--bg:#080d16;--card:#0f1623;--border:#1a2436;--text:#dce5f0;--muted:#5e6d82;--accent:#4da8f7;--green:#2dd47c;--red:#f5475d;--yellow:#f5a623;--purple:#9b6dff;--orange:#ff7849}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:240px;background:var(--card);border-right:1px solid var(--border);padding:16px;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}
+.sidebar h3{font-size:13px;color:var(--muted);margin:14px 0 6px;text-transform:uppercase;letter-spacing:1px}
+.sidebar h3:first-child{margin-top:0}
+.chk{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer;color:var(--text);transition:.1s}
+.chk:hover{color:var(--accent)}
+.chk input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+.chk .ticker{font-weight:600;letter-spacing:.5px}
+.chk-group{margin-bottom:4px}
+.sidebar-hdr{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.sidebar-hdr .s-logo{font-size:16px}
+.sidebar-hdr span{font-size:13px;font-weight:600}
+.s-count{margin-left:auto;background:var(--accent);color:#080d16;font-size:10px!important;padding:2px 8px;border-radius:8px}
+.s-btn{background:var(--bg);color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;transition:.15s}
+.s-btn:hover{color:var(--accent);border-color:var(--accent)}
+.s-btn-xs{margin-left:4px}
+.s-stat{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);padding:2px 0}
+.s-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.chk{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;cursor:pointer;color:var(--text)}
+.chk input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+.main{flex:1;padding:16px 20px;overflow-y:auto}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.header h1{font-size:20px;font-weight:700}
+.header .badge{font-size:11px;background:var(--accent);color:#080d16;padding:3px 10px;border-radius:10px;font-weight:600}
+.tabs{display:flex;gap:2px;margin-bottom:12px;flex-wrap:wrap}
+.tab{padding:7px 14px;font-size:12px;cursor:pointer;border:1px solid var(--border);border-radius:6px 6px 0 0;background:var(--bg);color:var(--muted);transition:.15s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--card);color:var(--accent);font-weight:600}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px}
+.panel h3{font-size:14px;margin-bottom:10px;color:var(--text);display:flex;align-items:center;gap:8px}
+.panel h3 .tag{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--accent);color:#080d16;font-weight:600}
+.chart-wrap{position:relative;height:340px}
+.chart-wrap canvas{width:100%!important}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px}
+.card .l{font-size:11px;color:var(--muted);margin-bottom:2px}
+.card .v{font-size:22px;font-weight:700}
+.card .s{font-size:11px;color:var(--muted);margin-top:2px}
+.heatmap{display:grid;gap:2px;font-size:12px;overflow-x:auto}
+.heatmap .hdr{font-weight:600;text-align:center;padding:6px 10px;color:var(--muted)}
+.heatmap .cell{text-align:center;padding:10px 12px;border-radius:4px;cursor:pointer;transition:.2s;font-weight:600}
+.heatmap .cell:hover{transform:scale(1.05);z-index:2;box-shadow:0 0 12px rgba(0,0,0,.4)}
+.heatmap .rowlabel{display:flex;align-items:center;padding:6px 10px;font-weight:600;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--bg);padding:8px 10px;text-align:left;border-bottom:2px solid var(--border);color:var(--muted);font-weight:600;cursor:pointer}
+th:hover{color:var(--accent)}
+td{padding:6px 10px;border-bottom:1px solid var(--border)}
+tr:hover{background:rgba(77,168,247,.05)}
+.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}
+.rec-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.rec-a{background:rgba(45,212,124,.15);color:var(--green);border:1px solid rgba(45,212,124,.3)}
+.rec-b{background:rgba(245,166,35,.15);color:var(--yellow);border:1px solid rgba(245,166,35,.3)}
+.rec-c{background:rgba(245,71,93,.15);color:var(--red);border:1px solid rgba(245,71,93,.3)}
+.toolbar{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.toolbar input{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:5px;font-size:12px;outline:none;width:180px}
+.toolbar input:focus{border-color:var(--accent)}
+.btn{background:var(--accent);color:#080d16;border:none;padding:5px 12px;border-radius:5px;font-size:11px;cursor:pointer;font-weight:600}
+.btn.outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.score-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-hdr">
+        <span class="s-logo">&#9776;</span>
+        <span>筛选面板</span>
+        <span class="s-count" id="totalItems">0</span>
+    </div>
+    <h3>&#128314; 品种
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('main',true)">全选</button>
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('main',false)">清空</button>
+    </h3>
+    <div class="chk-group" id="groupMain">
+    <label class="chk" data-group="main"><input type="checkbox" value="BTC-USDT" checked onchange="refilter()"><span class="ticker">BTC</span></label><label class="chk" data-group="main"><input type="checkbox" value="ETH-USDT" checked onchange="refilter()"><span class="ticker">ETH</span></label><label class="chk" data-group="main"><input type="checkbox" value="SOL-USDT" checked onchange="refilter()"><span class="ticker">SOL</span></label>
+    </div>
+    <h3>&#127760; 山寨
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('alt',true)">全选</button>
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('alt',false)">清空</button>
+    </h3>
+    <div class="chk-group" id="groupAlt">
+    <label class="chk" data-group="alt"><input type="checkbox" value="APT-USDT" checked onchange="refilter()"><span class="ticker">APT</span></label><label class="chk" data-group="alt"><input type="checkbox" value="DOGE-USDT" checked onchange="refilter()"><span class="ticker">DOGE</span></label><label class="chk" data-group="alt"><input type="checkbox" value="ORDI-USDT" checked onchange="refilter()"><span class="ticker">ORDI</span></label>
+    </div>
+    <h3>&#128207; 止损档位
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('sl',true)">全选</button>
+        <button class="s-btn s-btn-xs" onclick="toggleGroup('sl',false)">清空</button>
+    </h3>
+    <div class="chk-group" id="groupSL">
+    <label class="chk"><input type="checkbox" value="0.5" checked onchange="refilter()"><span>50.0%</span></label><label class="chk"><input type="checkbox" value="1.0" checked onchange="refilter()"><span>100.0%</span></label><label class="chk"><input type="checkbox" value="1.5" checked onchange="refilter()"><span>150.0%</span></label><label class="chk"><input type="checkbox" value="2.0" checked onchange="refilter()"><span>200.0%</span></label>
+    </div>
+    <h3>&#128260; 方向</h3>
+    <label class="chk"><input type="checkbox" value="LONG" checked onchange="refilter()">做多</label>
+    <label class="chk"><input type="checkbox" value="SHORT" checked onchange="refilter()">做空</label>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">
+        <div class="s-stat"><span class="s-dot" style="background:var(--green)"></span>存活 ≥70%</div>
+        <div class="s-stat"><span class="s-dot" style="background:var(--yellow)"></span>存活 45-70%</div>
+        <div class="s-stat"><span class="s-dot" style="background:var(--red)"></span>存活 &lt;45%</div>
+    </div>
+    <div style="margin-top:14px">
+        <button class="btn outline" onclick="exportCSV()" style="width:100%">&#128229; 导出 CSV</button>
+    </div>
+    <div style="margin-top:8px">
+        <button class="btn outline" onclick="resetFilters()" style="width:100%">&#128260; 重置筛选</button>
+    </div>
+</div>
+
+<div class="main">
+    <div class="header">
+        <h1>📊 入场精度分析 <span class="badge">v2</span></h1>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('heatmap')">🔥 热度图</div>
+        <div class="tab" onclick="switchTab('picks')">⭐ 最优推荐</div>
+        <div class="tab" onclick="switchTab('curve')">📈 存活曲线</div>
+        <div class="tab" onclick="switchTab('distribution')">📊 盈利分布</div>
+        <div class="tab" onclick="switchTab('triggers')">🎯 触发对比</div>
+        <div class="tab" onclick="switchTab('stoptime')">⏱ 止损时机</div>
+        <div class="tab" onclick="switchTab('data')">📋 明细</div>
+    </div>
+
+    <div class="cards" id="summaryCards"></div>
+
+    <div id="tab-heatmap" class="panel"><h3>🔥 存活率热度图 <span class="tag">核心</span></h3><div id="heatmapContainer"></div></div>
+    <div id="tab-picks" class="panel" style="display:none"><h3>⭐ 各品种最优止损推荐</h3><div style="overflow-x:auto"><table id="picksTable"><thead><tr><th>品种</th><th>推荐止损</th><th>存活率</th><th>均盈</th><th>综合评分</th><th>等级</th><th>建议仓位</th></tr></thead><tbody></tbody></table></div></div>
+    <div id="tab-curve" class="panel" style="display:none"><h3>📈 存活率 vs 止损宽度</h3><div class="chart-wrap"><canvas id="chartCurve"></canvas></div></div>
+    <div id="tab-distribution" class="panel" style="display:none"><h3>📊 盈利区间分布</h3><div class="chart-wrap"><canvas id="chartDist"></canvas></div></div>
+    <div id="tab-triggers" class="panel" style="display:none"><h3>🎯 触发类型对比</h3><div style="display:grid;grid-template-columns:1fr 1fr;gap:14px"><div class="chart-wrap"><canvas id="chartTrigStop"></canvas></div><div class="chart-wrap"><canvas id="chartTrigProfit"></canvas></div></div></div>
+    <div id="tab-stoptime" class="panel" style="display:none"><h3>⏱ 止损发生时间分布</h3><div class="chart-wrap"><canvas id="chartStopTime"></canvas></div></div>
+    <div id="tab-data" class="panel" style="display:none">
+        <h3>📋 信号明细</h3>
+        <div class="toolbar"><input type="text" id="tblSearch" placeholder="搜索..." oninput="renderTable()"><span style="font-size:11px;color:var(--muted);margin-left:auto" id="tblInfo"></span></div>
+        <div style="max-height:450px;overflow:auto"><table id="dataTable"><thead><tr><th onclick="sortTable('symbol')">品种↕</th><th onclick="sortTable('sl_pct')">止损↕</th><th onclick="sortTable('trigger')">触发↕</th><th>1H</th><th>4H</th><th>1D</th><th>SRSI K</th><th onclick="sortTable('stopped')">结果↕</th><th onclick="sortTable('profit')">浮盈↕</th></tr></thead><tbody></tbody></table></div>
+    </div>
+</div>
+
+<script>
+var D=JSON.parse('[{"symbol": "BTC-USDT", "sl_pct": 0.5, "total_signals": 1200, "stopped": 918, "survived": 282, "stop_rate": 76.5, "survive_rate": 23.5, "avg_max_profit": 1.91, "profit_buckets": {"<0%": 0, "0-2%": 180, "2-5%": 93, "5-10%": 9, ">10%": 0}, "stop_bar_dist": {"3bar": 52, "1bar": 26, ">24bar": 348, "11bar": 15, "7bar": 34, "4bar": 43, "21bar": 10, "8bar": 28, "5bar": 37, "22bar": 13, "16bar": 21, "13bar": 24, "14bar": 16, "6bar": 38, "2bar": 44, "9bar": 27, "20bar": 13, "17bar": 20, "15bar": 20, "12bar": 16, "23bar": 11, "18bar": 16, "10bar": 20, "24bar": 10, "19bar": 16}, "trigger_stats": {"dmi_flip": {"count": 328, "stop_rate": 78.0, "avg_profit": 2.18}, "srsi_bounce": {"count": 173, "stop_rate": 79.2, "avg_profit": 1.81}, "support_touch": {"count": 699, "stop_rate": 75.1, "avg_profit": 1.82}}, "direction": "LONG"}, {"symbol": "ETH-USDT", "sl_pct": 0.5, "total_signals": 1057, "stopped": 891, "survived": 166, "stop_rate": 84.3, "survive_rate": 15.7, "avg_max_profit": 3.16, "profit_buckets": {"<0%": 0, "0-2%": 78, "2-5%": 54, "5-10%": 31, ">10%": 3}, "stop_bar_dist": {"1bar": 55, "5bar": 39, "7bar": 26, "18bar": 13, "10bar": 25, "14bar": 23, "13bar": 21, "8bar": 26, "3bar": 54, "2bar": 51, "4bar": 50, ">24bar": 267, "23bar": 11, "22bar": 11, "21bar": 9, "20bar": 15, "12bar": 21, "6bar": 40, "11bar": 25, "9bar": 31, "17bar": 19, "15bar": 28, "16bar": 18, "24bar": 3, "19bar": 10}, "trigger_stats": {"dmi_flip": {"count": 339, "stop_rate": 81.4, "avg_profit": 3.15}, "srsi_bounce": {"count": 152, "stop_rate": 84.9, "avg_profit": 3.94}, "support_touch": {"count": 566, "stop_rate": 85.9, "avg_profit": 2.94}}, "direction": "LONG"}, {"symbol": "SOL-USDT", "sl_pct": 0.5, "total_signals": 1013, "stopped": 841, "survived": 172, "stop_rate": 83.0, "survive_rate": 17.0, "avg_max_profit": 3.45, "profit_buckets": {"<0%": 0, "0-2%": 42, "2-5%": 95, "5-10%": 34, ">10%": 1}, "stop_bar_dist": {"2bar": 77, "7bar": 35, "14bar": 20, "18bar": 11, "17bar": 19, "8bar": 41, "3bar": 53, "6bar": 29, "1bar": 57, ">24bar": 212, "9bar": 31, "23bar": 7, "12bar": 23, "10bar": 24, "21bar": 16, "15bar": 13, "5bar": 37, "4bar": 46, "16bar": 13, "13bar": 21, "11bar": 17, "24bar": 7, "22bar": 13, "20bar": 11, "19bar": 8}, "trigger_stats": {"dmi_flip": {"count": 317, "stop_rate": 79.8, "avg_profit": 3.5}, "srsi_bounce": {"count": 160, "stop_rate": 84.4, "avg_profit": 3.95}, "support_touch": {"count": 536, "stop_rate": 84.5, "avg_profit": 3.26}}, "direction": "LONG"}, {"symbol": "BTC-USDT", "sl_pct": 1.0, "total_signals": 1200, "stopped": 596, "survived": 604, "stop_rate": 49.7, "survive_rate": 50.3, "avg_max_profit": 1.73, "profit_buckets": {"<0%": 0, "0-2%": 407, "2-5%": 182, "5-10%": 15, ">10%": 0}, "stop_bar_dist": {"3bar": 11, "2bar": 7, ">24bar": 357, "24bar": 9, "21bar": 9, "18bar": 11, "16bar": 11, "10bar": 8, "6bar": 12, "14bar": 14, "12bar": 5, "11bar": 17, "5bar": 10, "4bar": 6, "9bar": 14, "8bar": 12, "7bar": 16, "17bar": 8, "15bar": 12, "13bar": 12, "22bar": 9, "20bar": 6, "19bar": 8, "23bar": 10, "1bar": 2}, "trigger_stats": {"dmi_flip": {"count": 328, "stop_rate": 56.1, "avg_profit": 2.07}, "srsi_bounce": {"count": 173, "stop_rate": 52.0, "avg_profit": 1.63}, "support_touch": {"count": 699, "stop_rate": 46.1, "avg_profit": 1.62}}, "direction": "LONG"}, {"symbol": "ETH-USDT", "sl_pct": 1.0, "total_signals": 1058, "stopped": 689, "survived": 369, "stop_rate": 65.1, "survive_rate": 34.9, "avg_max_profit": 2.66, "profit_buckets": {"<0%": 0, "0-2%": 193, "2-5%": 124, "5-10%": 49, ">10%": 3}, "stop_bar_dist": {"3bar": 19, "11bar": 15, "7bar": 13, ">24bar": 360, "17bar": 11, "16bar": 17, "15bar": 20, "14bar": 15, "13bar": 13, "9bar": 16, "8bar": 17, "5bar": 21, "2bar": 17, "6bar": 13, "4bar": 21, "1bar": 5, "20bar": 13, "12bar": 14, "10bar": 8, "22bar": 8, "21bar": 13, "18bar": 14, "23bar": 5, "24bar": 7, "19bar": 14}, "trigger_stats": {"dmi_flip": {"count": 339, "stop_rate": 61.1, "avg_profit": 2.8}, "srsi_bounce": {"count": 152, "stop_rate": 68.4, "avg_profit": 2.86}, "support_touch": {"count": 567, "stop_rate": 66.7, "avg_profit": 2.5}}, "direction": "LONG"}, {"symbol": "SOL-USDT", "sl_pct": 1.0, "total_signals": 1013, "stopped": 655, "survived": 358, "stop_rate": 64.7, "survive_rate": 35.3, "avg_max_profit": 3.03, "profit_buckets": {"<0%": 0, "0-2%": 126, "2-5%": 172, "5-10%": 59, ">10%": 1}, "stop_bar_dist": {"3bar": 20, "9bar": 18, ">24bar": 299, "13bar": 13, "2bar": 16, "5bar": 20, "22bar": 13, "18bar": 18, "17bar": 12, "12bar": 13, "21bar": 9, "15bar": 16, "10bar": 25, "8bar": 19, "16bar": 17, "11bar": 17, "7bar": 16, "14bar": 18, "1bar": 6, "6bar": 11, "4bar": 16, "24bar": 11, "23bar": 10, "20bar": 12, "19bar": 10}, "trigger_stats": {"dmi_flip": {"count": 317, "stop_rate": 63.1, "avg_profit": 3.08}, "srsi_bounce": {"count": 160, "stop_rate": 61.3, "avg_profit": 3.15}, "support_touch": {"count": 536, "stop_rate": 66.6, "avg_profit": 2.97}}, "direction": "LONG"}, {"symbol": "BTC-USDT", "sl_pct": 1.5, "total_signals": 1200, "stopped": 384, "survived": 816, "stop_rate": 32.0, "survive_rate": 68.0, "avg_max_profit": 1.64, "profit_buckets": {"<0%": 0, "0-2%": 567, "2-5%": 231, "5-10%": 18, ">10%": 0}, "stop_bar_dist": {"15bar": 5, ">24bar": 274, "17bar": 4, "23bar": 7, "16bar": 6, "13bar": 7, "12bar": 3, "7bar": 7, "6bar": 3, "5bar": 4, "10bar": 4, "9bar": 5, "21bar": 6, "20bar": 7, "19bar": 6, "18bar": 9, "3bar": 3, "24bar": 5, "22bar": 2, "8bar": 4, "14bar": 5, "11bar": 4, "2bar": 1, "4bar": 3}, "trigger_stats": {"dmi_flip": {"count": 328, "stop_rate": 40.9, "avg_profit": 2.02}, "srsi_bounce": {"count": 173, "stop_rate": 33.5, "avg_profit": 1.55}, "support_touch": {"count": 699, "stop_rate": 27.5, "avg_profit": 1.52}}, "direction": "LONG"}, {"symbol": "ETH-USDT", "sl_pct": 1.5, "total_signals": 1057, "stopped": 538, "survived": 519, "stop_rate": 50.9, "survive_rate": 49.1, "avg_max_profit": 2.42, "profit_buckets": {"<0%": 0, "0-2%": 291, "2-5%": 168, "5-10%": 57, ">10%": 3}, "stop_bar_dist": {"4bar": 4, "8bar": 9, "14bar": 9, ">24bar": 331, "12bar": 6, "7bar": 14, "10bar": 12, "9bar": 15, "16bar": 14, "3bar": 4, "18bar": 11, "13bar": 8, "5bar": 10, "6bar": 8, "19bar": 10, "17bar": 9, "15bar": 12, "22bar": 9, "20bar": 12, "24bar": 5, "23bar": 8, "2bar": 3, "21bar": 9, "11bar": 6}, "trigger_stats": {"dmi_flip": {"count": 339, "stop_rate": 45.1, "avg_profit": 2.56}, "srsi_bounce": {"count": 152, "stop_rate": 57.2, "avg_profit": 2.56}, "support_touch": {"count": 566, "stop_rate": 52.7, "avg_profit": 2.29}}, "direction": "LONG"}, {"symbol": "SOL-USDT", "sl_pct": 1.5, "total_signals": 1013, "stopped": 534, "survived": 479, "stop_rate": 52.7, "survive_rate": 47.3, "avg_max_profit": 2.76, "profit_buckets": {"<0%": 0, "0-2%": 209, "2-5%": 204, "5-10%": 65, ">10%": 1}, "stop_bar_dist": {"4bar": 7, "11bar": 13, ">24bar": 317, "5bar": 8, "21bar": 10, "15bar": 12, "10bar": 10, "9bar": 11, "8bar": 9, "18bar": 11, "17bar": 12, "16bar": 12, "3bar": 6, "14bar": 12, "12bar": 14, "6bar": 8, "7bar": 8, "24bar": 6, "19bar": 7, "23bar": 7, "22bar": 8, "20bar": 11, "13bar": 9, "2bar": 4, "1bar": 2}, "trigger_stats": {"dmi_flip": {"count": 317, "stop_rate": 48.3, "avg_profit": 2.89}, "srsi_bounce": {"count": 160, "stop_rate": 55.0, "avg_profit": 2.99}, "support_touch": {"count": 536, "stop_rate": 54.7, "avg_profit": 2.61}}, "direction": "LONG"}, {"symbol": "BTC-USDT", "sl_pct": 2.0, "total_signals": 1200, "stopped": 273, "survived": 927, "stop_rate": 22.8, "survive_rate": 77.2, "avg_max_profit": 1.61, "profit_buckets": {"<0%": 0, "0-2%": 659, "2-5%": 249, "5-10%": 19, ">10%": 0}, "stop_bar_dist": {"15bar": 4, ">24bar": 218, "24bar": 4, "17bar": 6, "14bar": 5, "13bar": 3, "11bar": 1, "10bar": 3, "16bar": 5, "8bar": 4, "22bar": 1, "21bar": 1, "19bar": 4, "20bar": 4, "18bar": 3, "4bar": 2, "3bar": 2, "9bar": 1, "7bar": 1, "6bar": 1}, "trigger_stats": {"dmi_flip": {"count": 328, "stop_rate": 29.6, "avg_profit": 1.9}, "srsi_bounce": {"count": 173, "stop_rate": 24.9, "avg_profit": 1.51}, "support_touch": {"count": 699, "stop_rate": 19.0, "avg_profit": 1.51}}, "direction": "LONG"}, {"symbol": "ETH-USDT", "sl_pct": 2.0, "total_signals": 1057, "stopped": 416, "survived": 641, "stop_rate": 39.4, "survive_rate": 60.6, "avg_max_profit": 2.3, "profit_buckets": {"<0%": 0, "0-2%": 370, "2-5%": 209, "5-10%": 59, ">10%": 3}, "stop_bar_dist": {"11bar": 7, "8bar": 7, "14bar": 9, "22bar": 2, ">24bar": 288, "9bar": 8, "4bar": 2, "20bar": 8, "17bar": 8, "19bar": 9, "18bar": 5, "16bar": 8, "21bar": 8, "15bar": 6, "24bar": 6, "10bar": 4, "3bar": 2, "13bar": 9, "12bar": 8, "23bar": 1, "7bar": 6, "2bar": 1, "6bar": 2, "5bar": 2}, "trigger_stats": {"dmi_flip": {"count": 339, "stop_rate": 36.6, "avg_profit": 2.48}, "srsi_bounce": {"count": 152, "stop_rate": 46.1, "avg_profit": 2.39}, "support_touch": {"count": 566, "stop_rate": 39.2, "avg_profit": 2.16}}, "direction": "LONG"}, {"symbol": "SOL-USDT", "sl_pct": 2.0, "total_signals": 1013, "stopped": 418, "survived": 595, "stop_rate": 41.3, "survive_rate": 58.7, "avg_max_profit": 2.68, "profit_buckets": {"<0%": 0, "0-2%": 272, "2-5%": 248, "5-10%": 74, ">10%": 1}, "stop_bar_dist": {"16bar": 10, "12bar": 9, ">24bar": 282, "21bar": 9, "15bar": 6, "10bar": 7, "9bar": 6, "8bar": 4, "5bar": 6, "19bar": 11, "17bar": 7, "3bar": 5, "14bar": 7, "11bar": 7, "6bar": 5, "4bar": 3, "7bar": 3, "20bar": 7, "22bar": 5, "18bar": 5, "13bar": 5, "23bar": 5, "24bar": 2, "2bar": 2}, "trigger_stats": {"dmi_flip": {"count": 317, "stop_rate": 37.5, "avg_profit": 2.84}, "srsi_bounce": {"count": 160, "stop_rate": 41.9, "avg_profit": 2.73}, "support_touch": {"count": 536, "stop_rate": 43.3, "avg_profit": 2.56}}, "direction": "LONG"}, {"symbol": "APT-USDT", "sl_pct": 1.0, "total_signals": 810, "stopped": 684, "survived": 126, "stop_rate": 84.4, "survive_rate": 15.6, "avg_max_profit": 5.98, "profit_buckets": {"<0%": 0, "0-2%": 0, "2-5%": 53, "5-10%": 64, ">10%": 9}, "stop_bar_dist": {"3bar": 43, "6bar": 36, "5bar": 37, "4bar": 35, "23bar": 5, "11bar": 22, "12bar": 18, "9bar": 27, "10bar": 15, ">24bar": 209, "1bar": 20, "2bar": 30, "7bar": 27, "24bar": 5, "22bar": 7, "8bar": 25, "15bar": 14, "19bar": 16, "17bar": 16, "16bar": 20, "13bar": 11, "18bar": 16, "14bar": 13, "21bar": 9, "20bar": 8}, "trigger_stats": {"dmi_flip": {"count": 387, "stop_rate": 80.6, "avg_profit": 6.0}, "srsi_bounce": {"count": 143, "stop_rate": 88.8, "avg_profit": 6.17}, "support_touch": {"count": 280, "stop_rate": 87.5, "avg_profit": 5.83}}, "direction": "LONG"}, {"symbol": "APT-USDT", "sl_pct": 1.5, "total_signals": 810, "stopped": 607, "survived": 203, "stop_rate": 74.9, "survive_rate": 25.1, "avg_max_profit": 5.98, "profit_buckets": {"<0%": 0, "0-2%": 4, "2-5%": 85, "5-10%": 94, ">10%": 20}, "stop_bar_dist": {"11bar": 19, "7bar": 18, "6bar": 13, "5bar": 18, "4bar": 17, ">24bar": 263, "23bar": 8, "12bar": 17, "2bar": 13, "1bar": 6, "24bar": 9, "22bar": 16, "15bar": 10, "9bar": 22, "3bar": 18, "8bar": 20, "16bar": 12, "17bar": 15, "14bar": 13, "10bar": 11, "20bar": 15, "19bar": 12, "18bar": 15, "13bar": 14, "21bar": 13}, "trigger_stats": {"dmi_flip": {"count": 387, "stop_rate": 71.3, "avg_profit": 5.96}, "srsi_bounce": {"count": 143, "stop_rate": 79.7, "avg_profit": 5.85}, "support_touch": {"count": 280, "stop_rate": 77.5, "avg_profit": 6.1}}, "direction": "LONG"}, {"symbol": "APT-USDT", "sl_pct": 2.0, "total_signals": 810, "stopped": 542, "survived": 268, "stop_rate": 66.9, "survive_rate": 33.1, "avg_max_profit": 5.41, "profit_buckets": {"<0%": 0, "0-2%": 22, "2-5%": 121, "5-10%": 102, ">10%": 23}, "stop_bar_dist": {"15bar": 16, ">24bar": 293, "12bar": 13, "7bar": 7, "24bar": 10, "22bar": 14, "9bar": 15, "5bar": 7, "4bar": 8, "8bar": 10, "19bar": 13, "10bar": 11, "18bar": 13, "11bar": 11, "14bar": 17, "16bar": 11, "6bar": 9, "23bar": 7, "21bar": 8, "20bar": 11, "17bar": 14, "2bar": 3, "13bar": 12, "3bar": 6, "1bar": 3}, "trigger_stats": {"dmi_flip": {"count": 387, "stop_rate": 62.3, "avg_profit": 5.23}, "srsi_bounce": {"count": 143, "stop_rate": 71.3, "avg_profit": 5.12}, "support_touch": {"count": 280, "stop_rate": 71.1, "avg_profit": 5.87}}, "direction": "LONG"}, {"symbol": "ORDI-USDT", "sl_pct": 0.5, "total_signals": 732, "stopped": 676, "survived": 56, "stop_rate": 92.3, "survive_rate": 7.7, "avg_max_profit": 16.76, "profit_buckets": {"<0%": 0, "0-2%": 0, "2-5%": 15, "5-10%": 26, ">10%": 15}, "stop_bar_dist": {"1bar": 187, "8bar": 20, ">24bar": 94, "13bar": 7, "12bar": 10, "11bar": 9, "9bar": 16, "4bar": 48, "2bar": 106, "7bar": 18, "3bar": 58, "22bar": 2, "10bar": 19, "5bar": 29, "17bar": 4, "21bar": 4, "20bar": 5, "19bar": 4, "18bar": 3, "6bar": 20, "14bar": 7, "16bar": 2, "15bar": 2, "24bar": 1, "23bar": 1}, "trigger_stats": {"dmi_flip": {"count": 355, "stop_rate": 91.0, "avg_profit": 11.31}, "srsi_bounce": {"count": 164, "stop_rate": 93.3, "avg_profit": 40.61}, "support_touch": {"count": 213, "stop_rate": 93.9, "avg_profit": 10.0}}, "direction": "LONG"}, {"symbol": "ORDI-USDT", "sl_pct": 1.0, "total_signals": 732, "stopped": 611, "survived": 121, "stop_rate": 83.5, "survive_rate": 16.5, "avg_max_profit": 13.37, "profit_buckets": {"<0%": 0, "0-2%": 9, "2-5%": 27, "5-10%": 49, ">10%": 36}, "stop_bar_dist": {"10bar": 19, ">24bar": 154, "5bar": 31, "21bar": 10, "12bar": 10, "11bar": 10, "3bar": 46, "7bar": 16, "16bar": 20, "20bar": 10, "14bar": 20, "9bar": 22, "18bar": 7, "15bar": 12, "4bar": 40, "8bar": 15, "6bar": 15, "13bar": 11, "22bar": 5, "23bar": 7, "24bar": 9, "17bar": 8, "2bar": 58, "1bar": 54, "19bar": 2}, "trigger_stats": {"dmi_flip": {"count": 355, "stop_rate": 81.7, "avg_profit": 10.51}, "srsi_bounce": {"count": 164, "stop_rate": 86.6, "avg_profit": 26.21}, "support_touch": {"count": 213, "stop_rate": 84.0, "avg_profit": 10.53}}, "direction": "LONG"}, {"symbol": "DOGE-USDT", "sl_pct": 0.5, "total_signals": 996, "stopped": 873, "survived": 123, "stop_rate": 87.7, "survive_rate": 12.3, "avg_max_profit": 3.91, "profit_buckets": {"<0%": 0, "0-2%": 17, "2-5%": 84, "5-10%": 16, ">10%": 6}, "stop_bar_dist": {"12bar": 19, "1bar": 58, "4bar": 50, "8bar": 34, "2bar": 86, "3bar": 70, "5bar": 53, ">24bar": 167, "21bar": 13, "11bar": 24, "10bar": 25, "9bar": 37, "7bar": 32, "6bar": 40, "13bar": 22, "20bar": 23, "15bar": 9, "16bar": 14, "14bar": 12, "24bar": 13, "23bar": 9, "22bar": 15, "19bar": 16, "17bar": 17, "18bar": 15}, "trigger_stats": {"dmi_flip": {"count": 378, "stop_rate": 86.8, "avg_profit": 4.18}, "srsi_bounce": {"count": 178, "stop_rate": 91.0, "avg_profit": 3.83}, "support_touch": {"count": 440, "stop_rate": 87.0, "avg_profit": 3.7}}, "direction": "LONG"}, {"symbol": "DOGE-USDT", "sl_pct": 1.0, "total_signals": 996, "stopped": 710, "survived": 286, "stop_rate": 71.3, "survive_rate": 28.7, "avg_max_profit": 3.51, "profit_buckets": {"<0%": 0, "0-2%": 67, "2-5%": 176, "5-10%": 34, ">10%": 9}, "stop_bar_dist": {">24bar": 319, "5bar": 25, "12bar": 16, "6bar": 27, "11bar": 25, "7bar": 17, "24bar": 11, "22bar": 11, "18bar": 16, "20bar": 12, "21bar": 14, "15bar": 16, "9bar": 24, "17bar": 13, "16bar": 18, "14bar": 16, "13bar": 22, "4bar": 22, "3bar": 17, "1bar": 9, "23bar": 13, "8bar": 16, "10bar": 9, "19bar": 17, "2bar": 5}, "trigger_stats": {"dmi_flip": {"count": 378, "stop_rate": 68.0, "avg_profit": 3.72}, "srsi_bounce": {"count": 178, "stop_rate": 75.3, "avg_profit": 3.77}, "support_touch": {"count": 440, "stop_rate": 72.5, "avg_profit": 3.19}}, "direction": "LONG"}, {"symbol": "DOGE-USDT", "sl_pct": 1.5, "total_signals": 995, "stopped": 589, "survived": 406, "stop_rate": 59.2, "survive_rate": 40.8, "avg_max_profit": 3.24, "profit_buckets": {"<0%": 0, "0-2%": 123, "2-5%": 229, "5-10%": 45, ">10%": 9}, "stop_bar_dist": {"22bar": 7, ">24bar": 380, "21bar": 9, "20bar": 9, "15bar": 12, "9bar": 14, "5bar": 7, "13bar": 12, "16bar": 12, "17bar": 7, "14bar": 10, "10bar": 10, "19bar": 7, "24bar": 7, "23bar": 10, "1bar": 1, "7bar": 9, "6bar": 11, "8bar": 10, "12bar": 15, "18bar": 10, "2bar": 4, "11bar": 9, "4bar": 4, "3bar": 3}, "trigger_stats": {"dmi_flip": {"count": 378, "stop_rate": 54.5, "avg_profit": 3.18}, "srsi_bounce": {"count": 177, "stop_rate": 61.6, "avg_profit": 3.6}, "support_touch": {"count": 440, "stop_rate": 62.3, "avg_profit": 3.15}}, "direction": "LONG"}, {"symbol": "DOGE-USDT", "sl_pct": 2.0, "total_signals": 995, "stopped": 486, "survived": 509, "stop_rate": 48.8, "survive_rate": 51.2, "avg_max_profit": 3.2, "profit_buckets": {"<0%": 0, "0-2%": 161, "2-5%": 280, "5-10%": 59, ">10%": 9}, "stop_bar_dist": {">24bar": 345, "21bar": 8, "20bar": 7, "15bar": 6, "9bar": 11, "5bar": 2, "14bar": 14, "24bar": 8, "23bar": 6, "17bar": 2, "13bar": 10, "4bar": 1, "16bar": 9, "10bar": 7, "19bar": 6, "22bar": 4, "12bar": 8, "18bar": 10, "2bar": 1, "8bar": 6, "7bar": 6, "11bar": 3, "6bar": 3, "3bar": 3}, "trigger_stats": {"dmi_flip": {"count": 378, "stop_rate": 45.0, "avg_profit": 3.09}, "srsi_bounce": {"count": 177, "stop_rate": 51.4, "avg_profit": 3.46}, "support_touch": {"count": 440, "stop_rate": 51.1, "avg_profit": 3.19}}, "direction": "LONG"}]'),curTab='heatmap',charts={},sortK='',sortAsc=true;
+var C=['#4da8f7','#2dd47c','#f5a623','#f5475d','#9b6dff','#ff7849','#e040fb','#00e5ff'];
+
+// Init with embedded data, then try to refresh from JSON
+D=D;refilter();
+fetch('dashboard_data.json').then(r=>r.json()).then(d=>{if(d&&d.length)D=d;refilter();}).catch(()=>{});
+
+function getFiltered(){
+    var chkS=[...document.querySelectorAll('.sidebar input[value]:checked')];
+    var syms=new Set(),sls=new Set(),dirs=new Set();
+    chkS.forEach(cb=>{
+        var v=cb.value;
+        if(v.includes('-'))syms.add(v);
+        else if(!isNaN(parseFloat(v)))sls.add(parseFloat(v));
+        else dirs.add(v);
+    });
+    return D.filter(d=>syms.has(d.symbol)&&sls.has(d.sl_pct)&&dirs.has(d.direction||'LONG'));
+}
+
+function refilter(){updateCards();redraw();if(curTab==='data')renderTable();if(curTab==='heatmap')drawHeatmap();if(curTab==='picks')drawPicks();
+    // Update total count
+    var f=getFiltered();
+    document.getElementById('totalItems').textContent=f.length;
+}
+
+function toggleGroup(grp,on){
+    var sel=grp==='main'?'#groupMain':grp==='alt'?'#groupAlt':'#groupSL';
+    document.querySelectorAll(sel+' input').forEach(cb=>{cb.checked=on;});
+    refilter();
+}
+
+function resetFilters(){
+    document.querySelectorAll('.sidebar input[type=checkbox]').forEach(cb=>cb.checked=true);
+    refilter();
+}
+
+function filterCell(sym,sl){
+    // Uncheck all, then check only this sym+sl
+    document.querySelectorAll('.sidebar input[type=checkbox]').forEach(cb=>cb.checked=false);
+    document.querySelectorAll('.sidebar input[value="'+sym+'"]').forEach(cb=>cb.checked=true);
+    document.querySelectorAll('.sidebar input[value="'+sl+'"]').forEach(cb=>cb.checked=true);
+    document.querySelector('.sidebar input[value="LONG"]').checked=true;
+    document.querySelector('.sidebar input[value="SHORT"]').checked=true;
+    refilter();
+    switchTab('picks');
+}
+
+function updateCards(){
+    var f=getFiltered(),el=document.getElementById('summaryCards');
+    if(!f.length){el.innerHTML=`<div class="panel empty">无匹配数据</div>`;return;}
+    var total=0,stopped=0,wtProfit=0,surv=0,bestSym='',bestSc=0;
+    f.forEach(x=>{total+=x.total_signals;stopped+=x.stopped;surv+=x.survived;wtProfit+=x.avg_max_profit*x.survived;});
+    var rate=surv/total*100,avgP=surv>0?wtProfit/surv:0;
+    f.forEach(x=>{var sc=x.survive_rate*x.avg_max_profit/100;if(sc>bestSc){bestSc=sc;bestSym=x.symbol+' '+ (x.sl_pct*100).toFixed(1)+'%';}});
+    var c1=rate>=70?`var(--green)`:rate>=45?`var(--yellow)`:`var(--red)`;
+    var c2=avgP>=2?`var(--green)`:avgP>=1?`var(--yellow)`:`var(--muted)`;
+    el.innerHTML=`<div class="card"><div class="l">总信号</div><div class="v" style="color:var(--accent)">${total.toLocaleString()}</div><div class="s">${f.length} 组数据</div></div>`+
+        `<div class="card"><div class="l">存活率</div><div class="v" style="color:${c1}">${rate.toFixed(1)}%</div><div class="s">${surv}/${total}</div></div>`+
+        `<div class="card"><div class="l">均盈</div><div class="v" style="color:${c2}">${avgP.toFixed(2)}%</div><div class="s">最佳: ${bestSym}</div></div>`+
+        `<div class="card"><div class="l">止损扫出</div><div class="v" style="color:var(--red)">${stopped.toLocaleString()}</div><div class="s">${(stopped/total*100).toFixed(1)}%</div></div>`;
+}
+
+// ── HEATMAP ──
+function drawHeatmap(){
+    var f=getFiltered(),el=document.getElementById('heatmapContainer');
+    if(!f.length){el.innerHTML=`<div class="empty">无数据</div>`;return;}
+    var syms=[...new Set(f.map(d=>d.symbol))].sort();
+    var sls=[...new Set(f.map(d=>d.sl_pct))].sort((a,b)=>a-b);
+    var matrix={};
+    f.forEach(d=>{if(!matrix[d.symbol])matrix[d.symbol]={};matrix[d.symbol][d.sl_pct]=d;});
+    var html=`<div class="heatmap" style="grid-template-columns:100px repeat(${sls.length},1fr)">`;
+    html+=`<div class="hdr">品种</div>`;
+    sls.forEach(s=>html+=`<div class="hdr">${(s*100).toFixed(1)}%</div>`);
+    syms.forEach(sym=>{
+        html+=`<div class="rowlabel">${sym}</div>`;
+        sls.forEach(sl=>{
+            var d=matrix[sym]?matrix[sym][sl]:null;
+            if(!d){html+=`<div class="cell" style="background:var(--bg);color:var(--muted)">-</div>`;return;}
+            var r=d.survive_rate,h=(r/100)*120;
+            var bg=`hsl(${h.toFixed(0)},70%,25%)`;
+            html+=`<div class="cell" style="background:${bg}" title="${sym} ${sl*100}% | 存活:${r.toFixed(1)}% | 均盈:${d.avg_max_profit.toFixed(2)}% | ${d.total_signals}信号" onclick="filterCell('${sym}',${sl})">${r.toFixed(0)}%</div>`;
+        });
+    });
+    html+=`</div>`;
+    el.innerHTML=html;
+}
+
+// ── OPTIMAL PICKS ──
+function drawPicks(){
+    var f=getFiltered(),tb=document.querySelector('#picksTable tbody');
+    tb.innerHTML='';
+    var bySym={};
+    f.forEach(d=>{if(!bySym[d.symbol])bySym[d.symbol]=[];bySym[d.symbol].push(d);});
+    var rows=[];
+    Object.entries(bySym).forEach(([sym,arr])=>{
+        arr.forEach(d=>{
+            var score=d.survive_rate*d.avg_max_profit/100;
+            var grade=score>=1.5?'A':score>=0.8?'B':'C';
+            var cls=grade==='A'?'rec-a':grade==='B'?'rec-b':'rec-c';
+            var posPct=grade==='A'?'80-95%':grade==='B'?'50-70%':'<40%';
+            var sc=d.survive_rate>=70?'green':d.survive_rate>=45?'yellow':'red';
+            var pc=d.avg_max_profit>=2?'green':'';
+            rows.push({sym:sym,sl:d.sl_pct,survive:d.survive_rate,profit:d.avg_max_profit,score:score,grade:grade,cls:cls,posPct:posPct,sc:sc,pc:pc});
+        });
+    });
+    rows.sort((a,b)=>b.score-a.score);
+    rows.forEach(r=>tb.innerHTML+=`<tr><td><strong>${r.sym}</strong></td><td>${(r.sl*100).toFixed(1)}%</td><td class="${r.sc}">${r.survive.toFixed(1)}%</td><td class="${r.pc}">${r.profit.toFixed(2)}%</td><td>${r.score.toFixed(2)}</td><td><span class="rec-badge ${r.cls}">${r.grade}</span></td><td>${r.posPct}</td></tr>`);
+}
+
+// ── CHARTS ──
+function destroyCharts(){for(var k in charts)charts[k].destroy();charts={};}
+
+function mkChart(id,type,data,opt){
+    var ctx=document.getElementById(id).getContext('2d');
+    charts[id]=new Chart(ctx,{type:type,data:data,options:opt});
+}
+
+function redraw(){
+    destroyCharts();
+    switch(curTab){
+        case'curve':drawCurve();break;
+        case'distribution':drawDist();break;
+        case'triggers':drawTrigStop();drawTrigProfit();break;
+        case'stoptime':drawStopT();break;
+    }
+}
+
+function drawCurve(){
+    var f=getFiltered();if(!f.length)return;
+    var groups={};
+    f.forEach(d=>{var k=d.symbol+' '+d.direction;if(!groups[k])groups[k]={};groups[k][d.sl_pct]=d.survive_rate;});
+    var slVals=[...new Set(f.map(d=>d.sl_pct))].sort((a,b)=>a-b);
+    mkChart('chartCurve','line',{
+        labels:slVals.map(s=>(s*100).toFixed(1)+'%'),
+        datasets:Object.entries(groups).map(([k,v],i)=>({label:k,data:slVals.map(s=>v[s]||null),borderColor:C[i%8],backgroundColor:'transparent',borderWidth:2.5,pointRadius:5,tension:.3}))
+    },{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#5e6d82',usePointStyle:true}},tooltip:{backgroundColor:'#0f1623',callbacks:{label:c=>c.dataset.label+': '+c.parsed.y.toFixed(1)+'%'}}},scales:{x:{ticks:{color:'#5e6d82'},title:{display:true,text:'止损宽度',color:'#5e6d82'}},y:{min:0,max:100,ticks:{color:'#5e6d82',callback:v=>v+'%'},title:{display:true,text:'存活率',color:'#5e6d82'}}}});
+}
+
+function drawDist(){
+    var f=getFiltered();if(!f.length)return;
+    var bks=['<0%','0-2%','2-5%','5-10%','>10%'];
+    mkChart('chartDist','bar',{
+        labels:bks,
+        datasets:f.map((d,i)=>({label:d.symbol+'('+(d.sl_pct*100).toFixed(1)+'%)',data:bks.map(b=>d.profit_buckets[b]||0),backgroundColor:C[i%8]+'88',borderColor:C[i%8],borderWidth:1,borderRadius:4}))
+    },{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#5e6d82',usePointStyle:true}}},scales:{x:{ticks:{color:'#5e6d82'}},y:{ticks:{color:'#5e6d82'},title:{display:true,text:'交易数',color:'#5e6d82'}}}});
+}
+
+function drawTrigStop(){
+    var f=getFiltered(),n={dmi_flip:'DMI翻多',srsi_bounce:'超卖反弹',support_touch:'支撑触碰'};
+    if(!f.length||!f[0].trigger_stats)return;
+    var tk=Object.keys(f[0].trigger_stats);
+    mkChart('chartTrigStop','bar',{labels:tk.map(t=>n[t]||t),datasets:f.map((d,i)=>({label:d.symbol+'('+(d.sl_pct*100).toFixed(1)+'%)',data:tk.map(t=>d.trigger_stats[t]?d.trigger_stats[t].stop_rate:0),backgroundColor:C[i%8]+'88',borderColor:C[i%8],borderWidth:1,borderRadius:4}))},{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#5e6d82',usePointStyle:true}},title:{display:true,text:'止损率 %',color:'var(--text)',font:{size:13}}},scales:{x:{ticks:{color:'#5e6d82'}},y:{ticks:{color:'#5e6d82',callback:v=>v+'%'},min:0,max:100}}});
+}
+
+function drawTrigProfit(){
+    var f=getFiltered(),n={dmi_flip:'DMI翻多',srsi_bounce:'超卖反弹',support_touch:'支撑触碰'};
+    if(!f.length||!f[0].trigger_stats)return;
+    var tk=Object.keys(f[0].trigger_stats);
+    mkChart('chartTrigProfit','bar',{labels:tk.map(t=>n[t]||t),datasets:f.map((d,i)=>({label:d.symbol+'('+(d.sl_pct*100).toFixed(1)+'%)',data:tk.map(t=>d.trigger_stats[t]?d.trigger_stats[t].avg_profit:0),backgroundColor:C[(i+4)%8]+'88',borderColor:C[(i+4)%8],borderWidth:1,borderRadius:4}))},{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#5e6d82',usePointStyle:true}},title:{display:true,text:'均盈 %',color:'var(--text)',font:{size:13}}},scales:{x:{ticks:{color:'#5e6d82'}},y:{ticks:{color:'#5e6d82',callback:v=>v+'%'}}}});
+}
+
+function drawStopT(){
+    var f=getFiltered(),m={};if(!f.length)return;
+    f.forEach(d=>Object.entries(d.stop_bar_dist||{}).forEach(e=>m[e[0]]=(m[e[0]]||0)+e[1]));
+    var s=Object.entries(m).sort((a,b)=>(parseInt(a[0].replace(/[^0-9]/g,''))||999)-(parseInt(b[0].replace(/[^0-9]/g,''))||999));
+    mkChart('chartStopTime','bar',{labels:s.map(e=>e[0]),datasets:[{label:'次数',data:s.map(e=>e[1]),backgroundColor:s.map((_,i)=>i<s.length-1?'rgba(245,71,93,.5)':'rgba(245,166,35,.7)'),borderColor:s.map((_,i)=>i<s.length-1?'#f5475d':'#f5a623'),borderWidth:1,borderRadius:4}]},{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#5e6d82'},title:{display:true,text:'入场后第N根K线',color:'#5e6d82'}},y:{ticks:{color:'#5e6d82'},title:{display:true,text:'次数',color:'#5e6d82'}}}});
+}
+
+// ── TAB ──
+function switchTab(t){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    event.target.classList.add('active');curTab=t;
+    ['heatmap','picks','curve','distribution','triggers','stoptime','data'].forEach(t=>{var e=document.getElementById('tab-'+t);if(e)e.style.display=t===curTab?'':'none';});
+    destroyCharts();
+    if(curTab==='heatmap')drawHeatmap();
+    else if(curTab==='picks')drawPicks();
+    else if(curTab==='curve')drawCurve();
+    else if(curTab==='distribution')drawDist();
+    else if(curTab==='triggers'){drawTrigStop();drawTrigProfit();}
+    else if(curTab==='stoptime')drawStopT();
+    else if(curTab==='data')renderTable();
+}
+
+// ── TABLE ──
+function buildRows(){
+    var f=getFiltered(),rows=[],n={dmi_flip:'DMI翻多',srsi_bounce:'超卖反弹',support_touch:'支撑触碰'};
+    f.forEach(d=>(d.sample_results||[]).forEach(r=>rows.push({symbol:d.symbol,sl_pct:d.sl_pct,trigger:n[r.trigger]||r.trigger,trend1h:r.trend_1h||'-',trend4h:r.trend_4h||'-',trend1d:r.trend_1d||'-',srsi:(r.srs_k||0).toFixed(1),stopped:r.stopped,profit:r.max_profit||0})));
+    return rows;
+}
+
+function sortTable(k){if(sortK===k)sortAsc=!sortAsc;else{sortK=k;sortAsc=true;}renderTable();}
+
+function renderTable(){
+    var rows=buildRows(),s=document.getElementById('tblSearch').value.toLowerCase();
+    if(s)rows=rows.filter(r=>JSON.stringify(r).toLowerCase().indexOf(s)>=0);
+    if(sortK)rows.sort((a,b)=>{var va=a[sortK],vb=b[sortK];if(typeof va==='string')va=va.toLowerCase();if(typeof vb==='string')vb=vb.toLowerCase();return va<vb?(sortAsc?-1:1):va>vb?(sortAsc?1:-1):0;});
+    var tb=document.querySelector('#dataTable tbody');tb.innerHTML='';
+    var lim=Math.min(rows.length,300);
+    for(var i=0;i<lim;i++){var r=rows[i];tb.innerHTML+='<tr><td>'+r.symbol+'</td><td>'+(r.sl_pct*100).toFixed(1)+'%</td><td>'+r.trigger+'</td><td>'+r.trend1h+'</td><td>'+r.trend4h+'</td><td>'+r.trend1d+'</td><td>'+r.srsi+'</td><td class="'+(r.stopped?'red':'green')+'">'+(r.stopped?'✗止损':'✓存活')+'</td><td class="'+(r.profit>=2?'green':r.profit>=0?'':'red')+'">'+r.profit.toFixed(2)+'%</td></tr>';}
+    document.getElementById('tblInfo').textContent='显示 '+lim+'/'+rows.length+' 条';
+}
+
+function exportCSV(){
+    var rows=buildRows(),csv='品种,止损%,触发,1H,4H,1D,SRSI_K,结果,最大浮盈%\n';
+    rows.forEach(r=>csv+=[r.symbol,(r.sl_pct*100).toFixed(1),r.trigger,r.trend1h,r.trend4h,r.trend1d,r.srsi,r.stopped?'止损':'存活',r.profit.toFixed(2)].join(',')+'\n');
+    var b=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}),a=document.createElement('a');
+    a.href=URL.createObjectURL(b);a.download='entry_analysis.csv';a.click();
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
+</script>
+</body>
+</html>
