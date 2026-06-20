@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
 cache/
-results/
+# results/ — tracked for GitHub Pages
 .DS_Store
 *.zip

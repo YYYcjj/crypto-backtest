@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "results/**"
+      - ".github/workflows/update-journal.yml"
   workflow_dispatch:
 
 jobs:
