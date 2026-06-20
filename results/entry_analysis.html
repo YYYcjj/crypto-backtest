@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>入场精度分析报告</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+       background:#0f172a; color:#e2e8f0; padding:24px; }
+h1 { font-size:24px; margin-bottom:8px; }
+.card { background:#1e293b; border-radius:12px; padding:20px; margin-bottom:20px; }
+.card h2 { color:#38bdf8; margin-bottom:12px; font-size:18px; }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+th, td { padding:8px 12px; text-align:center; border-bottom:1px solid #334155; }
+th { background:#0f172a; color:#94a3b8; }
+tr:hover { background:#334155; }
+.good { color:#22c55e; }
+.bad { color:#ef4444; }
+.warn { color:#f59e0b; }
+.bar { display:inline-block; height:14px; margin-right:4px;
+       background:#38bdf8; border-radius:2px; min-width:2px; }
+</style>
+</head>
+<body>
+<h1>📊 入场精度分析</h1>
+<p style="color:#94a3b8;margin-bottom:24px;">
+    15m 精确入场 | 高位周期趋势确认 | 止损测试
+</p>
+<div class="card">
+<h2>BTC-USDT — 止损 0%</h2>
+<p>
+  信号数: <strong>1200</strong> |
+  止损出局: <strong class="bad">918</strong> (76.5%) |
+  存活率: <strong class="bad">23.5%</strong> |
+  存活的平均最大浮盈: <strong class="good">1.91%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>180</td><td>63.8%</td>
+<td><span class="bar" style="width:127px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>93</td><td>33.0%</td>
+<td><span class="bar" style="width:66px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>9</td><td>3.2%</td>
+<td><span class="bar" style="width:6px"></span></td>
+</tr><tr>
+<td>>10%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>328</td>
+<td>78.0%</td>
+<td class="good">2.18%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>173</td>
+<td>79.2%</td>
+<td class="good">1.81%</td>
+</tr><tr>
+<td>support_touch</td><td>699</td>
+<td>75.1%</td>
+<td class="good">1.82%</td>
+</tr></table></div><div class="card">
+<h2>ETH-USDT — 止损 0%</h2>
+<p>
+  信号数: <strong>1057</strong> |
+  止损出局: <strong class="bad">891</strong> (84.3%) |
+  存活率: <strong class="bad">15.7%</strong> |
+  存活的平均最大浮盈: <strong class="good">3.16%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>78</td><td>47.0%</td>
+<td><span class="bar" style="width:94px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>54</td><td>32.5%</td>
+<td><span class="bar" style="width:65px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>31</td><td>18.7%</td>
+<td><span class="bar" style="width:37px"></span></td>
+</tr><tr>
+<td>>10%</td><td>3</td><td>1.8%</td>
+<td><span class="bar" style="width:3px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>339</td>
+<td>81.4%</td>
+<td class="good">3.15%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>152</td>
+<td>84.9%</td>
+<td class="good">3.94%</td>
+</tr><tr>
+<td>support_touch</td><td>566</td>
+<td>85.9%</td>
+<td class="good">2.94%</td>
+</tr></table></div><div class="card">
+<h2>SOL-USDT — 止损 0%</h2>
+<p>
+  信号数: <strong>1013</strong> |
+  止损出局: <strong class="bad">841</strong> (83.0%) |
+  存活率: <strong class="bad">17.0%</strong> |
+  存活的平均最大浮盈: <strong class="good">3.45%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>42</td><td>24.4%</td>
+<td><span class="bar" style="width:48px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>95</td><td>55.2%</td>
+<td><span class="bar" style="width:110px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>34</td><td>19.8%</td>
+<td><span class="bar" style="width:39px"></span></td>
+</tr><tr>
+<td>>10%</td><td>1</td><td>0.6%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>317</td>
+<td>79.8%</td>
+<td class="good">3.5%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>160</td>
+<td>84.4%</td>
+<td class="good">3.95%</td>
+</tr><tr>
+<td>support_touch</td><td>536</td>
+<td>84.5%</td>
+<td class="good">3.26%</td>
+</tr></table></div><div class="card">
+<h2>BTC-USDT — 止损 1%</h2>
+<p>
+  信号数: <strong>1200</strong> |
+  止损出局: <strong class="bad">596</strong> (49.7%) |
+  存活率: <strong class="warn">50.3%</strong> |
+  存活的平均最大浮盈: <strong class="good">1.73%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>407</td><td>67.4%</td>
+<td><span class="bar" style="width:134px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>182</td><td>30.1%</td>
+<td><span class="bar" style="width:60px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>15</td><td>2.5%</td>
+<td><span class="bar" style="width:5px"></span></td>
+</tr><tr>
+<td>>10%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>328</td>
+<td>56.1%</td>
+<td class="good">2.07%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>173</td>
+<td>52.0%</td>
+<td class="good">1.63%</td>
+</tr><tr>
+<td>support_touch</td><td>699</td>
+<td>46.1%</td>
+<td class="good">1.62%</td>
+</tr></table></div><div class="card">
+<h2>ETH-USDT — 止损 1%</h2>
+<p>
+  信号数: <strong>1058</strong> |
+  止损出局: <strong class="bad">689</strong> (65.1%) |
+  存活率: <strong class="bad">34.9%</strong> |
+  存活的平均最大浮盈: <strong class="good">2.66%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>193</td><td>52.3%</td>
+<td><span class="bar" style="width:104px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>124</td><td>33.6%</td>
+<td><span class="bar" style="width:67px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>49</td><td>13.3%</td>
+<td><span class="bar" style="width:26px"></span></td>
+</tr><tr>
+<td>>10%</td><td>3</td><td>0.8%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>339</td>
+<td>61.1%</td>
+<td class="good">2.8%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>152</td>
+<td>68.4%</td>
+<td class="good">2.86%</td>
+</tr><tr>
+<td>support_touch</td><td>567</td>
+<td>66.7%</td>
+<td class="good">2.5%</td>
+</tr></table></div><div class="card">
+<h2>SOL-USDT — 止损 1%</h2>
+<p>
+  信号数: <strong>1013</strong> |
+  止损出局: <strong class="bad">655</strong> (64.7%) |
+  存活率: <strong class="bad">35.3%</strong> |
+  存活的平均最大浮盈: <strong class="good">3.03%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>126</td><td>35.2%</td>
+<td><span class="bar" style="width:70px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>172</td><td>48.0%</td>
+<td><span class="bar" style="width:96px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>59</td><td>16.5%</td>
+<td><span class="bar" style="width:33px"></span></td>
+</tr><tr>
+<td>>10%</td><td>1</td><td>0.3%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>317</td>
+<td>63.1%</td>
+<td class="good">3.08%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>160</td>
+<td>61.3%</td>
+<td class="good">3.15%</td>
+</tr><tr>
+<td>support_touch</td><td>536</td>
+<td>66.6%</td>
+<td class="good">2.97%</td>
+</tr></table></div><div class="card">
+<h2>BTC-USDT — 止损 2%</h2>
+<p>
+  信号数: <strong>1200</strong> |
+  止损出局: <strong class="bad">384</strong> (32.0%) |
+  存活率: <strong class="warn">68.0%</strong> |
+  存活的平均最大浮盈: <strong class="good">1.64%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>567</td><td>69.5%</td>
+<td><span class="bar" style="width:139px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>231</td><td>28.3%</td>
+<td><span class="bar" style="width:56px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>18</td><td>2.2%</td>
+<td><span class="bar" style="width:4px"></span></td>
+</tr><tr>
+<td>>10%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>328</td>
+<td>40.9%</td>
+<td class="good">2.02%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>173</td>
+<td>33.5%</td>
+<td class="good">1.55%</td>
+</tr><tr>
+<td>support_touch</td><td>699</td>
+<td>27.5%</td>
+<td class="good">1.52%</td>
+</tr></table></div><div class="card">
+<h2>ETH-USDT — 止损 2%</h2>
+<p>
+  信号数: <strong>1057</strong> |
+  止损出局: <strong class="bad">538</strong> (50.9%) |
+  存活率: <strong class="bad">49.1%</strong> |
+  存活的平均最大浮盈: <strong class="good">2.42%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>291</td><td>56.1%</td>
+<td><span class="bar" style="width:112px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>168</td><td>32.4%</td>
+<td><span class="bar" style="width:64px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>57</td><td>11.0%</td>
+<td><span class="bar" style="width:22px"></span></td>
+</tr><tr>
+<td>>10%</td><td>3</td><td>0.6%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>339</td>
+<td>45.1%</td>
+<td class="good">2.56%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>152</td>
+<td>57.2%</td>
+<td class="good">2.56%</td>
+</tr><tr>
+<td>support_touch</td><td>566</td>
+<td>52.7%</td>
+<td class="good">2.29%</td>
+</tr></table></div><div class="card">
+<h2>SOL-USDT — 止损 2%</h2>
+<p>
+  信号数: <strong>1013</strong> |
+  止损出局: <strong class="bad">534</strong> (52.7%) |
+  存活率: <strong class="bad">47.3%</strong> |
+  存活的平均最大浮盈: <strong class="good">2.76%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>209</td><td>43.6%</td>
+<td><span class="bar" style="width:87px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>204</td><td>42.6%</td>
+<td><span class="bar" style="width:85px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>65</td><td>13.6%</td>
+<td><span class="bar" style="width:27px"></span></td>
+</tr><tr>
+<td>>10%</td><td>1</td><td>0.2%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>317</td>
+<td>48.3%</td>
+<td class="good">2.89%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>160</td>
+<td>55.0%</td>
+<td class="good">2.99%</td>
+</tr><tr>
+<td>support_touch</td><td>536</td>
+<td>54.7%</td>
+<td class="good">2.61%</td>
+</tr></table></div><div class="card">
+<h2>BTC-USDT — 止损 2%</h2>
+<p>
+  信号数: <strong>1200</strong> |
+  止损出局: <strong class="bad">273</strong> (22.8%) |
+  存活率: <strong class="good">77.2%</strong> |
+  存活的平均最大浮盈: <strong class="good">1.61%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>659</td><td>71.1%</td>
+<td><span class="bar" style="width:142px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>249</td><td>26.9%</td>
+<td><span class="bar" style="width:53px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>19</td><td>2.0%</td>
+<td><span class="bar" style="width:4px"></span></td>
+</tr><tr>
+<td>>10%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>328</td>
+<td>29.6%</td>
+<td class="good">1.9%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>173</td>
+<td>24.9%</td>
+<td class="good">1.51%</td>
+</tr><tr>
+<td>support_touch</td><td>699</td>
+<td>19.0%</td>
+<td class="good">1.51%</td>
+</tr></table></div><div class="card">
+<h2>ETH-USDT — 止损 2%</h2>
+<p>
+  信号数: <strong>1057</strong> |
+  止损出局: <strong class="bad">416</strong> (39.4%) |
+  存活率: <strong class="warn">60.6%</strong> |
+  存活的平均最大浮盈: <strong class="good">2.30%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>370</td><td>57.7%</td>
+<td><span class="bar" style="width:115px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>209</td><td>32.6%</td>
+<td><span class="bar" style="width:65px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>59</td><td>9.2%</td>
+<td><span class="bar" style="width:18px"></span></td>
+</tr><tr>
+<td>>10%</td><td>3</td><td>0.5%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>339</td>
+<td>36.6%</td>
+<td class="good">2.48%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>152</td>
+<td>46.1%</td>
+<td class="good">2.39%</td>
+</tr><tr>
+<td>support_touch</td><td>566</td>
+<td>39.2%</td>
+<td class="good">2.16%</td>
+</tr></table></div><div class="card">
+<h2>SOL-USDT — 止损 2%</h2>
+<p>
+  信号数: <strong>1013</strong> |
+  止损出局: <strong class="bad">418</strong> (41.3%) |
+  存活率: <strong class="warn">58.7%</strong> |
+  存活的平均最大浮盈: <strong class="good">2.68%</strong>
+</p>
+
+<h3>盈利分布（存活交易）</h3>
+<table>
+<tr><th>区间</th><th>数量</th><th>占比</th><th>分布</th></tr><tr>
+<td><0%</td><td>0</td><td>0.0%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr><tr>
+<td>0-2%</td><td>272</td><td>45.7%</td>
+<td><span class="bar" style="width:91px"></span></td>
+</tr><tr>
+<td>2-5%</td><td>248</td><td>41.7%</td>
+<td><span class="bar" style="width:83px"></span></td>
+</tr><tr>
+<td>5-10%</td><td>74</td><td>12.4%</td>
+<td><span class="bar" style="width:24px"></span></td>
+</tr><tr>
+<td>>10%</td><td>1</td><td>0.2%</td>
+<td><span class="bar" style="width:2px"></span></td>
+</tr></table>
+</div><div class="card">
+<h3>按触发类型</h3>
+<table>
+<tr><th>触发类型</th><th>信号数</th><th>止损率</th><th>均盈</th></tr><tr>
+<td>dmi_flip</td><td>317</td>
+<td>37.5%</td>
+<td class="good">2.84%</td>
+</tr><tr>
+<td>srsi_bounce</td><td>160</td>
+<td>41.9%</td>
+<td class="good">2.73%</td>
+</tr><tr>
+<td>support_touch</td><td>536</td>
+<td>43.3%</td>
+<td class="good">2.56%</td>
+</tr></table></div></body></html>
