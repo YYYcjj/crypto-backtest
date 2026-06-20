@@ -184,100 +184,186 @@ def merge_trades(existing, new_trades):
 
 
 def generate_excel(trades, output_path, month_label):
-    """生成 Excel"""
+    """生成 Excel — 清爽配色 + 顶部可视化汇总"""
     import openpyxl
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from openpyxl.chart import BarChart, Reference
+    from openpyxl.utils import get_column_letter
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = f"{month_label}月交易记录"
 
-    # 表头
-    ws.append(["交易日期", "Coin", "入场判断", "", "", "", "", "", "多/空",
-               "入场截图", "更多-1", "更多-2", "判断", "离场截图", "盈亏比", "交易得失分析", "整体截图", "", ""])
-    ws.append(["", "", "趋势方向", "", "", "RSI高低", "", "", "",
-               "", "", "", "", "", "", "", "", "", ""])
-    ws.append(["", "", "1H", "4H", "1D", "1H", "4H", "1D", "",
-               "", "", "", "", "", "", "", "", "", ""])
+    # ── 配色 ──
+    WHITE = "FFFFFF"
+    BG_STRIPE = "f8f9fa"
+    HEADER_BG = "e9ecef"
+    WIN_GREEN = "198754"
+    LOSE_RED = "dc3545"
+    SUCCESS_BG = "d1e7dd"
+    DANGER_BG = "f8d7da"
+    TEXT_MAIN = "212529"
+    TEXT_MUTED = "6c757d"
+    BORDER_COLOR = "dee2e6"
 
-    # 样式
-    hdr_fill = PatternFill("solid", fgColor="1a2436")
-    green_fill = PatternFill("solid", fgColor="142b14")
-    red_fill = PatternFill("solid", fgColor="2b1414")
-    border = Border(
-        left=Side("thin", "1a2436"), right=Side("thin", "1a2436"),
-        top=Side("thin", "1a2436"), bottom=Side("thin", "1a2436"),
-    )
-    wrap = Alignment(wrap_text=True, vertical="top")
+    hdr_fill = PatternFill("solid", fgColor=HEADER_BG)
+    border = Border(bottom=Side("thin", BORDER_COLOR))
+    hdr_border = Border(bottom=Side("medium", "0d6efd"))
+    center = Alignment(horizontal="center", vertical="center")
+    left = Alignment(vertical="center")
 
-    for row in [1, 2, 3]:
-        for col in range(1, 20):
-            ws.cell(row, col).fill = hdr_fill
-            ws.cell(row, col).font = Font(bold=True, color="64748b", size=10)
-            ws.cell(row, col).alignment = Alignment(horizontal="center")
+    total_pnl = sum(t["pnl_usdt"] for t in trades)
+    wins_list = [t for t in trades if t["pnl_usdt"] > 0]
+    losses_list = [t for t in trades if t["pnl_usdt"] <= 0]
+    win_rate = len(wins_list) / len(trades) * 100 if trades else 0
+    avg_win = sum(t["pnl_usdt"] for t in wins_list) / len(wins_list) if wins_list else 0
+    avg_loss = sum(t["pnl_usdt"] for t in losses_list) / len(losses_list) if losses_list else 0
+    best = max(trades, key=lambda t: t["pnl_usdt"]) if trades else None
+    worst = min(trades, key=lambda t: t["pnl_usdt"]) if trades else None
 
+    # ═══════════ 顶部可视化 ═══════════
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=9)
+    ws.cell(1, 1, f"📊 {month_label}月交易记录").font = Font(bold=True, size=18, color=TEXT_MAIN)
+    ws.row_dimensions[1].height = 36
+
+    # ── 统计卡片 ──
+    cards = [
+        ("总交易", f"{len(trades)} 笔"),
+        ("胜率", f"{win_rate:.0f}%"),
+        ("净P&L", f"{total_pnl:+.1f} USDT"),
+        ("最大盈利", f"+{best['pnl_usdt']:.1f}U {best['coin']}" if best else "-"),
+        ("最大亏损", f"{worst['pnl_usdt']:.1f}U {worst['coin']}" if worst else "-"),
+        ("盈亏比", f"{abs(avg_win/avg_loss):.1f}:1" if avg_loss else "-"),
+    ]
+    card_colors = [TEXT_MAIN, (WIN_GREEN if win_rate>=50 else LOSE_RED), (WIN_GREEN if total_pnl>0 else LOSE_RED), WIN_GREEN, LOSE_RED, WIN_GREEN]
+
+    for j, ((label, value), color) in enumerate(zip(cards, card_colors)):
+        col = 1 + j * 3
+        ws.merge_cells(start_row=3, start_column=col, end_row=3, end_column=col+1)
+        ws.cell(3, col, label).font = Font(size=9, color=TEXT_MUTED, bold=True)
+        ws.cell(3, col).alignment = center
+        ws.merge_cells(start_row=4, start_column=col, end_row=4, end_column=col+1)
+        ws.cell(4, col, value).font = Font(size=14, color=color, bold=True)
+        ws.cell(4, col).alignment = center
+    ws.row_dimensions[3].height = 16
+    ws.row_dimensions[4].height = 24
+
+    # ── 品种 P&L 柱状图 ──
+    coin_stats = {}
+    for t in trades:
+        c = t["coin"]
+        if c not in coin_stats:
+            coin_stats[c] = {"pnl": 0, "count": 0, "wins": 0}
+        coin_stats[c]["pnl"] += t["pnl_usdt"]
+        coin_stats[c]["count"] += 1
+        if t["pnl_usdt"] > 0:
+            coin_stats[c]["wins"] += 1
+
+    sorted_coins = sorted(coin_stats.items(), key=lambda x: x[1]["pnl"], reverse=True)
+    CD = 7  # Chart data row
+    ws.cell(CD, 1, "品种").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(CD, 2, "P&L(USDT)").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(CD, 3, "笔数").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(CD, 4, "胜率").font = Font(size=9, color=TEXT_MUTED)
+
+    for i, (coin, stats) in enumerate(sorted_coins):
+        r = CD + 1 + i
+        ws.cell(r, 1, coin).font = Font(size=10, color=TEXT_MAIN)
+        ws.cell(r, 2, round(stats["pnl"], 1)).font = Font(size=10)
+        ws.cell(r, 3, stats["count"]).font = Font(size=10, color=TEXT_MUTED)
+        wr = stats["wins"] / stats["count"] * 100
+        ws.cell(r, 4, f"{wr:.0f}%").font = Font(size=10, color=WIN_GREEN if wr>=50 else LOSE_RED)
+
+    CEND = CD + len(sorted_coins)
+
+    chart = BarChart()
+    chart.type = "col"
+    chart.style = 2
+    chart.title = None
+    chart.y_axis.title = "P&L (USDT)"
+    chart.legend = None
+    chart.width = 18
+    chart.height = 10
+
+    dref = Reference(ws, min_col=2, min_row=CD, max_col=2, max_row=CEND)
+    cref = Reference(ws, min_col=1, min_row=CD+1, max_row=CEND)
+    chart.add_data(dref, titles_from_data=True)
+    chart.set_categories(cref)
+    chart.shape = 4
+
+    from openpyxl.chart.series import DataPoint
+    for i in range(len(sorted_coins)):
+        pt = DataPoint(idx=i)
+        pt.graphicalProperties.solidFill = WIN_GREEN if sorted_coins[i][1]["pnl"] > 0 else LOSE_RED
+        chart.series[0].data_points.append(pt)
+
+    ws.add_chart(chart, f"F{CD}")
+
+    # Hide chart data
+    for r in range(CD, CEND + 1):
+        for c in range(1, 5):
+            ws.cell(r, c).value = None
+
+    # ═══════════ 明细表 ═══════════
+    TS = CEND + 2  # Table start
+
+    headers1 = ["交易日期","Coin","入场判断","","","","","","多/空","入场截图","更多-1","更多-2","判断","离场截图","盈亏比","交易得失分析","整体截图","",""]
+    headers2 = ["","","趋势方向","","","SRSI","","","","","","","","","","","","",""]
+    headers3 = ["","","1H","4H","1D","1H","4H","1D","","","","","","","","","","",""]
+
+    for hr, hd in enumerate([headers1, headers2, headers3]):
+        row = TS + hr
+        for col, val in enumerate(hd, 1):
+            c = ws.cell(row, col, val)
+            c.fill = hdr_fill
+            c.font = Font(bold=True, color=TEXT_MUTED, size=9)
+            c.alignment = center
+            c.border = hdr_border
+        ws.row_dimensions[row].height = 18
+
+    DS = TS + 3  # Data start
     for i, t in enumerate(trades):
-        row = i + 4
+        row = DS + i
         pnl = t["pnl_usdt"]
 
-        ws.cell(row, 1, t["entry_time"][:16]).font = Font(size=10)
-        ws.cell(row, 2, t["coin"]).font = Font(bold=True, size=11)
+        ws.cell(row, 1, t["entry_time"][:16]).font = Font(size=10, color=TEXT_MAIN)
+        ws.cell(row, 2, t["coin"]).font = Font(bold=True, size=10, color=TEXT_MAIN)
 
         for j, k in enumerate(["trend_1h", "trend_4h", "trend_1d"]):
             v = t.get(k, "?")
-            ws.cell(row, 3 + j, v).font = Font(
-                color="2dd47c" if v == "多" else ("f5475d" if v == "空" else "64748b"), size=10
-            )
+            ws.cell(row, 3+j, v).font = Font(color=WIN_GREEN if v=="多" else (LOSE_RED if v=="空" else TEXT_MUTED), size=10, bold=True)
 
         for j, k in enumerate(["srsi_1h", "srsi_4h", "srsi_1d"]):
             v = t.get(k, "?")
             if isinstance(v, (int, float)):
-                ws.cell(row, 6 + j, v).font = Font(
-                    color="f5475d" if v > 80 else ("2dd47c" if v < 20 else "f5a623"), size=10
-                )
+                ws.cell(row, 6+j, v).font = Font(color=LOSE_RED if v>80 else (WIN_GREEN if v<20 else "f59f00"), size=10)
             else:
-                ws.cell(row, 6 + j, v).font = Font(color="64748b", size=10)
+                ws.cell(row, 6+j, v).font = Font(color=TEXT_MUTED, size=10)
 
-        ws.cell(row, 9, t["direction"]).font = Font(
-            color="2dd47c" if "多" in t["direction"] else "f5475d", bold=True, size=10
-        )
+        ws.cell(row, 9, t["direction"]).font = Font(color=WIN_GREEN if "多" in t["direction"] else LOSE_RED, bold=True, size=10)
 
         pct = t.get("pnl_pct", 0)
-        ws.cell(row, 16, f"{pct:+.1f}%").font = Font(
-            color="2dd47c" if pnl > 0 else "f5475d", bold=True, size=10
-        )
+        ws.cell(row, 16, f"{pct:+.1f}%").font = Font(color=WIN_GREEN if pnl>0 else LOSE_RED, bold=True, size=10)
 
-        if pnl > 10:
-            note = "✅ 大盈利"
-        elif pnl > 3:
-            note = "✅ 盈利"
-        elif pnl > 0:
-            note = "✅ 小盈"
-        elif pnl > -4:
-            note = "⚠️ 小止损"
-        else:
-            note = "❌ 止损"
-        ws.cell(row, 17, note).font = Font(size=10)
+        note = "大盈利" if pnl>10 else ("盈利" if pnl>3 else ("小盈" if pnl>0 else ("小损" if pnl>-4 else "止损")))
+        ws.cell(row, 17, note).font = Font(size=9, color=WIN_GREEN if pnl>0 else LOSE_RED)
 
-        fill = green_fill if pnl > 0 else red_fill
+        row_fill = PatternFill("solid", fgColor=BG_STRIPE) if i%2==0 else PatternFill("solid", fgColor=WHITE)
         for col in range(1, 20):
-            ws.cell(row, col).fill = fill
+            ws.cell(row, col).fill = row_fill
             ws.cell(row, col).border = border
-            ws.cell(row, col).alignment = wrap
+            ws.cell(row, col).alignment = left
 
-    for col, w in {1: 16, 2: 10, 3: 6, 4: 6, 5: 6, 6: 8, 7: 8, 8: 8, 9: 8, 16: 12, 17: 16}.items():
-        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = w
+        ws.cell(row, 16).fill = PatternFill("solid", fgColor=SUCCESS_BG if pnl>0 else DANGER_BG)
 
-    # 汇总行
-    rr = len(trades) + 5
-    total = sum(t["pnl_usdt"] for t in trades)
-    wins = sum(1 for t in trades if t["pnl_usdt"] > 0)
-    ws.cell(rr, 1, "汇总").font = Font(bold=True, size=12)
-    ws.cell(rr, 4, f"{len(trades)}笔 | 胜{wins}/负{len(trades)-wins} | P&L:{total:+.1f}U").font = Font(bold=True, size=11)
+    # Column widths
+    for col, w in {1:16,2:10,3:5,4:5,5:5,6:6,7:6,8:6,9:6,16:10,17:10}.items():
+        ws.column_dimensions[get_column_letter(col)].width = w
+
+    ws.freeze_panes = ws.cell(DS, 1)
 
     wb.save(output_path)
     return output_path
-
 
 def main():
     now = datetime.now(timezone.utc) + timedelta(hours=8)  # CST
