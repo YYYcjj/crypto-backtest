@@ -362,8 +362,230 @@ def generate_excel(trades, output_path, month_label):
 
     ws.freeze_panes = ws.cell(DS, 1)
 
+    # ═══════════ Sheet 2: 可视化仪表盘 ═══════════
+    ws2 = wb.create_sheet("可视化")
+    _build_viz_sheet(ws2, trades, month_label)
+
     wb.save(output_path)
     return output_path
+
+
+def _build_viz_sheet(ws, trades, month_label):
+    """第二页：多图表可视化"""
+    import openpyxl
+    from openpyxl.styles import Font
+    from openpyxl.chart import BarChart, PieChart, LineChart, Reference
+    from openpyxl.chart.series import DataPoint
+    from openpyxl.chart.label import DataLabelList
+    from openpyxl.utils import get_column_letter
+
+    WHITE = "FFFFFF"
+    BG = "f8f9fa"
+    WIN_GREEN = "198754"
+    LOSE_RED = "dc3545"
+    TEXT_MAIN = "212529"
+    TEXT_MUTED = "6c757d"
+
+    ws.sheet_properties.tabColor = "0d6efd"
+
+    ws.merge_cells("A1:G1")
+    ws.cell(1, 1, f"📊 {month_label}月交易可视化").font = Font(bold=True, size=16, color=TEXT_MAIN)
+    ws.row_dimensions[1].height = 30
+
+    # ── Chart 1: 日 P&L 走势 ──
+    ws.cell(3, 1, "日期").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(3, 2, "日P&L").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(3, 3, "累计P&L").font = Font(size=9, color=TEXT_MUTED)
+
+    from collections import defaultdict
+    daily = defaultdict(float)
+    for t in trades:
+        day = t["entry_time"][:10]
+        daily[day] += t["pnl_usdt"]
+
+    sorted_days = sorted(daily.items())
+    cum = 0
+    for i, (day, pnl) in enumerate(sorted_days):
+        cum += pnl
+        ws.cell(4 + i, 1, day[5:]).font = Font(size=9)
+        ws.cell(4 + i, 2, round(pnl, 1)).font = Font(size=9)
+        ws.cell(4 + i, 3, round(cum, 1)).font = Font(size=9)
+    D_END = 3 + len(sorted_days)
+
+    line_chart = LineChart()
+    line_chart.title = "累计 P&L 走势"
+    line_chart.y_axis.title = "USDT"
+    line_chart.style = 2
+    line_chart.width = 22
+    line_chart.height = 12
+    dref = Reference(ws, min_col=3, min_row=3, max_col=3, max_row=D_END)
+    cref = Reference(ws, min_col=1, min_row=4, max_row=D_END)
+    line_chart.add_data(dref, titles_from_data=True)
+    line_chart.set_categories(cref)
+    line_chart.series[0].graphicalProperties.solidFill = "0d6efd"
+    line_chart.series[0].graphicalProperties.line.solidFill = "0d6efd"
+    ws.add_chart(line_chart, "E3")
+
+    # Hide data
+    for r in range(3, D_END + 1):
+        ws.cell(r, 1).value = None
+        ws.cell(r, 2).value = None
+        ws.cell(r, 3).value = None
+
+    # ── Chart 2: 胜/负 饼图 ──
+    PIE_ROW = D_END + 2
+    wins = sum(1 for t in trades if t["pnl_usdt"] > 0)
+    losses = len(trades) - wins
+    ws.cell(PIE_ROW, 1, "结果").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(PIE_ROW, 2, "笔数").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(PIE_ROW + 1, 1, "盈利").font = Font(size=10)
+    ws.cell(PIE_ROW + 1, 2, wins).font = Font(size=10)
+    ws.cell(PIE_ROW + 2, 1, "亏损").font = Font(size=10)
+    ws.cell(PIE_ROW + 2, 2, losses).font = Font(size=10)
+
+    pie = PieChart()
+    pie.title = f"胜率 {wins/len(trades)*100:.0f}%"
+    pie.width = 14
+    pie.height = 12
+    pref = Reference(ws, min_col=2, min_row=PIE_ROW, max_col=2, max_row=PIE_ROW+2)
+    cref2 = Reference(ws, min_col=1, min_row=PIE_ROW+1, max_row=PIE_ROW+2)
+    pie.add_data(pref, titles_from_data=True)
+    pie.set_categories(cref2)
+    pie.dataLabels = DataLabelList()
+    pie.dataLabels.showPercent = True
+    pie.dataLabels.showVal = False
+    pt0 = DataPoint(idx=0)
+    pt0.graphicalProperties.solidFill = WIN_GREEN
+    pt1 = DataPoint(idx=1)
+    pt1.graphicalProperties.solidFill = LOSE_RED
+    pie.series[0].data_points = [pt0, pt1]
+    ws.add_chart(pie, f"E{PIE_ROW}")
+
+    # Hide
+    for r in range(PIE_ROW, PIE_ROW + 3):
+        ws.cell(r, 1).value = None
+        ws.cell(r, 2).value = None
+
+    # ── Chart 3: 方向 vs 结果 ──
+    DIR_ROW = PIE_ROW + 4
+    ws.cell(DIR_ROW, 1, "方向").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(DIR_ROW, 2, "盈利").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(DIR_ROW, 3, "亏损").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(DIR_ROW, 4, "胜率").font = Font(size=9, color=TEXT_MUTED)
+
+    for j, direction in enumerate(["做多", "做空"]):
+        subset = [t for t in trades if t["direction"] == direction]
+        w = sum(1 for t in subset if t["pnl_usdt"] > 0)
+        l = len(subset) - w
+        wr = w / len(subset) * 100 if subset else 0
+        ws.cell(DIR_ROW+1+j, 1, direction).font = Font(size=10)
+        ws.cell(DIR_ROW+1+j, 2, w).font = Font(size=10, color=WIN_GREEN)
+        ws.cell(DIR_ROW+1+j, 3, l).font = Font(size=10, color=LOSE_RED)
+        ws.cell(DIR_ROW+1+j, 4, f"{wr:.0f}%").font = Font(size=10, bold=True, color=WIN_GREEN if wr>=50 else LOSE_RED)
+
+    bar2 = BarChart()
+    bar2.type = "col"
+    bar2.style = 2
+    bar2.title = "做多 vs 做空"
+    bar2.width = 14
+    bar2.height = 12
+    bar2.legend = None
+    dref2 = Reference(ws, min_col=2, min_row=DIR_ROW, max_col=2, max_row=DIR_ROW+2)
+    cref3 = Reference(ws, min_col=1, min_row=DIR_ROW+1, max_row=DIR_ROW+2)
+    bar2.add_data(dref2, titles_from_data=True)
+    bar2.set_categories(cref3)
+    ws.add_chart(bar2, f"E{DIR_ROW}")
+
+    for r in range(DIR_ROW, DIR_ROW + 3):
+        for c in range(1, 5):
+            ws.cell(r, c).value = None
+
+    # ── Chart 4: 趋势对齐 vs 存活率 ──
+    TREND_ROW = DIR_ROW + 4
+    ws.cell(TREND_ROW, 1, "趋势对齐").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(TREND_ROW, 2, "笔数").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(TREND_ROW, 3, "胜率").font = Font(size=9, color=TEXT_MUTED)
+
+    trend_groups = {"全多":[], "全空":[], "混合":[]}
+    for t in trades:
+        t1 = t.get("trend_1h", "?")
+        t4 = t.get("trend_4h", "?")
+        td = t.get("trend_1d", "?")
+        if t1 == "多" and t4 == "多" and td == "多":
+            trend_groups["全多"].append(t)
+        elif t1 == "空" and t4 == "空" and td == "空":
+            trend_groups["全空"].append(t)
+        else:
+            trend_groups["混合"].append(t)
+
+    for j, (label, subset) in enumerate(trend_groups.items()):
+        w = sum(1 for t in subset if t["pnl_usdt"] > 0)
+        wr = w / len(subset) * 100 if subset else 0
+        ws.cell(TREND_ROW+1+j, 1, label).font = Font(size=10)
+        ws.cell(TREND_ROW+1+j, 2, len(subset)).font = Font(size=10)
+        ws.cell(TREND_ROW+1+j, 3, f"{wr:.0f}%").font = Font(size=10, bold=True, color=WIN_GREEN if wr>=50 else LOSE_RED)
+
+    bar3 = BarChart()
+    bar3.type = "bar"
+    bar3.style = 2
+    bar3.title = "趋势对齐胜率"
+    bar3.width = 14
+    bar3.height = 10
+    bar3.legend = None
+    dref3 = Reference(ws, min_col=3, min_row=TREND_ROW, max_col=3, max_row=TREND_ROW+3)
+    cref4 = Reference(ws, min_col=1, min_row=TREND_ROW+1, max_row=TREND_ROW+3)
+    bar3.add_data(dref3, titles_from_data=True)
+    bar3.set_categories(cref4)
+    ws.add_chart(bar3, f"E{TREND_ROW}")
+
+    for r in range(TREND_ROW, TREND_ROW + 4):
+        for c in range(1, 4):
+            ws.cell(r, c).value = None
+
+    # ── Chart 5: P&L 分布 ──
+    DIST_ROW = TREND_ROW + 5
+    ws.cell(DIST_ROW, 1, "盈亏区间").font = Font(size=9, color=TEXT_MUTED)
+    ws.cell(DIST_ROW, 2, "笔数").font = Font(size=9, color=TEXT_MUTED)
+
+    buckets = {"<-10":0, "-10~-5":0, "-5~0":0, "0~+5":0, "+5~+15":0, ">+15":0}
+    for t in trades:
+        p = t["pnl_usdt"]
+        if p < -10: buckets["<-10"] += 1
+        elif p < -5: buckets["-10~-5"] += 1
+        elif p < 0: buckets["-5~0"] += 1
+        elif p < 5: buckets["0~+5"] += 1
+        elif p < 15: buckets["+5~+15"] += 1
+        else: buckets[">+15"] += 1
+
+    bucket_colors = [LOSE_RED, LOSE_RED, LOSE_RED, WIN_GREEN, WIN_GREEN, WIN_GREEN]
+    for j, (label, count) in enumerate(buckets.items()):
+        ws.cell(DIST_ROW+1+j, 1, label).font = Font(size=10)
+        ws.cell(DIST_ROW+1+j, 2, count).font = Font(size=10, bold=True, color=TEXT_MAIN)
+
+    bar4 = BarChart()
+    bar4.type = "col"
+    bar4.style = 2
+    bar4.title = "P&L 分布"
+    bar4.width = 14
+    bar4.height = 10
+    bar4.legend = None
+    dref4 = Reference(ws, min_col=2, min_row=DIST_ROW, max_col=2, max_row=DIST_ROW+6)
+    cref5 = Reference(ws, min_col=1, min_row=DIST_ROW+1, max_row=DIST_ROW+6)
+    bar4.add_data(dref4, titles_from_data=True)
+    bar4.set_categories(cref5)
+    for j, bc in enumerate(bucket_colors):
+        pt = DataPoint(idx=j)
+        pt.graphicalProperties.solidFill = bc
+        bar4.series[0].data_points.append(pt)
+    ws.add_chart(bar4, f"E{DIST_ROW}")
+
+    for r in range(DIST_ROW, DIST_ROW + 7):
+        for c in range(1, 3):
+            ws.cell(r, c).value = None
+
+    # Column widths for viz sheet
+    for c in range(1, 5):
+        ws.column_dimensions[get_column_letter(c)].width = 12
 
 def main():
     now = datetime.now(timezone.utc) + timedelta(hours=8)  # CST
