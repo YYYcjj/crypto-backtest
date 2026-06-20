@@ -128,7 +128,10 @@ var cd=document.getElementById('dc-'+idx);cd.innerHTML='';
 
 // Info bar
 var div=document.createElement('div');div.className='detail-info';
-var hm=p.hold_mae||0,hx=p.hold_mfe||0,pm=p.post_mae||0,px=p.post_mfe||0;div.innerHTML='<span>📌 持仓 <strong class="red">亏损: '+hm+'%</strong> <strong class="green">盈利: '+hx+'%</strong></span>+'<span style="border-left:2px dashed #dc3545;padding-left:8px">📅 离场后2天 <strong class="red">亏损: '+pm+'%</strong> <strong class="green">盈利: '+px+'%</strong></span>';
+var hm=p.hold_mae||0,hx=p.hold_mfe||0,pm=p.post_mae||0,px=p.post_mfe||0;
+var s1='<span>持仓 <strong style=color:#dc3545>亏损: '+hm+'%</strong> <strong style=color:#198754>盈利: '+hx+'%</strong></span>';
+var s2='<span style=border-left:2px dashed #dc3545;padding-left:8px>离场后2天 <strong style=color:#dc3545>亏损: '+pm+'%</strong> <strong style=color:#198754>盈利: '+px+'%</strong></span>';
+div.innerHTML=s1+s2;
 cd.appendChild(div);
 
 // === PRICE CHART (top) ===
