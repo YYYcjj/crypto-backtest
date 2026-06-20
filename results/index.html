@@ -119,7 +119,7 @@ var t=D[idx],p=PATHS[idx];
 if(!p||!p.bars||!p.bars.length){document.getElementById('dc-'+idx).innerHTML='<div style="padding:20px">无数据</div>';return}
 
 var bars=p.bars, srsi=p.srsi||[], times=p.time_labels||[], exitIdx=p.exit_idx, entryIdx=p.entry_idx||48;
-var mae=p.mae_val, mfe=p.mfe_val, maeIdx=p.mae_idx, mfeIdx=p.mfe_idx;
+
 
 // Build labels as time
 var labels=times.map(function(t,i){return i%6===0?t:''});
@@ -128,7 +128,7 @@ var cd=document.getElementById('dc-'+idx);cd.innerHTML='';
 
 // Info bar
 var div=document.createElement('div');div.className='detail-info';
-div.innerHTML='<span>持仓 <strong class="red">最大亏损: '+mae+'%</strong></span><span><strong class="green">最大盈利: '+mfe+'%</strong></span><span>离场后2天走势</span>';
+var hm=p.hold_mae||0,hx=p.hold_mfe||0,pm=p.post_mae||0,px=p.post_mfe||0;div.innerHTML='<span>📌 持仓 <strong class="red">亏损: '+hm+'%</strong> <strong class="green">盈利: '+hx+'%</strong></span>+'<span style="border-left:2px dashed #dc3545;padding-left:8px">📅 离场后2天 <strong class="red">亏损: '+pm+'%</strong> <strong class="green">盈利: '+px+'%</strong></span>';
 cd.appendChild(div);
 
 // === PRICE CHART (top) ===
@@ -136,8 +136,8 @@ var pcDiv=document.createElement('div');pcDiv.className='price-chart';
 cd.appendChild(pcDiv);
 var pcCv=document.createElement('canvas');pcDiv.appendChild(pcCv);
 
-var maeData=Array(bars.length).fill(null);maeData[maeIdx]=mae;
-var mfeData=Array(bars.length).fill(null);mfeData[mfeIdx]=mfe;
+var maeData=Array(bars.length).fill(null);var ei=p.entry_idx||48,xi=p.exit_idx||bars.length;var holdBars=bars.slice(ei,xi+1);var holdMin=Math.min.apply(null,holdBars);var holdMax=Math.max.apply(null,holdBars);var hmi=bars.indexOf(holdMin,ei);var hxi=bars.indexOf(holdMax,ei);maeData[hmi>=0?hmi:ei]=holdMin;
+var mfeData=Array(bars.length).fill(null);mfeData[hxi>=0?hxi:ei]=holdMax;
 
 priceChart=new Chart(pcCv.getContext('2d'),{
 type:'line',data:{labels:labels,datasets:[
