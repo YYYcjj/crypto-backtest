@@ -1,85 +1,31 @@
 name: 每日更新交易日记
 
 on:
-  push:
-    paths:
-      - "update_trading_journal.py"
-      - ".github/workflows/update-journal.yml"
-      - ".github/workflows/deploy-journal.yml"
-  schedule:
-    - cron: "0 1 * * *"  # 每天 UTC 1:00 = CST 9:00
-  workflow_dispatch:      # 手动触发
+  workflow_dispatch:
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     permissions:
       contents: write
-      pages: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install deps
-        run: pip install openpyxl requests
-
-      - name: Run journal update
-        env:
-          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
-          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
-          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
+      - name: Deploy to Pages branch
         run: |
-          python update_trading_journal.py
-          echo "=== Results ==="
-          ls -la results/
-          echo "=== Excel check ==="
-          python -c "
-          import openpyxl
-          wb = openpyxl.load_workbook('results/交易记录_06.xlsx')
-          ws = wb.active
-          print(f'Rows: {ws.max_row}')
-          for r in range(4, min(8, ws.max_row+1)):
-              print([ws.cell(r,c).value for c in [1,2,3,16]])
-          print('Summary:', ws.cell(ws.max_row,4).value)
-          "
-
-      - name: Upload Excel
-        uses: actions/upload-artifact@v4
-        with:
-          name: 交易记录
-          path: results/交易记录_*.xlsx
-          retention-days: 90
-
-      - name: Deploy to Pages
-        run: |
-          # Show what we have
-          ls -la results/
-          
-          # Deploy to pages branch
+          ls results/
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          
-          # Copy results to a temp dir
           mkdir -p /tmp/pages
-          cp results/*.xlsx /tmp/pages/
-          
-          # Checkout pages branch
-          git fetch origin pages
-          git checkout pages
-          
-          # Copy files in
-          cp /tmp/pages/*.xlsx .
-          
-          # Commit and push
-          git add *.xlsx
-          git diff --cached --stat
+          cp results/*.xlsx /tmp/pages/ 2>/dev/null
+          cp results/*.html /tmp/pages/ 2>/dev/null
+          git fetch origin pages 2>/dev/null || git checkout --orphan pages
+          git checkout pages 2>/dev/null || git checkout --orphan pages
+          cp /tmp/pages/* .
+          git add *.xlsx *.html 2>/dev/null
           git commit -m "📊 更新 $(date +%Y-%m-%d)" || echo "No changes"
-          git push origin pages
+          git push origin pages --force
 
