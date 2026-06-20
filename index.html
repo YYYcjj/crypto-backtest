@@ -96,7 +96,7 @@ new Chart(ctx4,{type:'bar',data:{labels:cd.map(function(x){return x.day}),datase
 
 function RT(){
 var q=document.getElementById('search').value.toLowerCase(),d=document.getElementById('fDir').value,r=document.getElementById('fRes').value;
-var f=D.filter(function(t){if(q&&!t.coin.toLowerCase().includes(q))return false;if(d!=='all'&&t.direction!==d)return false;if(r==='win'&&t.pnl_usdt<=0)return false;if(r==='lose'&&t.pnl_usdt>=0)return false;return true});
+var f=D.slice().reverse().filter(function(t){if(q&&!t.coin.toLowerCase().includes(q))return false;if(d!=='all'&&t.direction!==d)return false;if(r==='win'&&t.pnl_usdt<=0)return false;if(r==='lose'&&t.pnl_usdt>=0)return false;return true});
 document.getElementById('rowCount').textContent=f.length+'/'+D.length+'笔';
 var tb='';
 f.forEach(function(t){var oi=D.indexOf(t),db=t.direction==='做多'?'badge-long':'badge-short',rb=t.pnl_usdt>0?'badge-win':'badge-lose';
