@@ -29,10 +29,25 @@ def get_month_range(year, month):
     return start, end
 
 
+def get_okx_credentials():
+    """获取 OKX API 凭证：优先环境变量，fallback MCP 配置"""
+    # GitHub Actions 环境变量
+    if os.environ.get("OKX_API_KEY"):
+        return {
+            "OKX_API_KEY": os.environ["OKX_API_KEY"],
+            "OKX_API_SECRET": os.environ["OKX_API_SECRET"],
+            "OKX_API_PASSPHRASE": os.environ["OKX_API_PASSPHRASE"],
+        }
+    # 本地 MCP 配置
+    if os.path.exists(MCP_CONFIG):
+        with open(MCP_CONFIG) as f:
+            return json.load(f)["mcpServers"]["okx-mcp"]["env"]
+    raise RuntimeError("未找到 OKX API 凭证。请设置环境变量或配置 MCP。")
+
+
 def okx_get(path):
     """调用 OKX API v5"""
-    with open(MCP_CONFIG) as f:
-        env = json.load(f)["mcpServers"]["okx-mcp"]["env"]
+    env = get_okx_credentials()
     now = datetime.now(timezone.utc)
     ts = now.strftime("%Y-%m-%dT%H:%M:%S.") + f"{now.microsecond // 1000:03d}Z"
     sign = base64.b64encode(

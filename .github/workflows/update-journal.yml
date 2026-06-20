@@ -1,0 +1,37 @@
+name: 每日更新交易日记
+
+on:
+  schedule:
+    - cron: "0 1 * * *"  # 每天 UTC 1:00 = CST 9:00
+  workflow_dispatch:      # 手动触发
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install openpyxl requests
+
+      - name: Run journal update
+        env:
+          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
+          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
+        run: python update_trading_journal.py
+
+      - name: Upload Excel
+        uses: actions/upload-artifact@v4
+        with:
+          name: 交易记录
+          path: results/交易记录_*.xlsx
+          retention-days: 90
