@@ -35,7 +35,20 @@ jobs:
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
           OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
-        run: python update_trading_journal.py
+        run: |
+          python update_trading_journal.py
+          echo "=== Results ==="
+          ls -la results/
+          echo "=== Excel check ==="
+          python -c "
+          import openpyxl
+          wb = openpyxl.load_workbook('results/交易记录_06.xlsx')
+          ws = wb.active
+          print(f'Rows: {ws.max_row}')
+          for r in range(4, min(8, ws.max_row+1)):
+              print([ws.cell(r,c).value for c in [1,2,3,16]])
+          print('Summary:', ws.cell(ws.max_row,4).value)
+          "
 
       - name: Upload Excel
         uses: actions/upload-artifact@v4
