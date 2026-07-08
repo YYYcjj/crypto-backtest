@@ -1,1 +1,1 @@
-var ALL_DATA={1:[],2:[],3:[],4:[],5:[],6:[]};
+var ALL_DATA = {1:[{coin:"FARTCOIN-USDT",direction:"做空",entry_price:0.408667,exit_price:0.4192,pnl_usdt:-0.32,pnl_pct:-2.51,entry_time:"2026-01-08 05:41",exit_time:"2026-01-09 15:35",entry_ts:1767850876393,trend_1h:'?',srsi_1h:'?',trend_4h:'空',srsi_4h:2.1,trend_1d:'多',srsi_1d:96,mae_pct:0,mfe_pct:0}]};
