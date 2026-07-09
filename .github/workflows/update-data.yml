@@ -26,7 +26,17 @@ jobs:
 
       - name: 恢复完整历史数据
         run: |
-          if [ -f "crypto-backtest/results/journal_trades.b64" ]; then
+          if [ -f "results/journal_trades.b64" ]; then
+            python3 -c "
+import base64, zlib, json
+b64 = open('results/journal_trades.b64').read()
+data = zlib.decompress(base64.b64decode(b64))
+trades = json.loads(data)
+print(f'恢复 {len(trades)} 笔历史交易')
+with open('results/journal_trades.json', 'w') as f:
+    json.dump(trades, f, ensure_ascii=False)
+"
+          elif [ -f "crypto-backtest/results/journal_trades.b64" ]; then
             python3 -c "
 import base64, zlib, json
 b64 = open('crypto-backtest/results/journal_trades.b64').read()
@@ -45,13 +55,11 @@ with open('crypto-backtest/results/journal_trades.json', 'w') as f:
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
           OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
-        run: |
-          cd crypto-backtest
-          python3 update_trading_journal.py $(date +%-m)
+        run: python3 update_trading_journal.py $(date +%-m)
 
       - name: 生成网页数据文件
         run: |
-          cd crypto-backtest/results
+          cd results
           python3 << 'PYEOF'
           import json
           with open('journal_trades.json') as f:
@@ -95,7 +103,7 @@ with open('crypto-backtest/results/journal_trades.json', 'w') as f:
           for g, lines in groups.items():
               if lines:
                   content = ';'.join(lines) + ';'
-                  with open(f'../../docs/data_{g}.js','w') as f:
+                  with open(f'../docs/data_{g}.js','w') as f:
                       f.write(content)
                   print(f'  data_{g}.js: {len(content)} bytes')
 
@@ -108,7 +116,7 @@ with open('crypto-backtest/results/journal_trades.json', 'w') as f:
           git config user.name "Trading Bot"
           git config user.email "bot@trading.example.com"
           git add docs/data_*.js
-          git add crypto-backtest/results/journal_trades.json
+          git add results/journal_trades.json
           if git diff --staged --quiet; then
             echo "无数据变更"
           else
