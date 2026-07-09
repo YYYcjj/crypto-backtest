@@ -2,8 +2,8 @@ name: 每天自动更新交易数据
 
 on:
   schedule:
-    - cron: '0 0 * * *'   # 每天 UTC 00:00 (北京时间08:00)
-  workflow_dispatch:      # 手动触发
+    - cron: '0 0 * * *'
+  workflow_dispatch:
   push:
     paths:
       - 'trigger-now.txt'
@@ -22,16 +22,14 @@ jobs:
           python-version: '3.11'
 
       - name: 安装依赖
-        run: pip install requests
+        run: pip install requests openpyxl
 
       - name: 删除触发器
         run: |
           if [ -f trigger-now.txt ]; then
             rm trigger-now.txt
-            git config user.name "Trading Bot"
-            git config user.email "bot@trading.example.com"
-            git add trigger-now.txt
-            git commit -m "Clear trigger" || true
+            git config user.name "Bot" && git config user.email "bot@t.example.com"
+            git add trigger-now.txt && git commit -m "rm trigger" || true
           fi
 
       - name: 拉取交易数据
@@ -39,13 +37,11 @@ jobs:
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
           OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
-        run: |
-          cd crypto-backtest
-          python3 update_trading_journal.py $(date +%-m)
+        run: python3 update_trading_journal.py $(date +%-m)
 
-      - name: 生成网页文件
+      - name: 生成网页数据
+        working-directory: results
         run: |
-          cd crypto-backtest/results
           python3 << 'PYEOF'
           import json
           with open('journal_trades.json') as f:
@@ -67,7 +63,7 @@ jobs:
           for g, lines in groups.items():
               if lines:
                   content = ';'.join(lines) + ';'
-                  with open(f'../../docs/data_{g}.js','w') as f:
+                  with open(f'../docs/data_{g}.js','w') as f:
                       f.write(content)
           PYEOF
 
@@ -75,12 +71,10 @@ jobs:
         run: |
           git config user.name "Trading Bot"
           git config user.email "bot@trading.example.com"
-          git add docs/data_*.js docs/style.css docs/index.html 2>/dev/null || true
-          git add crypto-backtest/results/journal_trades.json
+          git add docs/data_*.js results/journal_trades.json
           if git diff --staged --quiet; then
             echo "无变更"
           else
-            NOW=$(TZ='Asia/Shanghai' date '+%Y-%m-%d')
-            git commit -m "🔄 ${NOW} 自动更新交易数据"
+            git commit -m "$(TZ='Asia/Shanghai' date '+%Y-%m-%d') 自动更新交易数据"
             git push
           fi
