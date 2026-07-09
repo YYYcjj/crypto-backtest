@@ -16,35 +16,54 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: 安装依赖
         run: pip install requests
-      - name: 删除触发器
-        run: rm -f trigger-now.txt
-      - name: 拉取全部交易数据
+
+      - name: 恢复完整历史数据
+        run: |
+          if [ -f "crypto-backtest/results/journal_trades.b64" ]; then
+            python3 -c "
+import base64, zlib, json
+b64 = open('crypto-backtest/results/journal_trades.b64').read()
+data = zlib.decompress(base64.b64decode(b64))
+trades = json.loads(data)
+print(f'恢复 {len(trades)} 笔历史交易')
+with open('crypto-backtest/results/journal_trades.json', 'w') as f:
+    json.dump(trades, f, ensure_ascii=False)
+"
+          else
+            echo '无历史备份，跳过'
+          fi
+
+      - name: 拉取当月交易数据
         env:
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
           OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
         run: |
-          for m in $(seq 1 $(date +%-m)); do
-            echo "拉取 ${m}月..."
-            python3 update_trading_journal.py $m || true
-          done
-      - name: 生成网页数据
-        working-directory: results
+          cd crypto-backtest
+          python3 update_trading_journal.py $(date +%-m)
+
+      - name: 生成网页数据文件
         run: |
+          cd crypto-backtest/results
           python3 << 'PYEOF'
           import json
           with open('journal_trades.json') as f:
               trades = json.load(f)
+
           months = {}
           for t in trades:
               m = int(t['entry_time'][5:7])
               months.setdefault(m, []).append(t)
-          labels = {1:'Q1',2:'Q1',3:'Q2',4:'Q2',5:'Q3',6:'Q3',7:'Q4',8:'Q4',9:'Q5',10:'Q5',11:'Q6',12:'Q6'}
+
+          labels = {1:'Q1',2:'Q1',3:'Q2',4:'Q2',5:'Q3',6:'Q3',
+                    7:'Q4',8:'Q4',9:'Q5',10:'Q5',11:'Q6',12:'Q6'}
           groups = {}
           for m in range(1,13):
               g = labels[m]
@@ -52,18 +71,48 @@ jobs:
               if m in months:
                   items = []
                   for t in months[m]:
-                      items.append(json.dumps({"coin":t["coin"],"direction":t["direction"],"entry_price":t["entry_price"],"exit_price":t["exit_price"],"pnl_usdt":t["pnl_usdt"],"pnl_pct":t["pnl_pct"],"entry_time":t["entry_time"],"exit_time":t["exit_time"],"entry_ts":t["entry_ts"],"mae_pct":t.get("mae_pct",0),"mfe_pct":t.get("mfe_pct",0),"trend_1h":t.get("trend_1h","?"),"trend_4h":t.get("trend_4h","?"),"trend_1d":t.get("trend_1d","?"),"srsi_1h":t.get("srsi_1h","?"),"srsi_4h":t.get("srsi_4h","?"),"srsi_1d":t.get("srsi_1d","?")}, ensure_ascii=False))
+                      items.append(json.dumps({
+                          "coin": t["coin"],
+                          "direction": t["direction"],
+                          "entry_price": t["entry_price"],
+                          "exit_price": t["exit_price"],
+                          "pnl_usdt": t["pnl_usdt"],
+                          "pnl_pct": t["pnl_pct"],
+                          "entry_time": t["entry_time"],
+                          "exit_time": t["exit_time"],
+                          "entry_ts": t["entry_ts"],
+                          "mae_pct": t.get("mae_pct",0),
+                          "mfe_pct": t.get("mfe_pct",0),
+                          "trend_1h": t.get("trend_1h","?"),
+                          "trend_4h": t.get("trend_4h","?"),
+                          "trend_1d": t.get("trend_1d","?"),
+                          "srsi_1h": t.get("srsi_1h","?"),
+                          "srsi_4h": t.get("srsi_4h","?"),
+                          "srsi_1d": t.get("srsi_1d","?"),
+                      }, ensure_ascii=False))
                   groups[g].append(f'ALL_DATA[{m}]=[{",".join(items)}]')
+
           for g, lines in groups.items():
               if lines:
                   content = ';'.join(lines) + ';'
-                  with open(f'../docs/data_{g}.js','w') as f:
+                  with open(f'../../docs/data_{g}.js','w') as f:
                       f.write(content)
-                  print(f'data_{g}.js: {len(content)} bytes')
+                  print(f'  data_{g}.js: {len(content)} bytes')
+
+          total = sum(len(v) for v in months.values())
+          print(f'生成完毕: {total} 笔交易, {len(months)} 个月')
           PYEOF
-      - name: 提交推送
+
+      - name: 提交并推送
         run: |
           git config user.name "Trading Bot"
           git config user.email "bot@trading.example.com"
-          git add docs/data_*.js results/journal_trades.json trigger-now.txt
-          if git diff --staged --quiet; then echo "无变更"; else git commit -m "$(TZ='Asia/Shanghai' date '+%m/%d') 自动更新" && git push; fi
+          git add docs/data_*.js
+          git add crypto-backtest/results/journal_trades.json
+          if git diff --staged --quiet; then
+            echo "无数据变更"
+          else
+            NOW=$(TZ='Asia/Shanghai' date '+%Y-%m-%d')
+            git commit -m "🔄 ${NOW} 自动更新交易数据"
+            git push
+          fi
