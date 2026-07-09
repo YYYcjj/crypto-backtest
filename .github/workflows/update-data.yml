@@ -16,29 +16,23 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: 安装依赖
-        run: pip install requests openpyxl
-
+        run: pip install requests
       - name: 删除触发器
-        run: |
-          if [ -f trigger-now.txt ]; then
-            rm trigger-now.txt
-            git config user.name "Bot" && git config user.email "bot@t.example.com"
-            git add trigger-now.txt && git commit -m "rm trigger" || true
-          fi
-
-      - name: 拉取交易数据
+        run: rm -f trigger-now.txt
+      - name: 拉取全部交易数据
         env:
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
           OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
-        run: python3 update_trading_journal.py $(date +%-m)
-
+        run: |
+          for m in $(seq 1 $(date +%-m)); do
+            echo "拉取 ${m}月..."
+            python3 update_trading_journal.py $m || true
+          done
       - name: 生成网页数据
         working-directory: results
         run: |
@@ -65,16 +59,11 @@ jobs:
                   content = ';'.join(lines) + ';'
                   with open(f'../docs/data_{g}.js','w') as f:
                       f.write(content)
+                  print(f'data_{g}.js: {len(content)} bytes')
           PYEOF
-
       - name: 提交推送
         run: |
           git config user.name "Trading Bot"
           git config user.email "bot@trading.example.com"
-          git add docs/data_*.js results/journal_trades.json
-          if git diff --staged --quiet; then
-            echo "无变更"
-          else
-            git commit -m "$(TZ='Asia/Shanghai' date '+%Y-%m-%d') 自动更新交易数据"
-            git push
-          fi
+          git add docs/data_*.js results/journal_trades.json trigger-now.txt
+          if git diff --staged --quiet; then echo "无变更"; else git commit -m "$(TZ='Asia/Shanghai' date '+%m/%d') 自动更新" && git push; fi
