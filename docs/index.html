@@ -1,23 +1,92 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta http-equiv="refresh" content="0;url=https://f34ea1adbe3745e980e3620e92d067d3.app.codebuddy.work">
-<title>交易日记</title>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>交易日记</title>
+<script>var ALL_DATA={};</script>
+<script src="data_Q1.js?v=4"></script>
+<script src="data_Q2.js?v=4"></script>
+<script src="data_Q3.js?v=4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-body{font-family:-apple-system,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f6fa;color:#1e293b}
-.box{text-align:center;padding:40px;background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
-h2{font-size:24px;margin-bottom:8px}
-p{color:#94a3b8;margin-bottom:16px}
-a{display:inline-block;padding:12px 28px;background:#6366f1;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px}
-</style>
-</head>
-<body>
-<div class="box">
-<h2>📊 交易日记</h2>
-<p>正在跳转至最新版本...</p>
-<a href="https://f34ea1adbe3745e980e3620e92d067d3.app.codebuddy.work">点击此处直接访问</a>
-</div>
-</body>
-</html>
+:root{--bg:#f5f6fa;--card:#fff;--text:#1e293b;--muted:#94a3b8;--green:#10b981;--red:#ef4444;--blue:#6366f1;--amber:#f59e0b;--border:#e2e8f0;--shadow:0 2px 8px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.03)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.nav{background:linear-gradient(135deg,#1e1b4b,#312e81,#3730a3);padding:0 24px;display:flex;align-items:center;gap:2px;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(30,27,75,.3)}
+.nav span{font-size:15px;font-weight:800;color:#fff;margin-right:24px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav a{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;color:rgba(255,255,255,.7);transition:all .2s}
+.nav a:hover{background:rgba(255,255,255,.12);color:#fff}.nav a svg{flex-shrink:0}
+.nav .dl{margin-left:auto;background:rgba(255,255,255,.15);color:#fff}.nav .dl:hover{background:rgba(255,255,255,.25)}
+.container{max-width:1500px;margin:0 auto;padding:24px 24px 40px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.6px;margin-bottom:6px}
+.sub{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:24px}.sub b{color:var(--text);font-weight:700}
+.mtabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.mtab{display:inline-flex;align-items:center;padding:8px 18px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.mtab:hover{border-color:var(--blue);color:var(--blue)}
+.mtab.act{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr)}}
+.scard{background:var(--card);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .2s}
+.scard:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.scard .sl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.scard .sv{font-size:28px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+.scard .sd{font-size:11px;color:var(--muted);margin-top:4px}
+.scard::after{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.scard.win::after{background:var(--green)}.scard.lose::after{background:var(--red)}.scard.info::after{background:var(--blue)}
+.sec{display:flex;align-items:center;gap:10px;margin:28px 0 12px}
+.sec span{font-size:13px;font-weight:700;color:var(--text)}.sec .line{flex:1;height:1px;background:var(--border)}
+.posi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px}
+.posi-card{background:var(--card);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:768px){.charts{grid-template-columns:1fr}}
+.cbox{background:var(--card);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.cbox h3{font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px}
+.cwrap{height:240px;position:relative}canvas{width:100%!important}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:12px 16px;background:var(--card);border-radius:12px;box-shadow:var(--shadow)}
+.toolbar label{font-size:11px;font-weight:700;color:var(--muted)}
+.toolbar input,.toolbar select{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;outline:none;background:#f8fafc;color:var(--text);transition:border-color .15s}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.toolbar input{min-width:110px}.toolbar select{min-width:70px}
+.toolbar .cnt{font-size:11px;font-weight:700;color:var(--blue);background:#eef2ff;padding:6px 16px;border-radius:20px;white-space:nowrap;margin-left:auto}
+.twrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px;box-shadow:var(--shadow)}
+.mt{width:100%;table-layout:fixed;border-spacing:0;font-size:12px;background:var(--card);border-radius:0;overflow:hidden;min-width:700px}
+.mt th{background:linear-gradient(180deg,#fafbfd,#f1f5f9);padding:11px 8px;text-align:center;font-weight:700;color:var(--muted);border-bottom:2px solid var(--blue);font-size:10px;white-space:nowrap;letter-spacing:.3px}
+.mt td{padding:9px 8px;border-bottom:1px solid #f1f5f9;text-align:center;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.mt tr.cl{cursor:pointer}.mt tr.w td{background:#f0fdf4}.mt tr.l td{background:#fef2f2}
+.mt tr.cl:hover td{filter:brightness(.93)}.mt tr.ex td{background:#eef2ff!important;filter:none!important}
+.dr{display:none}.dr.s{display:table-row}.dr td{padding:14px 8px 24px;border-bottom:2px solid var(--border);background:#f8fafc}
+@media(max-width:480px){body{font-size:13px}.container{padding:12px 10px 30px}h1{font-size:20px}.stats{grid-template-columns:repeat(2,1fr);gap:8px}.scard{padding:12px 14px}.scard .sv{font-size:22px}.nav{padding:0 8px;height:44px}.nav a{padding:5px 10px;font-size:11px;gap:3px}.toolbar{gap:6px;padding:8px 10px}.toolbar input{min-width:80px}.cwrap{height:180px}}
+.dt{width:100%;border-collapse:collapse;font-size:12px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.dt th{background:#f8fafc;padding:10px;text-align:center;font-weight:700;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)}
+.dt td{padding:10px;text-align:center;font-weight:600;border-bottom:1px solid #f1f5f9;font-size:12.5px}.dt tr:last-child td{border-bottom:0}
+.vb{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:600;margin:8px 0 12px}
+.vg{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}.vr{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.va{background:#fffbeb;color:#92400e;border:1px solid #fde68a}.vn{background:#f8fafc;color:var(--muted);border:1px solid var(--border)}
+.vd{width:8px;height:8px;border-radius:50%;flex-shrink:0}.vdg{background:var(--green)}.vdr{background:var(--red)}.vda{background:var(--amber)}.vdn{background:var(--muted)}
+.detail-stack{margin-top:14px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.detail-stack .pw{height:160px;position:relative;border-bottom:1px solid var(--border)}
+.detail-stack .sw{height:120px;position:relative}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.1px}
+.bl{background:#d1fae5;color:#065f46}.bs{background:#fee2e2;color:#991b1b}.g{color:var(--green)}.r{color:var(--red)}.a{color:var(--amber)}
+.up{color:var(--green)}.down{color:var(--red)}
+</style></head><body>
+<div class="nav"><span>📊 交易日记</span><a href="analysis.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>分析报告</a><a href="entry_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>入场研究</a><a href="exit_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>离场研究</a><a href="advice.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>改善建议</a><a href="compare.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>多月对比</a></div><div class="container"></div>
+<script>
+var M=0,cd=[],cs=[],PATHS=null,curIdx=null,pc=null,sc=null,chartRefs={},pathsFile="",pendingClick=null;
+
+function initPage(){
+  var months=Object.keys(ALL_DATA).map(Number).filter(function(m){return ALL_DATA[m]&&ALL_DATA[m].length});
+  if(!months.length){document.getElementById('container')||document.body;return;}
+  months.sort(function(a,b){return a-b});
+  var maxM=months[months.length-1];
+  var ctr=document.querySelector('.container');
+  if(!ctr.querySelector('.mtabs')){
+    ctr.innerHTML='<h1 id="hdTitle">'+maxM+'月交易记录</h1><div class="mtabs" id="hdTabs"></div><div class="sub" id="hdSub"></div><div class="stats" id="hdStats"></div><div class="sec"><span class="line"></span><span>图表分析</span><span class="line"></span></div><div class="charts"><div class="cbox"><h3>累计盈亏走势</h3><div class="cwrap"><canvas id="ch0"></canvas></div></div><div class="cbox"><h3>品种盈亏分布</h3><div class="cwrap"><canvas id="ch1"></canvas></div></div><div class="cbox"><h3>胜率分布</h3><div class="cwrap"><canvas id="ch2"></canvas></div></div><div class="cbox"><h3>日盈亏明细</h3><div class="cwrap"><canvas id="ch3"></canvas></div></div></div><div class="sec"><span class="line"></span><span>交易明细</span><span class="line"></span></div><div class="toolbar"><label>日期</label><input type="date" id="df" onchange="R()"><span style="color:var(--muted)">-</span><input type="date" id="dt" onchange="R()"><label>搜索</label><input type="text" id="sq" placeholder="币种..." oninput="R()"><label>方向</label><select id="sd" onchange="R()"><option value="all">全部</option><option value="做多">做多</option><option value="做空">做空</option></select><label>结果</label><select id="sr" onchange="R()"><option value="all">全部</option><option value="win">盈利</option><option value="lose">亏损</option></select><span class="cnt" id="rc"></span></div><div class="twrap"><table class="mt"><colgroup><col style="width:10%"><col style="width:11%"><col style="width:6%"><col style="width:11%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:13%"></colgroup><thead><tr><th>日期</th><th>币种</th><th>方向</th><th>趋势</th><th>SRSI</th><th>持仓亏损</th><th>持仓盈利</th><th>结果</th><th>离场亏损</th><th>离场盈利</th></tr></thead><tbody id="tb"></tbody></table></div>';
+    var tb2=document.getElementById('hdTabs');
+    months.forEach(function(m){
+      var b=document.createElement('button');
+      b.className='mtab'+(m===maxM?' act':'');
+      b.textContent=m+'月';b.id='mt'+m;
+      b.onclick=function(){switchMonth(m)};
+      tb2.appendChild(b);
+    });
+  }
+  switchMonth(maxM);
+}
