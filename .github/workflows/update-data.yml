@@ -32,11 +32,11 @@ jobs:
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
           OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
-        run: python3 update_trading_journal.py $(date +%-m)
+        run: python3 update_trading_journal.py $(date +%-m) || true
 
       - name: 生成网页数据文件
+        working-directory: results
         run: |
-          cd results
           python3 << 'PYEOF'
           import json
           with open('journal_trades.json') as f:
@@ -92,8 +92,7 @@ jobs:
         run: |
           git config user.name "Trading Bot"
           git config user.email "bot@trading.example.com"
-          git add docs/data_*.js
-          git add results/journal_trades.json trigger-now.txt
+          git add docs/data_*.js results/journal_trades.json trigger-now.txt
           if git diff --staged --quiet; then
             echo "无数据变更"
           else
