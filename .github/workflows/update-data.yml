@@ -24,31 +24,8 @@ jobs:
       - name: 安装依赖
         run: pip install requests
 
-      - name: 恢复完整历史数据
-        run: |
-          if [ -f "results/journal_trades.b64" ]; then
-            python3 -c "
-import base64, zlib, json
-b64 = open('results/journal_trades.b64').read()
-data = zlib.decompress(base64.b64decode(b64))
-trades = json.loads(data)
-print(f'恢复 {len(trades)} 笔历史交易')
-with open('results/journal_trades.json', 'w') as f:
-    json.dump(trades, f, ensure_ascii=False)
-"
-          elif [ -f "crypto-backtest/results/journal_trades.b64" ]; then
-            python3 -c "
-import base64, zlib, json
-b64 = open('crypto-backtest/results/journal_trades.b64').read()
-data = zlib.decompress(base64.b64decode(b64))
-trades = json.loads(data)
-print(f'恢复 {len(trades)} 笔历史交易')
-with open('crypto-backtest/results/journal_trades.json', 'w') as f:
-    json.dump(trades, f, ensure_ascii=False)
-"
-          else
-            echo '无历史备份，跳过'
-          fi
+      - name: 删除触发器
+        run: rm -f trigger-now.txt
 
       - name: 拉取当月交易数据
         env:
@@ -116,7 +93,7 @@ with open('crypto-backtest/results/journal_trades.json', 'w') as f:
           git config user.name "Trading Bot"
           git config user.email "bot@trading.example.com"
           git add docs/data_*.js
-          git add results/journal_trades.json
+          git add results/journal_trades.json trigger-now.txt
           if git diff --staged --quiet; then
             echo "无数据变更"
           else
