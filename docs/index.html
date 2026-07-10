@@ -1,171 +1,29 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>交易日记</title>
+<link rel="stylesheet" href="style.css?v=1">
 <script>var ALL_DATA={};</script>
-<script src="data_Q1.js?v=5"></script>
-<script src="data_Q2.js?v=5"></script>
-<script src="data_Q3.js?v=5"></script>
-<script src="data_Q4.js?v=5"></script>
-<script src="data_Q5.js?v=5"></script>
-<script src="data_Q6.js?v=5"></script>
+<script src="data_Q1.js?v=6"></script>
+<script src="data_Q2.js?v=6"></script>
+<script src="data_Q3.js?v=6"></script>
+<script src="data_Q4.js?v=6"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>...</style></head><body>
-<div class="nav"><span>📊 交易日记</span></div><div class="container"></div>
+</head><body>
+<div class="nav"><span>📊 交易日记</span><a href="https://github.com/YYYcjj/crypto-backtest/actions">⚡Actions</a></div><div class="container"></div>
 <script>
-var M=0,cd=[],cs=[],PATHS=null,curIdx=null,pc=null,sc=null,chartRefs={},pathsFile="",pendingClick=null;
-
+var M=0,cd=[],cs=[],D=[],PATHS=null,curIdx=null,pc=null,sc=null,chartRefs={},pendingClick=null;
 function initPage(){
-  var months=Object.keys(ALL_DATA).map(Number).filter(function(m){return ALL_DATA[m]&&ALL_DATA[m].length});
-  if(!months.length)return;
-  months.sort(function(a,b){return a-b});
-  var maxM=months[months.length-1];
-  var ctr=document.querySelector('.container');
-  if(!ctr.querySelector('.mtabs')){
-    ctr.innerHTML='<h1 id="hdTitle">'+maxM+'月交易记录</h1><div class="mtabs" id="hdTabs"></div><div class="sub" id="hdSub"></div><div class="stats" id="hdStats"></div><div class="sec"><span class="line"></span><span>图表分析</span><span class="line"></span></div><div class="charts"><div class="cbox"><h3>累计盈亏走势</h3><div class="cwrap"><canvas id="ch0"></canvas></div></div><div class="cbox"><h3>品种盈亏分布</h3><div class="cwrap"><canvas id="ch1"></canvas></div></div><div class="cbox"><h3>胜率分布</h3><div class="cwrap"><canvas id="ch2"></canvas></div></div><div class="cbox"><h3>日盈亏明细</h3><div class="cwrap"><canvas id="ch3"></canvas></div></div></div><div class="sec"><span class="line"></span><span>交易明细</span><span class="line"></span></div><div class="toolbar"><label>日期</label><input type="date" id="df" onchange="R()"><span style="color:var(--muted)">-</span><input type="date" id="dt" onchange="R()"><label>搜索</label><input type="text" id="sq" placeholder="币种..." oninput="R()"><label>方向</label><select id="sd" onchange="R()"><option value="all">全部</option><option value="做多">做多</option><option value="做空">做空</option></select><label>结果</label><select id="sr" onchange="R()"><option value="all">全部</option><option value="win">盈利</option><option value="lose">亏损</option></select><span class="cnt" id="rc"></span></div><div class="twrap"><table class="mt"><colgroup><col style="width:10%"><col style="width:11%"><col style="width:6%"><col style="width:11%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:13%"></colgroup><thead><tr><th>日期</th><th>币种</th><th>方向</th><th>趋势</th><th>SRSI</th><th>持仓亏损</th><th>持仓盈利</th><th>结果</th><th>离场亏损</th><th>离场盈利</th></tr></thead><tbody id="tb"></tbody></table></div>';
-    months.forEach(function(m){
-      var b=document.createElement('button');
-      b.className='mtab'+(m===maxM?' act':'');b.textContent=m+'月';b.id='mt'+m;
-      b.onclick=function(){switchMonth(m)};
-      document.getElementById('hdTabs').appendChild(b);
-    });
-  }
-  switchMonth(maxM);
-}
-
-function switchMonth(m){
-  if(m===M)return;
-  M=m;
-  document.querySelectorAll('.mtab').forEach(function(b){b.classList.toggle('act',parseInt(b.textContent)===m)});
-  document.getElementById('hdTitle').textContent=m+'月交易记录';
-  D=ALL_DATA[m]||[];
-  if(!D.length)return;
-  for(var di=0;di<D.length;di++)D[di]._oi=di;
-  D.reverse();
-  var wins=D.filter(function(t){return t.pnl_usdt>0}),losses=D.filter(function(t){return t.pnl_usdt<=0});
-  var total=D.length,totalPnl=D.reduce(function(s,t){return s+t.pnl_usdt},0);
-  var wr=wins.length/total*100,avgWin=wins.length?wins.reduce(function(s,t){return s+t.pnl_pct},0)/wins.length:0;
-  var avgLoss=losses.length?losses.reduce(function(s,t){return s+t.pnl_pct},0)/losses.length:0;
-  var maxLoss=losses.length?Math.min.apply(null,losses.map(function(t){return t.pnl_pct})):0;
-  var ratio=avgLoss?Math.abs(avgWin/avgLoss):0;
-  var uniqDays=new Set(D.map(function(t){return t.entry_time.substr(0,10)}));
-  document.getElementById('hdSub').innerHTML='<span>OKX 永续合约</span><span>'+total+' 笔交易</span><span>胜 <b>'+wins.length+'</b> / 负 <b>'+losses.length+'</b></span><span>净盈亏 <b class="'+(totalPnl<0?'down':'up')+'">'+totalPnl.toFixed(1)+'U</b></span>';
-  document.getElementById('hdStats').innerHTML='<div class="scard info"><div class="sl">交易天数</div><div class="sv">'+uniqDays.size+'</div></div><div class="scard '+(wr>=50?'win':'lose')+'"><div class="sl">胜率</div><div class="sv '+(wr>=50?'up':'down')+'">'+wr.toFixed(0)+'%</div></div><div class="scard lose"><div class="sl">净盈亏</div><div class="sv down">'+totalPnl.toFixed(1)+'U</div></div><div class="scard lose"><div class="sl">平均亏损</div><div class="sv down">'+Math.abs(avgLoss).toFixed(1)+'%</div></div><div class="scard win"><div class="sl">平均盈利</div><div class="sv up">+'+avgWin.toFixed(1)+'%</div></div><div class="scard win"><div class="sl">盈亏比</div><div class="sv up">'+ratio.toFixed(2)+'</div></div>';
-  var daily={};
-  D.forEach(function(t){var day=t.entry_time.substr(0,10);daily[day]=(daily[day]||0)+t.pnl_usdt});
-  cd=[];var cum=0;
-  for(var d=1;d<=31;d++){
-    var key='2026-'+('0'+M).slice(-2)+'-'+('0'+d).slice(-2);
-    var p=Math.round((daily[key]||0)*10)/10;
-    cum=Math.round((cum+p)*10)/10;
-    cd.push({d:('0'+M).slice(-2)+'-'+('0'+d).slice(-2),p:p,c:cum});
-  }
-  var cs2={};
-  D.forEach(function(t){var c=t.coin.replace('-USDT','');if(!cs2[c])cs2[c]={n:c,p:0,c:0};cs2[c].p+=t.pnl_usdt;cs2[c].c++});
-  cs=Object.values(cs2);cs.sort(function(a,b){return b.p-a.p});
-  buildCharts();
-  pathsFile='paths_data_'+('0'+m).slice(-2)+'.json';
-  PATHS=null;pendingClick=null;
-  fetch(pathsFile).then(function(r){return r.json()}).then(function(d){PATHS=d;if(pendingClick){var pk=pendingClick;pendingClick=null;TD(pk.oi,pk.j,pk.t,pk.row)}}).catch(function(){console.log('paths not available')});
-  R();
-}
-
-function R(){
-  var q=document.getElementById('sq').value.toLowerCase();
-  var dir=document.getElementById('sd').value;
-  var res=document.getElementById('sr').value;
-  var df=document.getElementById('df').value,dt2=document.getElementById('dt').value;
-  var f=[];
-  for(var i=0;i<D.length;i++){
-    var t=D[i];
-    if(df&&t.entry_time<df+' 00:00')continue;
-    if(dt2&&t.entry_time>dt2+' 23:59')continue;
-    if(q&&t.coin.toLowerCase().indexOf(q)<0)continue;
-    if(dir!=='all'&&t.direction!==dir)continue;
-    if(res==='win'&&t.pnl_usdt<=0)continue;
-    if(res==='lose'&&t.pnl_usdt>=0)continue;
-    f.push({idx:i,trade:t});
-  }
-  document.getElementById('rc').textContent='显示 '+f.length+'/'+D.length+' 笔';
-  var tb=document.getElementById('tb');tb.innerHTML='';
-  for(var j=0;j<f.length;j++){
-    var t=f[j].trade;
-    var row=document.createElement('tr');
-    row.className='cl'+(t.pnl_usdt>0?' w':' l');
-    row.onclick=(function(oi,jj,tr){return function(){TD(oi,jj,tr,this)}})(t._oi,j,t);
-    row.innerHTML='<td>'+t.entry_time.substr(5,11)+'</td><td><b>'+t.coin+'</b></td><td><span class=badge '+(t.direction==='做多'?'bl':'bs')+'>'+t.direction+'</span></td><td>'+(t.trend_1h||'?')+'/'+(t.trend_4h||'?')+'/'+(t.trend_1d||'?')+'</td><td>'+(t.srsi_1h||'?')+'/'+(t.srsi_4h||'?')+'/'+(t.srsi_1d||'?')+'</td><td class=r>'+((t.mae_pct||0).toFixed(1)==='0.0'?'—':(t.mae_pct||0).toFixed(1)+'%')+'</td><td class=g>'+((t.mfe_pct||0).toFixed(1)==='0.0'?'—':'+'+(t.mfe_pct||0).toFixed(1)+'%')+'</td><td class='+(t.pnl_usdt>0?'g':'r')+'><b>'+(t.pnl_usdt>0?'盈':'亏')+' '+((t.pnl_usdt>0?'+':'')+t.pnl_usdt.toFixed(2)+'U')+'</b></td><td>'+((t.exit_time||'').substr(5,11)||'-')+'</td><td class='+((t.pnl_pct||0)>0?'g':'r')+'>'+((t.pnl_pct||0)>0?'+'+(t.pnl_pct||0).toFixed(1)+'%':(t.pnl_pct||0).toFixed(1)+'%')+'</td>';
-    tb.appendChild(row);
-    var dr=document.createElement('tr');dr.className='dr';dr.id='dr-'+j;dr.style.display='none';
-    var dtd=document.createElement('td');dtd.colSpan=10;dtd.id='dc-'+j;
-    dtd.innerHTML='<div style="padding:16px;text-align:center;color:var(--muted)">暂无走势数据（需本地生成 paths_data）</div>';
-    dr.appendChild(dtd);tb.appendChild(dr);
-  }
-}
-
-function TD(oi,j,t,row){
-  if(!PATHS){alert('走势数据未加载');return}
-  var dr=document.getElementById('dr-'+j),vis=dr.classList.contains('s');
-  document.querySelectorAll('.dr.s').forEach(function(e){e.classList.remove('s');e.style.display='none'});
-  document.querySelectorAll('tr.ex').forEach(function(e){e.classList.remove('ex')});
-  if(pc){try{pc.destroy()}catch(e){}}if(sc){try{sc.destroy()}catch(e){}}pc=null;sc=null;
-  if(vis){curIdx=null;return}
-  row.classList.add('ex');dr.classList.add('s');dr.style.display='';curIdx=j;
-  var cd2=document.getElementById('dc-'+j);cd2.innerHTML='';
-  var p=PATHS[oi];
-  if(!p||!p.b||!p.b.length){cd2.innerHTML='<div style="padding:20px;color:var(--muted)">无数据</div>';return}
-  var bars=p.b,sv=p.s||[],dv=p.d||[],times=p.t||[],ex=p.ex,ei=p.ei||0;
-  var st=Math.max(0,ei-12);bars=bars.slice(st);sv=sv.slice(st);dv=dv.slice(st);times=times.slice(st);ei-=st;if(ex!=null)ex-=st;
-  var hm=p.hm||0,hx=p.hx||0,pm=p.pm||0,px=p.px||0,isShort=t.direction==='做空';
-  var title=t.coin+' · '+t.direction+' · '+(t.pnl_usdt>0?'盈利':'亏损')+' '+(t.pnl_pct||0).toFixed(1)+'%';
-  var verdict='',vcls='',vdot='';
-  if(t.pnl_usdt<=0){
-    if(isShort){
-      if(px!=null&&px>0&&px>Math.abs(t.pnl_pct||0)*0.5){verdict='止损合适: 离场后上涨+'+px.toFixed(1)+'%';vcls='vg';vdot='vdg'}
-      else if(pm!=null&&pm<-3&&pm<hm-3){verdict='止损过早: 离场后继续跌'+(hm-pm).toFixed(1)+'%';vcls='vr';vdot='vdr'}
-      else{verdict='止损中性';vcls='vn';vdot='vdn'}
-    }else{
-      if(pm!=null&&pm<-3&&pm<hm-3){verdict='止损合适: 离场后继续跌'+(hm-pm).toFixed(1)+'%';vcls='vg';vdot='vdg'}
-      else if(px!=null&&px>0&&px>Math.abs(t.pnl_pct||0)*0.5){verdict='止损过早: 离场后反弹+'+px.toFixed(1)+'%';vcls='vr';vdot='vdr'}
-      else{verdict='止损中性';vcls='vn';vdot='vdn'}
-    }
-  }else{
-    var gb=hx-(t.pnl_pct||0);
-    if(hx>0&&gb>5){verdict='止盈过晚: 最高+'+hx.toFixed(1)+'% 回吐'+gb.toFixed(1)+'%';vcls='vr';vdot='vdr'}
-    else if(px!=null&&px>10){verdict='止盈过早: 错失+'+px.toFixed(0)+'%';vcls='va';vdot='vda'}
-    else if(px!=null&&px>3){verdict='止盈略早: 仍有+'+px.toFixed(0)+'%';vcls='va';vdot='vda'}
-    else if(pm!=null&&pm<-3){verdict='止盈合适: 离场后回落';vcls='vg';vdot='vdg'}
-    else{verdict='止盈中性';vcls='vn';vdot='vdn'}
-  }
-  cd2.innerHTML='<div style="font-size:14px;font-weight:700;margin-bottom:4px">'+title+'</div><div class="vb '+vcls+'"><div class="vd '+vdot+'"></div>'+verdict+'</div><table class=dt><tr><th>入场</th><th>离场</th><th>入场价</th><th>离场价</th><th>持仓亏损</th><th>持仓盈利</th><th>离场亏损</th><th>离场盈利</th></tr><tr><td>'+t.entry_time.substr(0,16)+'</td><td>'+(t.exit_time?t.exit_time.substr(0,16):'-')+'</td><td>'+t.entry_price+'</td><td>'+(t.exit_price||'-')+'</td>'+(isShort?'<td class=r>'+(-hx).toFixed(1)+'%</td><td class=g>+'+(-hm).toFixed(1)+'%</td><td class=r>'+(-px).toFixed(1)+'%</td><td class=g>+'+(-pm).toFixed(1)+'%</td>':'<td class=r>'+hm+'%</td><td class=g>'+hx+'%</td><td class=r>'+pm+'%</td><td class=g>'+px+'%</td>')+'</tr></table>';
-  var ds2=document.createElement('div');ds2.className='detail-stack';cd2.appendChild(ds2);
-  var p1=document.createElement('div');p1.className='pw';ds2.appendChild(p1);
-  var pv=document.createElement('canvas');p1.appendChild(pv);
-  var p2=document.createElement('div');p2.className='sw';ds2.appendChild(p2);
-  var sv3=document.createElement('canvas');p2.appendChild(sv3);
-  setTimeout(function(){
-    var hl=ex!=null?ex+1:bars.length;
-    var mi2=Infinity,mx2=-Infinity,hi2=-1,hj2=-1;
-    for(var k2=ei;k2<hl&&k2<bars.length;k2++){
-      if(bars[k2]<mi2){mi2=bars[k2];hi2=k2}
-      if(bars[k2]>mx2){mx2=bars[k2];hj2=k2}
-    }
-    var mkd=Array(bars.length).fill(null),mxd=Array(bars.length).fill(null);
-    if(hi2>=0)mkd[hi2]=mi2;if(hj2>=0)mxd[hj2]=mx2;
-    pc=new Chart(pv,{type:'line',data:{labels:times.length?times:bars.map(function(_,i){return i}),datasets:[{data:bars.map(function(b){return isShort?-b:b}),borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.08)',fill:true,tension:.4,pointRadius:0,borderWidth:2},{data:mkd,backgroundColor:'rgba(239,68,68,.5)',borderColor:'#ef4444',pointRadius:5,showLine:false},{data:mxd,backgroundColor:'rgba(16,185,129,.5)',borderColor:'#10b981',pointRadius:5,showLine:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:function(v){return v+'%'}}}}}});
-    var hasSrsi=sv.some(function(v){return v!==null&&v!==undefined});
-    if(hasSrsi){sc=new Chart(sv3,{type:'line',data:{datasets:[{label:'K',data:sv,borderColor:'#6366f1',borderWidth:1.5,tension:.4,pointRadius:0,spanGaps:true},{label:'D',data:dv,borderColor:'#f59e0b',borderWidth:1,tension:.4,pointRadius:0,spanGaps:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100}}}})}
-    else{sv3.parentElement.style.display='none'}
-  },50);
-}
-
-function buildCharts(){
-  Object.values(chartRefs).forEach(function(c){try{c.destroy()}catch(e){}});
-  chartRefs.ch0=new Chart(document.getElementById('ch0'),{type:'line',data:{labels:cd.map(function(x){return x.d}),datasets:[{data:cd.map(function(x){return x.c}),borderColor:'#6366f1',backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);g.addColorStop(0,'rgba(99,102,241,.15)');g.addColorStop(1,'rgba(99,102,241,0)');return g},fill:true,tension:.4,pointRadius:0,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(v){return'累计:'+v.raw+'U'}}}}}});
-  chartRefs.ch1=new Chart(document.getElementById('ch1'),{type:'bar',data:{labels:cs.map(function(c){return c.n}),datasets:[{data:cs.map(function(c){return c.p}),backgroundColor:cs.map(function(c){return c.p>0?'rgba(16,185,129,.7)':'rgba(239,68,68,.6)'}),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
-  var wcount=D.filter(function(t){return t.pnl_usdt>0}).length,lcount=D.length-wcount;
-  chartRefs.ch2=new Chart(document.getElementById('ch2'),{type:'doughnut',data:{labels:['盈利','亏损'],datasets:[{data:[wcount,lcount],backgroundColor:['#10b981','#ef4444'],borderColor:'#fff',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom'}}}});
-  chartRefs.ch3=new Chart(document.getElementById('ch3'),{type:'bar',data:{labels:cd.map(function(x){return x.d}),datasets:[{data:cd.map(function(x){return x.p}),backgroundColor:cd.map(function(x){return x.p>0?'rgba(16,185,129,.65)':'rgba(239,68,68,.55)'}),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false}});
-}
-
-if(typeof ALL_DATA!=='undefined'&&typeof Chart!=='undefined'){initPage()}
-else{document.addEventListener('DOMContentLoaded',function(){if(typeof ALL_DATA!=='undefined'&&typeof Chart!=='undefined')initPage()})}
+var months=Object.keys(ALL_DATA).map(Number).filter(function(m){return ALL_DATA[m]&&ALL_DATA[m].length});
+if(!months.length){document.querySelector('.container').innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)"><h2>暂无数据</h2><p>数据正在由GitHub Actions自动拉取中...</p><a href="https://github.com/YYYcjj/crypto-backtest/actions" style="color:var(--blue)">查看运行状态</a></div>';return}
+months.sort(function(a,b){return a-b});
+var maxM=months[months.length-1];
+var ctr=document.querySelector('.container');
+ctr.innerHTML='<h1 id="hdTitle">'+maxM+'月交易记录</h1><div class="mtabs" id="hdTabs"></div><div class="sub" id="hdSub"></div><div class="stats" id="hdStats"></div><div class="sec"><span class="line"></span><span>图表分析</span><span class="line"></span></div><div class="charts"><div class="cbox"><h3>累计盈亏走势</h3><div class="cwrap"><canvas id="ch0"></canvas></div></div><div class="cbox"><h3>品种盈亏分布</h3><div class="cwrap"><canvas id="ch1"></canvas></div></div><div class="cbox"><h3>胜率分布</h3><div class="cwrap"><canvas id="ch2"></canvas></div></div><div class="cbox"><h3>日盈亏明细</h3><div class="cwrap"><canvas id="ch3"></canvas></div></div></div><div class="sec"><span class="line"></span><span>交易明细</span><span class="line"></span></div><div class="toolbar"><label>日期</label><input type="date" id="df" onchange="R()"><span style="color:var(--muted)">-</span><input type="date" id="dt" onchange="R()"><label>搜索</label><input type="text" id="sq" placeholder="币种..." oninput="R()"><label>方向</label><select id="sd" onchange="R()"><option value="all">全部</option><option value="做多">做多</option><option value="做空">做空</option></select><label>结果</label><select id="sr" onchange="R()"><option value="all">全部</option><option value="win">盈利</option><option value="lose">亏损</option></select><span class="cnt" id="rc"></span></div><div class="twrap"><table class="mt"><colgroup><col style="width:10%"><col style="width:11%"><col style="width:6%"><col style="width:11%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:13%"></colgroup><thead><tr><th>日期</th><th>币种</th><th>方向</th><th>趋势</th><th>SRSI</th><th>持仓亏损</th><th>持仓盈利</th><th>结果</th><th>离场亏损</th><th>离场盈利</th></tr></thead><tbody id="tb"></tbody></table></div>';
+months.forEach(function(m){var b=document.createElement('button');b.className='mtab'+(m===maxM?' act':'');b.textContent=m+'月';b.id='mt'+m;b.onclick=function(){switchMonth(m)};document.getElementById('hdTabs').appendChild(b)});
+switchMonth(maxM)}
+function switchMonth(m){if(m===M)return;M=m;document.querySelectorAll('.mtab').forEach(function(b){b.classList.toggle('act',parseInt(b.textContent)===m)});document.getElementById('hdTitle').textContent=m+'月交易记录';D=ALL_DATA[m]||[];if(!D.length)return;for(var di=0;di<D.length;di++)D[di]._oi=di;D.reverse();var wins=D.filter(function(t){return t.pnl_usdt>0}),losses=D.filter(function(t){return t.pnl_usdt<=0});var total=D.length,totalPnl=D.reduce(function(s,t){return s+t.pnl_usdt},0);var wr=wins.length/total*100,avgWin=wins.length?wins.reduce(function(s,t){return s+t.pnl_pct},0)/wins.length:0,avgLoss=losses.length?losses.reduce(function(s,t){return s+t.pnl_pct},0)/losses.length:0,ratio=avgLoss?Math.abs(avgWin/avgLoss):0;var uniqDays=new Set(D.map(function(t){return t.entry_time.substr(0,10)}));document.getElementById('hdSub').innerHTML='<span>OKX 永续合约</span><span>'+total+' 笔交易</span><span>胜 <b>'+wins.length+'</b> / 负 <b>'+losses.length+'</b></span><span>净盈亏 <b class="'+(totalPnl<0?'down':'up')+'">'+totalPnl.toFixed(1)+'U</b></span>';document.getElementById('hdStats').innerHTML='<div class="scard info"><div class="sl">交易天数</div><div class="sv">'+uniqDays.size+'</div></div><div class="scard '+(wr>=50?'win':'lose')+'"><div class="sl">胜率</div><div class="sv '+(wr>=50?'up':'down')+'">'+wr.toFixed(0)+'%</div></div><div class="scard '+(totalPnl>=0?'win':'lose')+'"><div class="sl">净盈亏</div><div class="sv '+(totalPnl>=0?'up':'down')+'">'+totalPnl.toFixed(1)+'U</div></div><div class="scard lose"><div class="sl">平均亏损</div><div class="sv down">'+Math.abs(avgLoss).toFixed(1)+'%</div></div><div class="scard win"><div class="sl">平均盈利</div><div class="sv up">+'+avgWin.toFixed(1)+'%</div></div><div class="scard win"><div class="sl">盈亏比</div><div class="sv up">'+ratio.toFixed(2)+'</div></div>';var daily={};D.forEach(function(t){var day=t.entry_time.substr(0,10);daily[day]=(daily[day]||0)+t.pnl_usdt});cd=[];var cum=0;for(var d=1;d<=31;d++){var key='2026-'+('0'+M).slice(-2)+'-'+('0'+d).slice(-2),p=Math.round((daily[key]||0)*10)/10;cum=Math.round((cum+p)*10)/10;cd.push({d:('0'+M).slice(-2)+'-'+('0'+d).slice(-2),p:p,c:cum})}var cs2={};D.forEach(function(t){var c=t.coin.replace('-USDT','');if(!cs2[c])cs2[c]={n:c,p:0,c:0};cs2[c].p+=t.pnl_usdt;cs2[c].c++});cs=Object.values(cs2);cs.sort(function(a,b){return b.p-a.p});buildCharts();R()}
+function R(){var q=document.getElementById('sq').value.toLowerCase(),dir=document.getElementById('sd').value,res=document.getElementById('sr').value,df=document.getElementById('df').value,dt2=document.getElementById('dt').value,f=[];for(var i=0;i<D.length;i++){var t=D[i];if(df&&t.entry_time<df+' 00:00')continue;if(dt2&&t.entry_time>dt2+' 23:59')continue;if(q&&t.coin.toLowerCase().indexOf(q)<0)continue;if(dir!=='all'&&t.direction!==dir)continue;if(res==='win'&&t.pnl_usdt<=0)continue;if(res==='lose'&&t.pnl_usdt>=0)continue;f.push({idx:i,trade:t})}document.getElementById('rc').textContent='显示 '+f.length+'/'+D.length+' 笔';var tb=document.getElementById('tb');tb.innerHTML='';for(var j=0;j<f.length;j++){var t=f[j].trade,row=document.createElement('tr');row.className='cl'+(t.pnl_usdt>0?' w':' l');row.onclick=(function(oi,jj,tr){return function(){TD(oi,jj,tr,this)}})(t._oi,j,t);row.innerHTML='<td>'+t.entry_time.substr(5,11)+'</td><td><b>'+t.coin+'</b></td><td><span class=badge '+(t.direction==='做多'?'bl':'bs')+'>'+t.direction+'</span></td><td>'+(t.trend_1h||'?')+'/'+(t.trend_4h||'?')+'/'+(t.trend_1d||'?')+'</td><td>'+(t.srsi_1h||'?')+'/'+(t.srsi_4h||'?')+'/'+(t.srsi_1d||'?')+'</td><td class=r>'+((t.mae_pct||0).toFixed(1)==='0.0'?'—':(t.mae_pct||0).toFixed(1)+'%')+'</td><td class=g>'+((t.mfe_pct||0).toFixed(1)==='0.0'?'—':'+'+(t.mfe_pct||0).toFixed(1)+'%')+'</td><td class='+(t.pnl_usdt>0?'g':'r')+'><b>'+(t.pnl_usdt>0?'盈':'亏')+' '+((t.pnl_usdt>0?'+':'')+t.pnl_usdt.toFixed(2)+'U')+'</b></td><td>'+((t.exit_time||'').substr(5,11)||'-')+'</td><td class='+((t.pnl_pct||0)>0?'g':'r')+'>'+((t.pnl_pct||0)>0?'+'+(t.pnl_pct||0).toFixed(1)+'%':(t.pnl_pct||0).toFixed(1)+'%')+'</td>';tb.appendChild(row)}
+function TD(oi,j,t,row){return}
+function buildCharts(){Object.values(chartRefs).forEach(function(c){try{c.destroy()}catch(e){}});chartRefs.ch0=new Chart(document.getElementById('ch0'),{type:'line',data:{labels:cd.map(function(x){return x.d}),datasets:[{data:cd.map(function(x){return x.c}),borderColor:'#6366f1',backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);g.addColorStop(0,'rgba(99,102,241,.15)');g.addColorStop(1,'rgba(99,102,241,0)');return g},fill:true,tension:.4,pointRadius:0,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});chartRefs.ch1=new Chart(document.getElementById('ch1'),{type:'bar',data:{labels:cs.map(function(c){return c.n}),datasets:[{data:cs.map(function(c){return c.p}),backgroundColor:cs.map(function(c){return c.p>0?'rgba(16,185,129,.7)':'rgba(239,68,68,.6)'}),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false}});var wcount=D.filter(function(t){return t.pnl_usdt>0}).length,lcount=D.length-wcount;chartRefs.ch2=new Chart(document.getElementById('ch2'),{type:'doughnut',data:{labels:['盈利','亏损'],datasets:[{data:[wcount,lcount],backgroundColor:['#10b981','#ef4444'],borderColor:'#fff',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%'}});chartRefs.ch3=new Chart(document.getElementById('ch3'),{type:'bar',data:{labels:cd.map(function(x){return x.d}),datasets:[{data:cd.map(function(x){return x.p}),backgroundColor:cd.map(function(x){return x.p>0?'rgba(16,185,129,.65)':'rgba(239,68,68,.55)'}),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false}})}
+if(typeof ALL_DATA!=='undefined'&&typeof Chart!=='undefined'){initPage()}else{document.addEventListener('DOMContentLoaded',function(){if(typeof ALL_DATA!=='undefined'&&typeof Chart!=='undefined')initPage()})}
 </script>
 </body></html>
