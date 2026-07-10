@@ -62,58 +62,25 @@ def okx_get(path):
 
 
 def fetch_trades(start_ts, end_ts):
-    """从 OKX 拉取已平仓订单并重建交易"""
-    path = f"/api/v5/trade/orders-history?instType=SWAP&state=filled&begin={start_ts}&end={end_ts}&limit=100"
-    orders = sorted(okx_get(path).get("data", []), key=lambda x: int(x["cTime"]))
+    """从 OKX 拉取已平仓订单并重建交易（支持分页）"""
+    orders = []
+    after = ""
+    page = 1
+    while True:
+        path = f"/api/v5/trade/orders-history?instType=SWAP&state=filled&begin={start_ts}&end={end_ts}&limit=100"
+        if after:
+            path += f"&after={after}"
+        result = okx_get(path)
+        page_data = result.get("data", [])
+        orders.extend(page_data)
+        if len(page_data) < 100:
+            break
+        after = page_data[-1].get("ordId", "")
+        page += 1
+        if page > 20:
+            break
+    orders.sort(key=lambda x: int(x["cTime"]))
 
-    trades = []
-    pending = defaultdict(list)
-
-    for o in orders:
-        inst = o["instId"]
-        pnl = float(o["pnl"])
-        side = o["side"]
-        sz = float(o["accFillSz"])
-        px = float(o["avgPx"])
-        ts = int(o["cTime"])
-
-        if pnl != 0:
-            ep_sum, ec, ots = 0.0, 0.0, []
-            rem = sz
-            while rem > 0 and pending[inst]:
-                oo = pending[inst].pop(0)
-                use = min(rem, oo["sz"])
-                ep_sum += oo["px"] * use
-                ec += use
-                ots.append(oo["ts"])
-                rem -= use
-                if oo["sz"] > use:
-                    pending[inst].insert(0, {"sz": oo["sz"] - use, "px": oo["px"], "ts": oo["ts"]})
-
-            if ec > 0:
-                ep = ep_sum / ec
-                et = datetime.fromtimestamp(min(ots) / 1000, tz=timezone.utc)
-                xt = datetime.fromtimestamp(ts / 1000, tz=timezone.utc)
-                coin = inst.replace("-SWAP", "")
-                direction = "做多" if side == "sell" else "做空"
-                px_chg = (px / ep - 1) if direction == "做多" else (ep / px - 1)
-
-                trades.append({
-                    "coin": coin,
-                    "direction": direction,
-                    "entry_price": round(ep, 6),
-                    "exit_price": round(px, 6),
-                    "pnl_usdt": round(pnl, 2),
-                    "pnl_pct": round(abs(px_chg) * 200, 1),  # ×2x ×100
-                    "entry_time": et.strftime("%Y-%m-%d %H:%M"),
-                    "exit_time": xt.strftime("%Y-%m-%d %H:%M"),
-                    "entry_ts": int(et.timestamp() * 1000),
-                })
-        else:
-            pending[inst].append({"sz": sz, "px": px, "ts": ts})
-
-    trades.sort(key=lambda x: x["entry_ts"])
-    return trades
 
 
 def enrich_with_indicators(trades):
