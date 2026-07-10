@@ -1,29 +1,210 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>交易日记</title>
-<link rel="stylesheet" href="style.css?v=1">
-<script>var ALL_DATA={};</script>
-<script src="data_Q1.js?v=6"></script>
-<script src="data_Q2.js?v=6"></script>
-<script src="data_Q3.js?v=6"></script>
-<script src="data_Q4.js?v=6"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head><body>
-<div class="nav"><span>📊 交易日记</span><a href="https://github.com/YYYcjj/crypto-backtest/actions">⚡Actions</a></div><div class="container"></div>
+<script src="data_Q1.js?v=5"></script>
+<script src="data_Q2.js?v=5"></script>
+<script src="data_Q3.js?v=5"></script>
+<script src="data_Q4.js?v=5"></script>
+<script src="chart.min.js"></script>
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--text:#1e293b;--muted:#94a3b8;--green:#10b981;--red:#ef4444;--blue:#6366f1;--amber:#f59e0b;--border:#e2e8f0;--shadow:0 2px 8px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.03)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.nav{background:linear-gradient(135deg,#1e1b4b,#312e81,#3730a3);padding:0 24px;display:flex;align-items:center;gap:2px;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(30,27,75,.3)}
+.nav span{font-size:15px;font-weight:800;color:#fff;margin-right:24px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav a{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;color:rgba(255,255,255,.7);transition:all .2s}
+.nav a:hover{background:rgba(255,255,255,.12);color:#fff}.nav a svg{flex-shrink:0}
+.nav .dl{margin-left:auto;background:rgba(255,255,255,.15);color:#fff}.nav .dl:hover{background:rgba(255,255,255,.25)}
+.container{max-width:1500px;margin:0 auto;padding:24px 24px 40px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.6px;margin-bottom:6px}
+.sub{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:24px}.sub b{color:var(--text);font-weight:700}
+.mtabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.mtab{display:inline-flex;align-items:center;padding:8px 18px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.mtab:hover{border-color:var(--blue);color:var(--blue)}
+.mtab.act{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr)}}
+.scard{background:var(--card);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .2s}
+.scard:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.scard .sl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.scard .sv{font-size:28px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+.scard .sd{font-size:11px;color:var(--muted);margin-top:4px}
+.scard::after{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.scard.win::after{background:var(--green)}.scard.lose::after{background:var(--red)}.scard.info::after{background:var(--blue)}
+.sec{display:flex;align-items:center;gap:10px;margin:28px 0 12px}
+.sec span{font-size:13px;font-weight:700;color:var(--text)}.sec .line{flex:1;height:1px;background:var(--border)}
+.posi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px}
+.posi-card{background:var(--card);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:768px){.charts{grid-template-columns:1fr}}
+.cbox{background:var(--card);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.cbox h3{font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px}
+.cwrap{height:240px;position:relative}canvas{width:100%!important}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:12px 16px;background:var(--card);border-radius:12px;box-shadow:var(--shadow)}
+.toolbar label{font-size:11px;font-weight:700;color:var(--muted)}
+.toolbar input,.toolbar select{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;outline:none;background:#f8fafc;color:var(--text);transition:border-color .15s}
+.toolbar input:focus,.toolbar select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.toolbar input{min-width:110px}.toolbar select{min-width:70px}
+.toolbar .cnt{font-size:11px;font-weight:700;color:var(--blue);background:#eef2ff;padding:6px 16px;border-radius:20px;white-space:nowrap;margin-left:auto}
+.mt{width:100%;table-layout:fixed;border-spacing:0;font-size:12px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.mt th{background:linear-gradient(180deg,#fafbfd,#f1f5f9);padding:11px 8px;text-align:center;font-weight:700;color:var(--muted);border-bottom:2px solid var(--blue);font-size:10px;white-space:nowrap;letter-spacing:.3px}
+.mt td{padding:9px 8px;border-bottom:1px solid #f1f5f9;text-align:center;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.mt tr.cl{cursor:pointer}.mt tr.w td{background:#f0fdf4}.mt tr.l td{background:#fef2f2}
+.mt tr.cl:hover td{filter:brightness(.93)}.mt tr.ex td{background:#eef2ff!important;filter:none!important}
+.dr{display:none}.dr.s{display:table-row}.dr td{padding:14px 8px 24px;border-bottom:2px solid var(--border);background:#f8fafc}
+.dt{width:100%;border-collapse:collapse;font-size:12px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.dt th{background:#f8fafc;padding:10px;text-align:center;font-weight:700;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)}
+.dt td{padding:10px;text-align:center;font-weight:600;border-bottom:1px solid #f1f5f9;font-size:12.5px}.dt tr:last-child td{border-bottom:0}
+.vb{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:600;margin:8px 0 12px}
+.vg{background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0}.vr{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.va{background:#fffbeb;color:#92400e;border:1px solid #fde68a}.vn{background:#f8fafc;color:var(--muted);border:1px solid var(--border)}
+.vd{width:8px;height:8px;border-radius:50%;flex-shrink:0}.vdg{background:var(--green)}.vdr{background:var(--red)}.vda{background:var(--amber)}.vdn{background:var(--muted)}
+.detail-stack{margin-top:14px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.detail-stack .pw{height:160px;position:relative;border-bottom:1px solid var(--border)}
+.detail-stack .sw{height:120px;position:relative}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.1px}
+.bl{background:#d1fae5;color:#065f46}.bs{background:#fee2e2;color:#991b1b}.g{color:var(--green)}.r{color:var(--red)}.a{color:var(--amber)}
+.up{color:var(--green)}.down{color:var(--red)}
+</style></head><body>
+<div class="nav"><span>📊 交易日记</span><a href="analysis.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>分析报告</a><a href="entry_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>入场研究</a><a href="exit_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>离场研究</a><a href="advice.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>改善建议</a><a href="dashboard.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>仪表盘</a><a href="compare.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>多月对比</a><a href="weekly.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每周分析</a><a href="交易记录_06.xlsx" class="dl" download><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>下载 Excel</a></div><div class="container">
+<h1 id="hdTitle">7月交易记录</h1><div class="mtabs"><button class="mtab" onclick="switchMonth(1)" id="mt1">1月</button><button class="mtab" onclick="switchMonth(2)" id="mt2">2月</button><button class="mtab" onclick="switchMonth(3)" id="mt3">3月</button><button class="mtab" onclick="switchMonth(4)" id="mt4">4月</button><button class="mtab" onclick="switchMonth(5)" id="mt5">5月</button><button class="mtab act" onclick="switchMonth(7)" id="mt7">7月</button></div><div class="sub" id="hdSub"><span>OKX 永续合约</span><span id="ss1"></span><span id="ss2"></span><span id="ss3"></span></div>
+<div class="stats"><div class="scard info"><div class="sl">交易天数</div><div class="sv">30</div><div class="sd">06/01 — 06/30</div></div><div class="scard lose"><div class="sl">胜率</div><div class="sv down" id="svWR">24%</div><div class="sd" id="sdWR">62 胜 / 187 负</div></div><div class="scard lose"><div class="sl">净盈亏</div><div class="sv down" id="svPnl">-178.3<span style="font-size:16px">U</span></div><div class="sd" id="sdPnl">日均 -5.9U</div></div><div class="scard lose"><div class="sl">平均亏损</div><div class="sv down" id="svAL">2.9%</div><div class="sd" id="sdAL">最大 -6.1%</div></div><div class="scard win"><div class="sl">平均盈利</div><div class="sv up" id="svAW">+7.3%</div><div class="sd" id="sdAW">62 笔盈利交易</div></div><div class="scard win"><div class="sl">盈亏比</div><div class="sv up" id="svWR2">2.48</div><div class="sd">均盈/均亏</div></div></div>
+<div class="sec"><span class="line"></span><span>当前持仓</span><span class="line"></span></div><div class="posi-grid"><div class="posi-card"><div class="pc">WLD-USDT <span class="badge bl">做多</span></div><div class="pi">322 张 @ 0.6053 · 浮盈 +3.10U</div></div><div class="posi-card"><div class="pc">APT-USDT <span class="badge bs">做空</span></div><div class="pi">340 张 @ 0.6386 · 浮盈 +0.72U</div></div></div>
+<div class="sec"><span class="line"></span><span>图表分析</span><span class="line"></span></div><div class="charts"><div class="cbox"><h3>累计盈亏走势</h3><div class="cwrap"><canvas id="ch0"></canvas></div></div><div class="cbox"><h3>品种盈亏分布</h3><div class="cwrap"><canvas id="ch1"></canvas></div></div><div class="cbox"><h3>胜率分布</h3><div class="cwrap"><canvas id="ch2"></canvas></div></div><div class="cbox"><h3>日盈亏明细</h3><div class="cwrap"><canvas id="ch3"></canvas></div></div></div>
+<div class="sec"><span class="line"></span><span>交易明细</span><span class="line"></span></div><div class="toolbar"><label>日期</label><input type="date" id="df" onchange="R()"><span style="color:var(--muted)">-</span><input type="date" id="dt" onchange="R()"><label>搜索</label><input type="text" id="sq" placeholder="币种..." oninput="R()"><label>方向</label><select id="sd" onchange="R()"><option value="all">全部</option><option value="做多">做多</option><option value="做空">做空</option></select><label>结果</label><select id="sr" onchange="R()"><option value="all">全部</option><option value="win">盈利</option><option value="lose">亏损</option></select><span class="cnt" id="rc"></span></div><table class="mt"><colgroup><col style="width:11%"><col style="width:11%"><col style="width:6%"><col style="width:12%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:10%"><col style="width:10%"></colgroup><thead><tr><th>日期</th><th>币种</th><th>方向</th><th>趋势</th><th>SRSI</th><th>持仓亏损</th><th>持仓盈利</th><th>结果</th><th>离场亏损</th><th>离场盈利</th></tr></thead><tbody id="tb"></tbody></table></div>
 <script>
-var M=0,cd=[],cs=[],D=[],PATHS=null,curIdx=null,pc=null,sc=null,chartRefs={},pendingClick=null;
-function initPage(){
-var months=Object.keys(ALL_DATA).map(Number).filter(function(m){return ALL_DATA[m]&&ALL_DATA[m].length});
-if(!months.length){document.querySelector('.container').innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)"><h2>暂无数据</h2><p>数据正在由GitHub Actions自动拉取中...</p><a href="https://github.com/YYYcjj/crypto-backtest/actions" style="color:var(--blue)">查看运行状态</a></div>';return}
-months.sort(function(a,b){return a-b});
-var maxM=months[months.length-1];
-var ctr=document.querySelector('.container');
-ctr.innerHTML='<h1 id="hdTitle">'+maxM+'月交易记录</h1><div class="mtabs" id="hdTabs"></div><div class="sub" id="hdSub"></div><div class="stats" id="hdStats"></div><div class="sec"><span class="line"></span><span>图表分析</span><span class="line"></span></div><div class="charts"><div class="cbox"><h3>累计盈亏走势</h3><div class="cwrap"><canvas id="ch0"></canvas></div></div><div class="cbox"><h3>品种盈亏分布</h3><div class="cwrap"><canvas id="ch1"></canvas></div></div><div class="cbox"><h3>胜率分布</h3><div class="cwrap"><canvas id="ch2"></canvas></div></div><div class="cbox"><h3>日盈亏明细</h3><div class="cwrap"><canvas id="ch3"></canvas></div></div></div><div class="sec"><span class="line"></span><span>交易明细</span><span class="line"></span></div><div class="toolbar"><label>日期</label><input type="date" id="df" onchange="R()"><span style="color:var(--muted)">-</span><input type="date" id="dt" onchange="R()"><label>搜索</label><input type="text" id="sq" placeholder="币种..." oninput="R()"><label>方向</label><select id="sd" onchange="R()"><option value="all">全部</option><option value="做多">做多</option><option value="做空">做空</option></select><label>结果</label><select id="sr" onchange="R()"><option value="all">全部</option><option value="win">盈利</option><option value="lose">亏损</option></select><span class="cnt" id="rc"></span></div><div class="twrap"><table class="mt"><colgroup><col style="width:10%"><col style="width:11%"><col style="width:6%"><col style="width:11%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:13%"></colgroup><thead><tr><th>日期</th><th>币种</th><th>方向</th><th>趋势</th><th>SRSI</th><th>持仓亏损</th><th>持仓盈利</th><th>结果</th><th>离场亏损</th><th>离场盈利</th></tr></thead><tbody id="tb"></tbody></table></div>';
-months.forEach(function(m){var b=document.createElement('button');b.className='mtab'+(m===maxM?' act':'');b.textContent=m+'月';b.id='mt'+m;b.onclick=function(){switchMonth(m)};document.getElementById('hdTabs').appendChild(b)});
-switchMonth(maxM)}
-function switchMonth(m){if(m===M)return;M=m;document.querySelectorAll('.mtab').forEach(function(b){b.classList.toggle('act',parseInt(b.textContent)===m)});document.getElementById('hdTitle').textContent=m+'月交易记录';D=ALL_DATA[m]||[];if(!D.length)return;for(var di=0;di<D.length;di++)D[di]._oi=di;D.reverse();var wins=D.filter(function(t){return t.pnl_usdt>0}),losses=D.filter(function(t){return t.pnl_usdt<=0});var total=D.length,totalPnl=D.reduce(function(s,t){return s+t.pnl_usdt},0);var wr=wins.length/total*100,avgWin=wins.length?wins.reduce(function(s,t){return s+t.pnl_pct},0)/wins.length:0,avgLoss=losses.length?losses.reduce(function(s,t){return s+t.pnl_pct},0)/losses.length:0,ratio=avgLoss?Math.abs(avgWin/avgLoss):0;var uniqDays=new Set(D.map(function(t){return t.entry_time.substr(0,10)}));document.getElementById('hdSub').innerHTML='<span>OKX 永续合约</span><span>'+total+' 笔交易</span><span>胜 <b>'+wins.length+'</b> / 负 <b>'+losses.length+'</b></span><span>净盈亏 <b class="'+(totalPnl<0?'down':'up')+'">'+totalPnl.toFixed(1)+'U</b></span>';document.getElementById('hdStats').innerHTML='<div class="scard info"><div class="sl">交易天数</div><div class="sv">'+uniqDays.size+'</div></div><div class="scard '+(wr>=50?'win':'lose')+'"><div class="sl">胜率</div><div class="sv '+(wr>=50?'up':'down')+'">'+wr.toFixed(0)+'%</div></div><div class="scard '+(totalPnl>=0?'win':'lose')+'"><div class="sl">净盈亏</div><div class="sv '+(totalPnl>=0?'up':'down')+'">'+totalPnl.toFixed(1)+'U</div></div><div class="scard lose"><div class="sl">平均亏损</div><div class="sv down">'+Math.abs(avgLoss).toFixed(1)+'%</div></div><div class="scard win"><div class="sl">平均盈利</div><div class="sv up">+'+avgWin.toFixed(1)+'%</div></div><div class="scard win"><div class="sl">盈亏比</div><div class="sv up">'+ratio.toFixed(2)+'</div></div>';var daily={};D.forEach(function(t){var day=t.entry_time.substr(0,10);daily[day]=(daily[day]||0)+t.pnl_usdt});cd=[];var cum=0;for(var d=1;d<=31;d++){var key='2026-'+('0'+M).slice(-2)+'-'+('0'+d).slice(-2),p=Math.round((daily[key]||0)*10)/10;cum=Math.round((cum+p)*10)/10;cd.push({d:('0'+M).slice(-2)+'-'+('0'+d).slice(-2),p:p,c:cum})}var cs2={};D.forEach(function(t){var c=t.coin.replace('-USDT','');if(!cs2[c])cs2[c]={n:c,p:0,c:0};cs2[c].p+=t.pnl_usdt;cs2[c].c++});cs=Object.values(cs2);cs.sort(function(a,b){return b.p-a.p});buildCharts();R()}
-function R(){var q=document.getElementById('sq').value.toLowerCase(),dir=document.getElementById('sd').value,res=document.getElementById('sr').value,df=document.getElementById('df').value,dt2=document.getElementById('dt').value,f=[];for(var i=0;i<D.length;i++){var t=D[i];if(df&&t.entry_time<df+' 00:00')continue;if(dt2&&t.entry_time>dt2+' 23:59')continue;if(q&&t.coin.toLowerCase().indexOf(q)<0)continue;if(dir!=='all'&&t.direction!==dir)continue;if(res==='win'&&t.pnl_usdt<=0)continue;if(res==='lose'&&t.pnl_usdt>=0)continue;f.push({idx:i,trade:t})}document.getElementById('rc').textContent='显示 '+f.length+'/'+D.length+' 笔';var tb=document.getElementById('tb');tb.innerHTML='';for(var j=0;j<f.length;j++){var t=f[j].trade,row=document.createElement('tr');row.className='cl'+(t.pnl_usdt>0?' w':' l');row.onclick=(function(oi,jj,tr){return function(){TD(oi,jj,tr,this)}})(t._oi,j,t);row.innerHTML='<td>'+t.entry_time.substr(5,11)+'</td><td><b>'+t.coin+'</b></td><td><span class=badge '+(t.direction==='做多'?'bl':'bs')+'>'+t.direction+'</span></td><td>'+(t.trend_1h||'?')+'/'+(t.trend_4h||'?')+'/'+(t.trend_1d||'?')+'</td><td>'+(t.srsi_1h||'?')+'/'+(t.srsi_4h||'?')+'/'+(t.srsi_1d||'?')+'</td><td class=r>'+((t.mae_pct||0).toFixed(1)==='0.0'?'—':(t.mae_pct||0).toFixed(1)+'%')+'</td><td class=g>'+((t.mfe_pct||0).toFixed(1)==='0.0'?'—':'+'+(t.mfe_pct||0).toFixed(1)+'%')+'</td><td class='+(t.pnl_usdt>0?'g':'r')+'><b>'+(t.pnl_usdt>0?'盈':'亏')+' '+((t.pnl_usdt>0?'+':'')+t.pnl_usdt.toFixed(2)+'U')+'</b></td><td>'+((t.exit_time||'').substr(5,11)||'-')+'</td><td class='+((t.pnl_pct||0)>0?'g':'r')+'>'+((t.pnl_pct||0)>0?'+'+(t.pnl_pct||0).toFixed(1)+'%':(t.pnl_pct||0).toFixed(1)+'%')+'</td>';tb.appendChild(row)}
-function TD(oi,j,t,row){return}
-function buildCharts(){Object.values(chartRefs).forEach(function(c){try{c.destroy()}catch(e){}});chartRefs.ch0=new Chart(document.getElementById('ch0'),{type:'line',data:{labels:cd.map(function(x){return x.d}),datasets:[{data:cd.map(function(x){return x.c}),borderColor:'#6366f1',backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);g.addColorStop(0,'rgba(99,102,241,.15)');g.addColorStop(1,'rgba(99,102,241,0)');return g},fill:true,tension:.4,pointRadius:0,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});chartRefs.ch1=new Chart(document.getElementById('ch1'),{type:'bar',data:{labels:cs.map(function(c){return c.n}),datasets:[{data:cs.map(function(c){return c.p}),backgroundColor:cs.map(function(c){return c.p>0?'rgba(16,185,129,.7)':'rgba(239,68,68,.6)'}),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false}});var wcount=D.filter(function(t){return t.pnl_usdt>0}).length,lcount=D.length-wcount;chartRefs.ch2=new Chart(document.getElementById('ch2'),{type:'doughnut',data:{labels:['盈利','亏损'],datasets:[{data:[wcount,lcount],backgroundColor:['#10b981','#ef4444'],borderColor:'#fff',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%'}});chartRefs.ch3=new Chart(document.getElementById('ch3'),{type:'bar',data:{labels:cd.map(function(x){return x.d}),datasets:[{data:cd.map(function(x){return x.p}),backgroundColor:cd.map(function(x){return x.p>0?'rgba(16,185,129,.65)':'rgba(239,68,68,.55)'}),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false}})}
-if(typeof ALL_DATA!=='undefined'&&typeof Chart!=='undefined'){initPage()}else{document.addEventListener('DOMContentLoaded',function(){if(typeof ALL_DATA!=='undefined'&&typeof Chart!=='undefined')initPage()})}
+var M=7,cd=[{"d":"06-01","p":25.3,"c":25.3},{"d":"06-02","p":-16.1,"c":9.2},{"d":"06-03","p":-15.6,"c":-6.4},{"d":"06-04","p":-15.2,"c":-21.6},{"d":"06-05","p":-15.0,"c":-36.6},{"d":"06-06","p":0,"c":-36.6},{"d":"06-07","p":-22.2,"c":-58.8},{"d":"06-08","p":14.7,"c":-44.1},{"d":"06-09","p":-7.3,"c":-51.4},{"d":"06-10","p":-7.4,"c":-58.8},{"d":"06-11","p":-8.7,"c":-67.5},{"d":"06-12","p":-10.2,"c":-77.7},{"d":"06-13","p":1.9,"c":-75.8},{"d":"06-14","p":27.5,"c":-48.3},{"d":"06-15","p":-3.1,"c":-51.4},{"d":"06-16","p":0,"c":-51.4},{"d":"06-17","p":-7.6,"c":-59.0},{"d":"06-18","p":-2.2,"c":-61.2},{"d":"06-19","p":0,"c":-61.2},{"d":"06-20","p":-9.8,"c":-71.0},{"d":"06-21","p":0,"c":-71.0},{"d":"06-22","p":0,"c":-71.0},{"d":"06-23","p":0,"c":-71.0},{"d":"06-24","p":0,"c":-71.0},{"d":"06-25","p":0,"c":-71.0},{"d":"06-26","p":0,"c":-71.0},{"d":"06-27","p":0,"c":-71.0},{"d":"06-28","p":0,"c":-71.0},{"d":"06-29","p":0,"c":-71.0},{"d":"06-30","p":0,"c":-71.0}],cs=[{n:"HUMA",p:40.059999999999995,c:13},{n:"APT",p:19.659999999999993,c:31},{n:"RIVER",p:19.540000000000003,c:4},{n:"PIPPIN",p:1.11,c:4},{n:"LIT",p:0.6699999999999999,c:20},{n:"2Z",p:0.3799999999999998,c:8},{n:"MERL",p:-0.15,c:1},{n:"COAI",p:-0.17,c:1},{n:"BREV",p:-0.35,c:2},{n:"AZTEC",p:-0.82,c:2},{n:"YB",p:-1.4799999999999998,c:26},{n:"HOME",p:-3.62,c:8},{n:"FARTCOIN",p:-6.49,c:31},{n:"YGG",p:-6.88,c:1},{n:"LAB",p:-6.95,c:1},{n:"TRIA",p:-7.3,c:1},{n:"BERA",p:-7.42,c:1},{n:"WLD",p:-7.47,c:1},{n:"GMT",p:-7.63,c:1},{n:"XPL",p:-9.77,c:1},{n:"APR",p:-10.15000000000001,c:17},{n:"KITE",p:-14.67,c:2},{n:"JTO",p:-15.03,c:2},{n:"ORDI",p:-17.499999999999996,c:9},{n:"PUMP",p:-21.559999999999995,c:43},{n:"RAVE",p:-32.33,c:4},{n:"HMSTR",p:-36.78,c:8},{n:"DASH",p:-45.199999999999996,c:6}];
+var D=ALL_DATA[M]||[];
+cs.sort(function(a,b){return b.p-a.p});
+var chartRefs={};
+function buildCharts(){
+Object.values(chartRefs).forEach(function(c){try{c.destroy()}catch(e){}});
+chartRefs.ch0=new Chart(document.getElementById("ch0"),{type:"line",data:{labels:cd.map(function(x){return x.d}),datasets:[{data:cd.map(function(x){return x.c}),borderColor:"#6366f1",backgroundColor:function(ctx){var g=ctx.chart.ctx.createLinearGradient(0,0,0,ctx.chart.height);g.addColorStop(0,"rgba(99,102,241,.15)");g.addColorStop(1,"rgba(99,102,241,0)");return g},fill:true,tension:.4,pointRadius:0,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(v){return"累计:"+v.raw+"U"}}}},scales:{x:{grid:{display:false},ticks:{maxTicksLimit:16,color:"#94a3b8",font:{size:10}}},y:{grid:{color:"rgba(0,0,0,.03)",drawBorder:false},ticks:{color:"#94a3b8",font:{size:10},callback:function(v){return v+"U"}}}}}});
+chartRefs.ch1=new Chart(document.getElementById("ch1"),{type:"bar",data:{labels:cs.map(function(c){return c.n}),datasets:[{data:cs.map(function(c){return c.p}),backgroundColor:cs.map(function(c){return c.p>0?"rgba(16,185,129,.7)":"rgba(239,68,68,.6)"}),borderColor:cs.map(function(c){return c.p>0?"#10b981":"#ef4444"}),borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(v){var c=cs[v.dataIndex];return c.n+" "+c.p+"U ("+c.c+")"}}}},scales:{x:{grid:{display:false},ticks:{color:"#94a3b8",font:{size:9},maxRotation:45,maxTicksLimit:20}},y:{grid:{color:"rgba(0,0,0,.03)",drawBorder:false},ticks:{color:"#94a3b8",font:{size:10},callback:function(v){return v+"U"}}}}}});
+var wcount=D.filter(function(t){return t.pnl_usdt>0}).length,lcount=D.length-wcount;
+chartRefs.ch2=new Chart(document.getElementById("ch2"),{type:"doughnut",data:{labels:["盈利","亏损"],datasets:[{data:[wcount,lcount],backgroundColor:["#10b981","#ef4444"],borderColor:"#fff",borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:"65%",plugins:{legend:{position:"bottom",labels:{padding:14,usePointStyle:true,pointStyleWidth:8,font:{size:11}}}}}});
+chartRefs.ch3=new Chart(document.getElementById("ch3"),{type:"bar",data:{labels:cd.map(function(x){return x.d}),datasets:[{data:cd.map(function(x){return x.p}),backgroundColor:cd.map(function(x){return x.p>0?"rgba(16,185,129,.65)":"rgba(239,68,68,.55)"}),borderColor:cd.map(function(x){return x.p>0?"#10b981":"#ef4444"}),borderWidth:1,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:"#94a3b8",font:{size:9},maxRotation:45}},y:{grid:{color:"rgba(0,0,0,.03)",drawBorder:false},ticks:{color:"#94a3b8",font:{size:10},callback:function(v){return v+"U"}}}}}});
+}
+var PATHS=null,curIdx=null,pc=null,sc=null;
+var pathsFile="paths_data_"+("0"+M).slice(-2)+".json";
+fetch(pathsFile).then(function(r){return r.json()}).then(function(d){PATHS=d;R()});R();
+function switchMonth(m){if(m===M)return;
+history.replaceState(null,"","?m="+m);
+M=m;
+document.querySelectorAll(".mtab").forEach(function(b){b.classList.toggle("act",parseInt(b.textContent)===m)});
+D=ALL_DATA[m]||[];if(!D.length)return;
+var wins=D.filter(function(t){return t.pnl_usdt>0});var losses=D.filter(function(t){return t.pnl_usdt<=0});
+var total=D.length,totalPnl=D.reduce(function(s,t){return s+t.pnl_usdt},0);
+var wr=wins.length/total*100,avgWin=wins.length?wins.reduce(function(s,t){return s+t.pnl_pct},0)/wins.length:0;
+var avgLoss=losses.length?losses.reduce(function(s,t){return s+t.pnl_pct},0)/losses.length:0;
+var maxLoss=losses.length?Math.min.apply(null,losses.map(function(t){return t.pnl_pct})):0;
+var ratio=avgLoss?Math.abs(avgWin/avgLoss):0;
+document.getElementById("hdSub").innerHTML="<span>OKX 永续合约</span><span>"+total+" 笔交易</span><span>胜 <b>"+wins.length+"</b> / 负 <b>"+losses.length+"</b></span><span>净盈亏 <b class=\""+(totalPnl<0?"down":"up")+"\">"+totalPnl.toFixed(1)+"U</b></span>";
+document.getElementById("svWR").textContent=wr.toFixed(0)+"%";
+document.getElementById("sdWR").textContent=wins.length+" 胜 / "+losses.length+" 负";
+document.getElementById("svPnl").innerHTML=totalPnl.toFixed(1)+"<span style=font-size:16px>U</span>";
+document.getElementById("svAL").textContent=Math.abs(avgLoss).toFixed(1)+"%";
+document.getElementById("sdAL").textContent="最大 "+maxLoss.toFixed(1)+"%";
+document.getElementById("svAW").textContent="+"+avgWin.toFixed(1)+"%";
+document.getElementById("sdAW").textContent=wins.length+" 笔盈利交易";
+document.getElementById("svWR2").textContent=ratio.toFixed(2);
+var daily={};D.forEach(function(t){var day=t.entry_time.substr(0,10);daily[day]=(daily[day]||0)+t.pnl_usdt});
+var monthDays=new Date(2026,M,0).getDate();
+cd=[];var cum=0;for(var d=1;d<=Math.min(monthDays,31);d++){var key="2026-"+("0"+M).slice(-2)+"-"+("0"+d).slice(-2);var p=Math.round((daily[key]||0)*10)/10;cum=Math.round((cum+p)*10)/10;cd.push({d:("0"+M).slice(-2)+"-"+("0"+d).slice(-2),p:p,c:cum})}
+var cs2={};D.forEach(function(t){var c=t.coin.replace("-USDT","");if(!cs2[c])cs2[c]={n:c,p:0,c:0};cs2[c].p+=t.pnl_usdt;cs2[c].c++});cs=Object.values(cs2);cs.sort(function(a,b){return b.p-a.p});
+buildCharts();
+pathsFile="paths_data_"+("0"+m).slice(-2)+".json";
+PATHS=null;fetch(pathsFile).then(function(r){return r.json()}).then(function(d){PATHS=d;R()});R();
+}
+function R(){var q=document.getElementById("sq").value.toLowerCase();var d=document.getElementById("sd").value;var r=document.getElementById("sr").value;var df=document.getElementById("df").value,dt2=document.getElementById("dt").value;var f=[];for(var i=D.length-1;i>=0;i--){var t=D[i];if(df&&t.entry_time<df+" 00:00")continue;if(dt2&&t.entry_time>dt2+" 23:59")continue;if(q&&t.coin.toLowerCase().indexOf(q)<0)continue;if(d!=="all"&&t.direction!==d)continue;if(r==="win"&&t.pnl_usdt<=0)continue;if(r==="lose"&&t.pnl_usdt>=0)continue;f.push({trade:t,idx:i});}f.sort(function(a,b){return a.trade.exit_time<b.trade.exit_time?1:-1});document.getElementById("rc").textContent="显示 "+f.length+"/"+D.length+" 笔";var tb=document.getElementById("tb");tb.innerHTML="";for(var j=0;j<f.length;j++){var t=f[j].trade,oi=f[j].idx;var row=document.createElement("tr");row.className="cl "+(t.pnl_usdt>0?"w":"l");row.onclick=function(idx){return function(){TD(idx,this)}}(oi);var c1=document.createElement("td");c1.textContent=t.entry_time.substr(5,11);row.appendChild(c1);var c2=document.createElement("td");c2.innerHTML="<b>"+t.coin+"</b>";row.appendChild(c2);var c3=document.createElement("td");c3.innerHTML="<span class=badge "+(t.direction==="做多"?"bl":"bs")+">"+t.direction+"</span>";row.appendChild(c3);var c4=document.createElement("td");c4.textContent=t.trend_1h+"/"+t.trend_4h+"/"+t.trend_1d;row.appendChild(c4);var c5=document.createElement("td");c5.textContent=t.srsi_1h+"/"+t.srsi_4h+"/"+t.srsi_1d;row.appendChild(c5);var c6=document.createElement("td");c6.className="r";c6.textContent=(t.mae_pct||0).toFixed(1)+"%";row.appendChild(c6);var c7=document.createElement("td");c7.className="g";c7.textContent="+"+(t.mfe_pct||0).toFixed(1)+"%";row.appendChild(c7);var res=(t.pnl_usdt>0?"盈":"亏")+" "+(t.pnl_pct>0?"+":"")+t.pnl_pct.toFixed(1)+"%";var c8=document.createElement("td");c8.className=t.pnl_usdt>0?"g":"r";c8.innerHTML="<b>"+res+"</b>";row.appendChild(c8);var pp=PATHS&&PATHS[oi]?PATHS[oi]:null;var c9=document.createElement("td");c9.className="r";c9.textContent=pp&&pp.pm!=null?pp.pm.toFixed(1)+"%":"-";row.appendChild(c9);var c10=document.createElement("td");c10.className="g";c10.textContent=pp&&pp.px!=null?(pp.px>0?"+":"")+pp.px.toFixed(1)+"%":"-";row.appendChild(c10);tb.appendChild(row);var dr=document.createElement("tr");dr.className="dr";dr.id="dr-"+oi;var dtc=document.createElement("td");dtc.colSpan=10;var dd=document.createElement("div");dd.id="dc-"+oi;dtc.appendChild(dd);dr.appendChild(dtc);tb.appendChild(dr);}}
+function TD(idx,row){
+if(!PATHS){var dr=document.getElementById("dr-"+idx);if(dr){dr.classList.add("s");dr.style.display="";dr.innerHTML='<td colspan=10 style=padding:16px;text-align:center;color:var(--muted)>数据加载中...</td>'}return}
+var dr=document.getElementById("dr-"+idx),vis=dr.classList.contains("s");
+var all=document.querySelectorAll(".dr.s");for(var i=0;i<all.length;i++){all[i].classList.remove("s");all[i].style.display="none"}
+var al2=document.querySelectorAll("tr.ex");for(var i=0;i<al2.length;i++)al2[i].classList.remove("ex");
+if(pc){try{pc.destroy()}catch(e){}}if(sc){try{sc.destroy()}catch(e){}}pc=null;sc=null;
+if(vis){curIdx=null;return}
+row.classList.add("ex");dr.classList.add("s");dr.style.display="";curIdx=idx;
+var t=D[idx],p=PATHS[idx],cd2=document.getElementById("dc-"+idx);cd2.innerHTML="";
+if(!p||!p.b||!p.b.length){cd2.innerHTML='<div style="padding:20px;color:var(--muted)">无数据</div>';return}
+var bars=p.b,sv=p.s||[],dv=p.d||[],times=p.t||[],ex=p.ex,ei=p.ei||0;
+var st=Math.max(0,ei-12);bars=bars.slice(st);sv=sv.slice(st);dv=dv.slice(st);times=times.slice(st);ei-=st;if(ex!=null)ex-=st;
+var lbs=[];for(var k=0;k<times.length;k++)lbs.push(k%8===0?times[k]:"");
+var hm=p.hm||0,hx=p.hx||0,pm=p.pm||0,px=p.px||0,isShort=t.direction==="做空";
+var eP=t.entry_price,eT=t.entry_time.substr(0,16),xP=t.exit_price||"-",xT=t.exit_time?t.exit_time.substr(0,16):"-";
+var title=t.coin+" · "+t.direction+" · "+(t.pnl_usdt>0?"盈利":"亏损")+" "+t.pnl_pct.toFixed(1)+"%";
+var verdict="",vcls="",vdot="";
+if(t.pnl_usdt<=0){
+  if(isShort){
+    if(px!=null&&px>0&&px>Math.abs(t.pnl_pct)*0.5){verdict="止损合适: 离场后上涨+"+px.toFixed(1)+"%";vcls="vg";vdot="vdg"}
+    else if(pm!=null&&pm<-3&&pm<hm-3){verdict="止损过早: 离场后继续跌"+(hm-pm).toFixed(1)+"%";vcls="vr";vdot="vdr"}
+    else{verdict="止损中性";vcls="vn";vdot="vdn"}
+  }else{
+    if(pm!=null&&pm<-3&&pm<hm-3){verdict="止损合适: 离场后继续跌"+(hm-pm).toFixed(1)+"%";vcls="vg";vdot="vdg"}
+    else if(px!=null&&px>0&&px>Math.abs(t.pnl_pct)*0.5){verdict="止损过早: 离场后反弹+"+px.toFixed(1)+"%";vcls="vr";vdot="vdr"}
+    else{verdict="止损中性";vcls="vn";vdot="vdn"}
+  }
+}else{
+  var gb=hx-t.pnl_pct;
+  if(hx>0&&gb>5){verdict="止盈过晚: 最高+"+hx.toFixed(1)+"% 回吐"+gb.toFixed(1)+"%";vcls="vr";vdot="vdr"}
+  else if(px!=null&&px>10){verdict="止盈过早: 错失+"+px.toFixed(0)+"%";vcls="va";vdot="vda"}
+  else if(px!=null&&px>3){verdict="止盈略早: 仍有+"+px.toFixed(0)+"%";vcls="va";vdot="vda"}
+  else if(pm!=null&&pm<-3){verdict="止盈合适: 离场后回落";vcls="vg";vdot="vdg"}
+  else{verdict="止盈中性";vcls="vn";vdot="vdn"}
+}
+var tbl='<div style="font-size:14px;font-weight:700;margin-bottom:4px">'+title+'</div>';
+tbl+='<div class="vb '+vcls+'"><div class="vd '+vdot+'"></div>'+verdict+'</div>';
+tbl+='<table class=dt><thead><tr><th>入场时间</th><th>离场时间</th><th>入场价</th><th>离场价</th><th>持仓亏损</th><th>持仓盈利</th><th>离场亏损</th><th>离场盈利</th></tr></thead><tbody><tr>';
+tbl+='<td>'+eT+'</td><td>'+xT+'</td><td>'+eP+'</td><td>'+xP+'</td>';
+if(isShort){
+  tbl+='<td class=r>'+(-hx).toFixed(1)+'%</td><td class=g>+'+(-hm).toFixed(1)+'%</td>';
+  tbl+='<td class=r>'+(-px).toFixed(1)+'%</td><td class=g>+'+(-pm).toFixed(1)+'%</td>';
+}else{
+  tbl+='<td class=r>'+hm+'%</td><td class=g>'+hx+'%</td>';
+  tbl+='<td class=r>'+pm+'%</td><td class=g>'+px+'%</td>';
+}
+tbl+='</tr></tbody></table>';
+cd2.innerHTML=tbl;
+
+var ds=document.createElement("div");ds.className="detail-stack";cd2.appendChild(ds);
+var p1=document.createElement("div");p1.className="pw";ds.appendChild(p1);
+var pv=document.createElement("canvas");p1.appendChild(pv);
+var p2=document.createElement("div");p2.className="sw";ds.appendChild(p2);
+var sv2=document.createElement("canvas");p2.appendChild(sv2);
+
+var hl=ex!=null?ex+1:bars.length,mi=Infinity,mx=-Infinity,hi=-1,hj=-1;
+for(var k=ei;k<hl&&k<bars.length;k++){if(bars[k]<mi){mi=bars[k];hi=k}if(bars[k]>mx){mx=bars[k];hj=k}}
+var mkd=Array(bars.length).fill(null),mxd=Array(bars.length).fill(null);if(hi>=0)mkd[hi]=mi;if(hj>=0)mxd[hj]=mx;
+var pmi=Infinity,pmx=-Infinity,phi=-1,phj=-1;
+if(ex!=null){for(var k=ex+1;k<bars.length;k++){if(bars[k]<pmi){pmi=bars[k];phi=k}if(bars[k]>pmx){pmx=bars[k];phj=k}}}
+var pmkd=Array(bars.length).fill(null),pmxd=Array(bars.length).fill(null);if(phi>=0)pmkd[phi]=pmi;if(phj>=0)pmxd[phj]=pmx;
+
+var lp={id:"ln",afterDraw:function(chart){
+var ctx=chart.ctx,x=chart.scales.x,y=chart.scales.y,y0=y.getPixelForValue(0);
+ctx.save();ctx.beginPath();ctx.setLineDash([4,4]);ctx.strokeStyle="rgba(148,163,184,.3)";ctx.lineWidth=1;ctx.moveTo(x.left,y0);ctx.lineTo(x.right,y0);ctx.stroke();ctx.restore();
+ctx.save();ctx.beginPath();ctx.setLineDash([6,3]);ctx.strokeStyle="rgba(16,185,129,.6)";ctx.lineWidth=2;var xe=x.getPixelForValue(ei);ctx.moveTo(xe,y.top);ctx.lineTo(xe,y.bottom);ctx.stroke();ctx.fillStyle="#10b981";ctx.font="bold 10px sans-serif";ctx.fillText("入场",xe+4,y.top+14);ctx.restore();
+if(ex!=null){ctx.save();var xe2=x.getPixelForValue(ex);ctx.fillStyle="rgba(241,245,249,.5)";ctx.fillRect(xe2,y.top,x.right-xe2,y.bottom-y.top);ctx.beginPath();ctx.setLineDash([6,4]);ctx.strokeStyle="#ef4444";ctx.lineWidth=2;ctx.moveTo(xe2,y.top);ctx.lineTo(xe2,y.bottom);ctx.stroke();ctx.fillStyle="#ef4444";ctx.font="bold 10px sans-serif";ctx.fillText("离场",xe2+4,y.top+14);ctx.restore();}
+}};
+
+pc=new Chart(pv.getContext("2d"),{type:"line",plugins:[lp],data:{labels:lbs,datasets:[
+{data:bars,borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,.06)",fill:true,tension:.2,pointRadius:0,borderWidth:1.5,label:"价格%"},
+{data:mkd,borderColor:"#ef4444",backgroundColor:"#ef4444",pointRadius:5,pointStyle:"rectRot",showLine:false,label:"持仓最低"},
+{data:mxd,borderColor:"#10b981",backgroundColor:"#10b981",pointRadius:5,pointStyle:"triangle",showLine:false,label:"持仓最高"},
+{data:pmkd,borderColor:"#f59e0b",backgroundColor:"#f59e0b",pointRadius:5,pointStyle:"rectRot",showLine:false,label:"离场后最低"},
+{data:pmxd,borderColor:"#f59e0b",backgroundColor:"#f59e0b",pointRadius:5,pointStyle:"triangle",showLine:false,label:"离场后最高"}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"top",labels:{boxWidth:10,font:{size:9},usePointStyle:true}}},scales:{x:{display:false,grid:{display:false}},y:{ticks:{color:"#94a3b8",font:{size:9},callback:function(v){return v+"%"}},grid:{color:"rgba(0,0,0,.03)"}}}}});
+
+var s80={id:"s80",afterDraw:function(chart){
+var ctx=chart.ctx,y=chart.scales.y;[20,80].forEach(function(v){
+var yv=y.getPixelForValue(v);ctx.save();ctx.beginPath();ctx.setLineDash([5,3]);ctx.strokeStyle="rgba(148,163,184,.35)";ctx.lineWidth=1;ctx.moveTo(chart.scales.x.left,yv);ctx.lineTo(chart.scales.x.right,yv);ctx.stroke();ctx.fillStyle="rgba(148,163,184,.6)";ctx.font="10px sans-serif";ctx.fillText(v,chart.scales.x.right-28,yv-4);ctx.restore()
+})}};
+
+sc=new Chart(sv2.getContext("2d"),{type:"line",plugins:[s80],data:{labels:lbs,datasets:[
+{data:sv,borderColor:"rgba(245,158,11,.85)",backgroundColor:"rgba(245,158,11,0)",pointRadius:0,borderWidth:1.8,tension:.4,label:"SRSI K"},
+{data:dv,borderColor:"rgba(99,102,241,.6)",backgroundColor:"rgba(99,102,241,0)",pointRadius:0,borderWidth:1.5,tension:.4,label:"SRSI D"}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"top",labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{ticks:{color:"#94a3b8",maxTicksLimit:10,maxRotation:45,font:{size:9}},grid:{display:false}},y:{min:0,max:100,ticks:{color:"#94a3b8",stepSize:25,font:{size:9}},grid:{color:"rgba(0,0,0,.03)"}}}}});
+}
+
+buildCharts();
+var pm=new URLSearchParams(location.search).get("m");if(pm&&ALL_DATA[parseInt(pm)])switchMonth(parseInt(pm));
 </script>
 </body></html>
