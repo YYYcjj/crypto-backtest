@@ -23,63 +23,56 @@ jobs:
         run: pip install requests
       - name: 删除触发器
         run: rm -f trigger-now.txt
-      - name: 拉取当月交易数据
+      - name: 调试API
         env:
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
           OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
-        run: |
-          python3 -c "
-import requests, os, hmac, hashlib, base64, datetime as dt
-k=os.environ['OKX_API_KEY'];s=os.environ['OKX_API_SECRET'];p=os.environ['OKX_API_PASSPHRASE']
-now=dt.datetime.now(dt.timezone.utc);ts=now.strftime('%Y-%m-%dT%H:%M:%S.')+f'{now.microsecond//1000:03d}Z'
-for m in range(1,8):
-    q=f'/api/v5/trade/orders-history?instType=SWAP&state=filled&begin={dt.datetime(2026,m,1,tzinfo=dt.timezone.utc).timestamp()*1000:.0f}&end={(dt.datetime(2026,m+1,1,tzinfo=dt.timezone.utc).timestamp()-1)*1000:.0f}&limit=100'
-    sig=hmac.new(s.encode(),(ts+'GET'+q).encode(),hashlib.sha256).digest()
-    r=requests.get('https://www.okx.com'+q,headers={'OK-ACCESS-KEY':k,'OK-ACCESS-SIGN':base64.b64encode(sig).decode(),'OK-ACCESS-TIMESTAMP':ts,'OK-ACCESS-PASSPHRASE':p},timeout=30)
-    d=r.json()
-    print(f'{m}月: {len(d.get("data",[]))}条, code={d.get("code")}')
-"
-          python3 update_trading_journal.py $(date +%-m) || true
+        run: python3 debug_okx.py
+      - name: 拉取当月数据
+        env:
+          OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
+          OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
+        run: python3 update_trading_journal.py $(date +%-m) || true
       - name: 生成网页数据
         working-directory: results
         run: |
           python3 << 'PYEOF'
           import json
           with open('journal_trades.json') as f:
-              trades = json.load(f)
+            trades = json.load(f)
           months = {}
           for t in trades:
-              m = int(t['entry_time'][5:7])
-              months.setdefault(m, []).append(t)
+            m = int(t['entry_time'][5:7])
+            months.setdefault(m, []).append(t)
           labels = {1:'Q1',2:'Q1',3:'Q2',4:'Q2',5:'Q3',6:'Q3',7:'Q4',8:'Q4',9:'Q5',10:'Q5',11:'Q6',12:'Q6'}
           groups = {}
           for m in range(1,13):
-              g = labels[m]
-              groups.setdefault(g, [])
-              if m in months:
-                  items = []
-                  for t in months[m]:
-                      items.append(json.dumps({"coin":t["coin"],"direction":t["direction"],"entry_price":t["entry_price"],"exit_price":t["exit_price"],"pnl_usdt":t["pnl_usdt"],"pnl_pct":t["pnl_pct"],"entry_time":t["entry_time"],"exit_time":t["exit_time"],"entry_ts":t["entry_ts"],"mae_pct":t.get("mae_pct",0),"mfe_pct":t.get("mfe_pct",0),"trend_1h":t.get("trend_1h","?"),"trend_4h":t.get("trend_4h","?"),"trend_1d":t.get("trend_1d","?"),"srsi_1h":t.get("srsi_1h","?"),"srsi_4h":t.get("srsi_4h","?"),"srsi_1d":t.get("srsi_1d","?")}, ensure_ascii=False))
-                  groups[g].append('ALL_DATA[' + str(m) + ']=[' + ','.join(items) + ']')
+            g = labels[m]
+            groups.setdefault(g, [])
+            if m in months:
+              items = []
+              for t in months[m]:
+                items.append(json.dumps(t, ensure_ascii=False))
+              groups[g].append('ALL_DATA['+str(m)+']=['+','.join(items)+']')
           for g, lines in groups.items():
-              if lines:
-                  content = ';'.join(lines) + ';'
-                  with open('../docs/data_' + g + '.js','w') as f:
-                      f.write(content)
-                  print('  data_' + g + '.js: ' + str(len(content)) + ' bytes')
+            if lines:
+              content = ';'.join(lines)+';'
+              with open('../docs/data_'+g+'.js','w') as f:
+                f.write(content)
+              print('data_'+g+'.js: '+str(len(content))+' bytes')
           total = sum(len(v) for v in months.values())
-          print('Total: ' + str(total) + ' trades, ' + str(len(months)) + ' months')
+          print('Total: '+str(total)+' trades, '+str(len(months))+' months')
           PYEOF
-      - name: 提交并推送
+      - name: 提交推送
         run: |
           git config user.name "Trading Bot"
           git config user.email "bot@trading.example.com"
           git add docs/data_*.js results/journal_trades.json
           if git diff --staged --quiet; then
-            echo "无数据变更"
+            echo "No changes"
           else
-            NOW=$(TZ='Asia/Shanghai' date '+%Y-%m-%d')
-            git commit -m "${NOW} 自动更新"
+            git commit -m "$(TZ='Asia/Shanghai' date '+%m/%d') auto update"
             git push
           fi
