@@ -28,7 +28,19 @@ jobs:
           OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
           OKX_API_SECRET: ${{ secrets.OKX_API_SECRET }}
           OKX_API_PASSPHRASE: ${{ secrets.OKX_API_PASSPHRASE }}
-        run: python3 update_trading_journal.py $(date +%-m) || true
+        run: |
+          python3 -c "
+import requests, os, hmac, hashlib, base64, datetime as dt
+k=os.environ['OKX_API_KEY'];s=os.environ['OKX_API_SECRET'];p=os.environ['OKX_API_PASSPHRASE']
+now=dt.datetime.now(dt.timezone.utc);ts=now.strftime('%Y-%m-%dT%H:%M:%S.')+f'{now.microsecond//1000:03d}Z'
+for m in range(1,8):
+    q=f'/api/v5/trade/orders-history?instType=SWAP&state=filled&begin={dt.datetime(2026,m,1,tzinfo=dt.timezone.utc).timestamp()*1000:.0f}&end={(dt.datetime(2026,m+1,1,tzinfo=dt.timezone.utc).timestamp()-1)*1000:.0f}&limit=100'
+    sig=hmac.new(s.encode(),(ts+'GET'+q).encode(),hashlib.sha256).digest()
+    r=requests.get('https://www.okx.com'+q,headers={'OK-ACCESS-KEY':k,'OK-ACCESS-SIGN':base64.b64encode(sig).decode(),'OK-ACCESS-TIMESTAMP':ts,'OK-ACCESS-PASSPHRASE':p},timeout=30)
+    d=r.json()
+    print(f'{m}月: {len(d.get("data",[]))}条, code={d.get("code")}')
+"
+          python3 update_trading_journal.py $(date +%-m) || true
       - name: 生成网页数据
         working-directory: results
         run: |
