@@ -5261,5 +5261,24 @@
     "srsi_4h": 0.9,
     "trend_1d": "空",
     "srsi_1d": 18.9
+  },
+  {
+    "coin": "APT-USDT",
+    "direction": "做空",
+    "entry_price": 0.603,
+    "exit_price": 0.6215,
+    "pnl_usdt": -6.55,
+    "pnl_pct": -2.98,
+    "entry_time": "2026-07-14 08:26",
+    "exit_time": "2026-07-14 13:22",
+    "entry_ts": 1784017616701,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 88.1,
+    "trend_4h": "空",
+    "srsi_4h": 51.9,
+    "trend_1d": "空",
+    "srsi_1d": 19.2
   }
 ]
