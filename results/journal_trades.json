@@ -5187,6 +5187,25 @@
     "srsi_1d": 80.8
   },
   {
+    "coin": "HUMA-USDT",
+    "direction": "做多",
+    "entry_price": 0.02226,
+    "exit_price": 0.02146,
+    "pnl_usdt": -4.32,
+    "pnl_pct": -3.59,
+    "entry_time": "2026-07-09 06:47",
+    "exit_time": "2026-07-16 08:44",
+    "entry_ts": 1783579625188,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 88.6,
+    "trend_4h": "空",
+    "srsi_4h": 0.3,
+    "trend_1d": "多",
+    "srsi_1d": 38.8
+  },
+  {
     "coin": "ORDI-USDT",
     "direction": "做多",
     "entry_price": 3.55,
