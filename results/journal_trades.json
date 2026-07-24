@@ -5244,6 +5244,25 @@
     "srsi_1d": 48.0
   },
   {
+    "coin": "APR-USDT",
+    "direction": "做多",
+    "entry_price": 0.2083,
+    "exit_price": 0.200805,
+    "pnl_usdt": -6.82,
+    "pnl_pct": -3.6,
+    "entry_time": "2026-07-12 01:53",
+    "exit_time": "2026-07-23 12:25",
+    "entry_ts": 1783821214254,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 94.7,
+    "trend_4h": "多",
+    "srsi_4h": 27.6,
+    "trend_1d": "多",
+    "srsi_1d": 55.3
+  },
+  {
     "coin": "WLD-USDT",
     "direction": "做多",
     "entry_price": 0.407,
