@@ -5964,5 +5964,43 @@
     "srsi_4h": 24.3,
     "trend_1d": "空",
     "srsi_1d": 4.9
+  },
+  {
+    "coin": "PUMP-USDT",
+    "direction": "做多",
+    "entry_price": 0.002125,
+    "exit_price": 0.002061,
+    "pnl_usdt": -5.38,
+    "pnl_pct": -3.01,
+    "entry_time": "2026-08-02 12:18",
+    "exit_time": "2026-08-03 04:54",
+    "entry_ts": 1785673117358,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 1.7,
+    "trend_4h": "多",
+    "srsi_4h": 2.2,
+    "trend_1d": "多",
+    "srsi_1d": 73.2
+  },
+  {
+    "coin": "WLD-USDT",
+    "direction": "做多",
+    "entry_price": 0.315,
+    "exit_price": 0.307734,
+    "pnl_usdt": -6.9,
+    "pnl_pct": -2.31,
+    "entry_time": "2026-08-03 01:45",
+    "exit_time": "2026-08-03 06:55",
+    "entry_ts": 1785721534949,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 86.9,
+    "trend_4h": "多",
+    "srsi_4h": 61.4,
+    "trend_1d": "空",
+    "srsi_1d": 53.6
   }
 ]
