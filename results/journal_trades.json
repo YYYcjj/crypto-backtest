@@ -6154,5 +6154,43 @@
     "srsi_4h": 80.2,
     "trend_1d": "多",
     "srsi_1d": 61.7
+  },
+  {
+    "coin": "BIO-USDT",
+    "direction": "做多",
+    "entry_price": 0.02443,
+    "exit_price": 0.02382,
+    "pnl_usdt": -4.54,
+    "pnl_pct": -2.5,
+    "entry_time": "2026-08-05 14:04",
+    "exit_time": "2026-08-06 02:00",
+    "entry_ts": 1785938640212,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 7.5,
+    "trend_4h": "多",
+    "srsi_4h": 72.0,
+    "trend_1d": "多",
+    "srsi_1d": 61.7
+  },
+  {
+    "coin": "HUMA-USDT",
+    "direction": "做多",
+    "entry_price": 0.02,
+    "exit_price": 0.01995,
+    "pnl_usdt": -0.65,
+    "pnl_pct": -0.25,
+    "entry_time": "2026-08-06 05:18",
+    "exit_time": "2026-08-06 13:33",
+    "entry_ts": 1785993517201,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 78.8,
+    "trend_4h": "多",
+    "srsi_4h": 95.0,
+    "trend_1d": "多",
+    "srsi_1d": 90.3
   }
 ]
