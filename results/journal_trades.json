@@ -6517,6 +6517,25 @@
     "srsi_1d": 80.2
   },
   {
+    "coin": "PUMP-USDT",
+    "direction": "做空",
+    "entry_price": 0.00271,
+    "exit_price": 0.002766,
+    "pnl_usdt": -3.53,
+    "pnl_pct": -2.02,
+    "entry_time": "2026-08-12 09:55",
+    "exit_time": "2026-08-13 03:46",
+    "entry_ts": 1786528543012,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 19.1,
+    "trend_4h": "多",
+    "srsi_4h": 10.8,
+    "trend_1d": "多",
+    "srsi_1d": 89.4
+  },
+  {
     "coin": "HUMA-USDT",
     "direction": "做空",
     "entry_price": 0.01973,
@@ -6553,5 +6572,24 @@
     "srsi_4h": 94.5,
     "trend_1d": "空",
     "srsi_1d": 17.9
+  },
+  {
+    "coin": "NEAR-USDT",
+    "direction": "做多",
+    "entry_price": 1.67,
+    "exit_price": 1.636,
+    "pnl_usdt": -5.2,
+    "pnl_pct": -2.04,
+    "entry_time": "2026-08-13 07:00",
+    "exit_time": "2026-08-13 16:07",
+    "entry_ts": 1786604429747,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 99.8,
+    "trend_4h": "多",
+    "srsi_4h": 82.5,
+    "trend_1d": "空",
+    "srsi_1d": 30.2
   }
 ]
