@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>多月对比分析</title>
+<script src="chart.min.js"></script>
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--text:#1e293b;--muted:#94a3b8;--green:#10b981;--red:#ef4444;--blue:#6366f1;--amber:#f59e0b;--border:#e2e8f0;--shadow:0 2px 8px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.03)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.nav{background:linear-gradient(135deg,#1e1b4b,#312e81,#3730a3);padding:0 24px;display:flex;align-items:center;gap:2px;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(30,27,75,.3)}
+.nav span{font-size:15px;font-weight:800;color:#fff;margin-right:24px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav a{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;color:rgba(255,255,255,.7);transition:all .2s}
+.nav a:hover{background:rgba(255,255,255,.12);color:#fff}.nav a svg{flex-shrink:0}
+.nav .dl{margin-left:auto;background:rgba(255,255,255,.15);color:#fff}.nav .dl:hover{background:rgba(255,255,255,.25)}
+.container{max-width:1400px;margin:0 auto;padding:24px 24px 40px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.6px;margin-bottom:6px}
+.sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+h2{font-size:15px;font-weight:700;margin:32px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--blue);color:var(--text)}
+.g{color:var(--green)}.r{color:var(--red)}.a{color:var(--amber)}
+
+table{width:100%;border-spacing:0;font-size:13px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin:0 0 24px}
+th{background:linear-gradient(180deg,#fafbfd,#f1f5f9);padding:13px 10px;text-align:center;font-weight:700;color:var(--muted);border-bottom:2px solid var(--blue);font-size:10px;white-space:nowrap}
+td{padding:11px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:13px}
+tr:last-child td{border-bottom:none}
+.best{background:#f0fdf4;font-weight:700}.worst{color:var(--red)}
+
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:768px){.charts{grid-template-columns:1fr}}
+.cbox{background:var(--card);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.cbox h3{font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px}
+.cwrap{height:280px;position:relative}canvas{width:100%!important}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:28px}
+.card{background:var(--card);border-radius:14px;padding:16px;box-shadow:var(--shadow);text-align:center}
+.card .lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.card .val{font-size:28px;font-weight:800;line-height:1}
+.card .d{font-size:11px;color:var(--muted);margin-top:4px}
+.mtabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.mtab{display:inline-flex;align-items:center;padding:8px 18px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.03);text-decoration:none}
+.mtab:hover{border-color:var(--blue);color:var(--blue)}
+.mtab.act{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+</style></head><body>
+<div class="nav"><span>📊 交易日记</span>
+<a href="index.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>仪表盘</a>
+<a href="analysis.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>分析报告</a>
+<a href="entry_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>入场研究</a>
+<a href="exit_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>离场研究</a>
+<a href="advice.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>改善建议</a>
+<a href="compare.html" style="color:#fff;background:rgba(255,255,255,.12)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>多月对比</a>
+<a href="weekly.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每周分析</a>
+<a href="交易记录_06.xlsx" class="dl" download><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>下载 Excel</a>
+</div><div class="container">
+<div class="mtabs">
+<a class="mtab" href="index.html?m=1" onclick="localStorage.setItem('lastMonth','1')">1月</a>
+<a class="mtab" href="index.html?m=2" onclick="localStorage.setItem('lastMonth','2')">2月</a>
+<a class="mtab" href="index.html?m=3" onclick="localStorage.setItem('lastMonth','3')">3月</a>
+<a class="mtab" href="index.html?m=4" onclick="localStorage.setItem('lastMonth','4')">4月</a>
+<a class="mtab" href="index.html?m=5" onclick="localStorage.setItem('lastMonth','5')">5月</a>
+<a class="mtab" href="index.html?m=6" onclick="localStorage.setItem('lastMonth','6')">6月</a>
+<a class="mtab" href="index.html?m=7" onclick="localStorage.setItem('lastMonth','7')">7月</a>
+<a class="mtab act" href="index.html?m=8" onclick="localStorage.setItem('lastMonth','8')">8月</a>
+</div>
+
+<h1>多月对比分析</h1>
+<div class="sub">1-8月 · 348笔交易 · 全维度月度对比</div>
+
+<div class="cards" id="summary-cards"></div>
+
+<div class="charts">
+<div class="cbox"><h3>净盈亏趋势</h3><div class="cwrap"><canvas id="cPnl"></canvas></div></div>
+<div class="cbox"><h3>胜率 & 盈亏比</h3><div class="cwrap"><canvas id="cWR"></canvas></div></div>
+<div class="cbox"><h3>交易笔数 & Win/Loss分布</h3><div class="cwrap"><canvas id="cCount"></canvas></div></div>
+<div class="cbox"><h3>均盈/均亏 月度变化</h3><div class="cwrap"><canvas id="cAvg"></canvas></div></div>
+</div>
+
+<h2>月度核心指标明细</h2>
+<table id="cmp"></table>
+<div style="font-size:11px;color:var(--muted);padding:8px 0 20px;text-align:center">绿色=最优月 · 红色=最差月 · 基于1-8月实际交易数据</div>
+
+<script>
+var D = [{"m": 1, "total": 49, "wins": 15, "losses": 34, "wr": 30.6, "pnl": 0.6, "avgWin": 6.4, "avgLoss": -2.4, "ratio": 2.67}, {"m": 2, "total": 44, "wins": 14, "losses": 30, "wr": 31.8, "pnl": -0.8, "avgWin": 4.9, "avgLoss": -2.6, "ratio": 1.88}, {"m": 3, "total": 38, "wins": 7, "losses": 31, "wr": 18.4, "pnl": -7.0, "avgWin": 3.7, "avgLoss": -2.6, "ratio": 1.42}, {"m": 4, "total": 44, "wins": 12, "losses": 32, "wr": 27.3, "pnl": -17.6, "avgWin": 9.7, "avgLoss": -3.2, "ratio": 3.03}, {"m": 5, "total": 39, "wins": 9, "losses": 30, "wr": 23.1, "pnl": -82.5, "avgWin": 10.9, "avgLoss": -3.4, "ratio": 3.21}, {"m": 6, "total": 43, "wins": 6, "losses": 37, "wr": 14.0, "pnl": -88.8, "avgWin": 10.8, "avgLoss": -3.4, "ratio": 3.18}, {"m": 7, "total": 51, "wins": 10, "losses": 41, "wr": 19.6, "pnl": -141.8, "avgWin": 4.4, "avgLoss": -3.2, "ratio": 1.38}, {"m": 8, "total": 40, "wins": 8, "losses": 32, "wr": 20.0, "pnl": -52.7, "avgWin": 7.5, "avgLoss": -2.1, "ratio": 3.57}];
+
+(function(){
+// Summary cards
+var allPnl = D.reduce(function(s,d){return s+d.pnl},0);
+var allTotal = D.reduce(function(s,d){return s+d.total},0);
+var allWins = D.reduce(function(s,d){return s+d.wins},0);
+var avgWR = D.reduce(function(s,d){return s+d.wr},0)/D.length;
+var bestMonth = D.reduce(function(b,d){return d.pnl>b.pnl?d:b},D[0]);
+var worstMonth = D.reduce(function(w,d){return d.pnl<w.pnl?d:w},D[0]);
+
+var cardsH='';
+cardsH+='<div class="card"><div class="lbl">总交易笔数</div><div class="val">'+allTotal+'</div><div class="d">1-6月累计</div></div>';
+cardsH+='<div class="card"><div class="lbl">累计净盈亏</div><div class="val '+ (allPnl>0?'g':'r')+'">'+allPnl.toFixed(1)+'U</div><div class="d">6个月总和</div></div>';
+cardsH+='<div class="card"><div class="lbl">平均月胜率</div><div class="val r">'+avgWR.toFixed(0)+'%</div><div class="d">'+allWins+'盈/'+(allTotal-allWins)+'亏</div></div>';
+cardsH+='<div class="card"><div class="lbl">最佳月份</div><div class="val g">'+bestMonth.m+'月</div><div class="d">净'+bestMonth.pnl.toFixed(1)+'U · WR '+bestMonth.wr+'%</div></div>';
+cardsH+='<div class="card"><div class="lbl">最差月份</div><div class="val r">'+worstMonth.m+'月</div><div class="d">净'+worstMonth.pnl.toFixed(1)+'U · WR '+worstMonth.wr+'%</div></div>';
+cardsH+='<div class="card"><div class="lbl">月均交易</div><div class="val">'+(allTotal/D.length).toFixed(0)+'</div><div class="d">笔/月</div></div>';
+document.getElementById('summary-cards').innerHTML=cardsH;
+
+// Charts
+var labels = D.map(function(d){return d.m+'月'});
+var colors = D.map(function(d){return d.pnl>0?'rgba(16,185,129,.6)':'rgba(239,68,68,.5)'});
+var borders = D.map(function(d){return d.pnl>0?'#10b981':'#ef4444'});
+
+// P&L
+new Chart(document.getElementById('cPnl'),{type:'bar',data:{labels:labels,datasets:[
+{label:'净盈亏 U',data:D.map(function(d){return d.pnl}),backgroundColor:colors,borderColor:borders,borderWidth:1,borderRadius:6}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{ticks:{callback:function(v){return v+'U'},font:{size:10}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+
+// WR + Ratio
+new Chart(document.getElementById('cWR'),{type:'bar',data:{labels:labels,datasets:[
+{label:'胜率 %',type:'line',data:D.map(function(d){return d.wr}),borderColor:'#6366f1',borderWidth:3,pointRadius:8,pointBackgroundColor:'#6366f1',yAxisID:'y1'},
+{label:'盈亏比',data:D.map(function(d){return d.ratio}),backgroundColor:'rgba(16,185,129,.5)',borderColor:'#10b981',borderWidth:1,borderRadius:6}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:10},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:60,ticks:{callback:function(v){return v+'%'},font:{size:10}},grid:{drawOnChartArea:false}}}}});
+
+// Count + Win/Loss
+new Chart(document.getElementById('cCount'),{type:'bar',data:{labels:labels,datasets:[
+{label:'盈利',data:D.map(function(d){return d.wins}),backgroundColor:'rgba(16,185,129,.6)',borderColor:'#10b981',borderWidth:1,borderRadius:4,stack:'s'},
+{label:'亏损',data:D.map(function(d){return d.losses}),backgroundColor:'rgba(239,68,68,.4)',borderColor:'#ef4444',borderWidth:1,borderRadius:4,stack:'s'}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:10},usePointStyle:true}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:12}}},y:{stacked:true,ticks:{stepSize:10,font:{size:10}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+
+// Avg Win/Loss
+new Chart(document.getElementById('cAvg'),{type:'bar',data:{labels:labels,datasets:[
+{label:'均盈利 %',data:D.map(function(d){return d.avgWin}),backgroundColor:'rgba(16,185,129,.5)',borderColor:'#10b981',borderWidth:1,borderRadius:4},
+{label:'均亏损 %',data:D.map(function(d){return Math.abs(d.avgLoss)}),backgroundColor:'rgba(239,68,68,.4)',borderColor:'#ef4444',borderWidth:1,borderRadius:4}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:10},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:12}}},y:{ticks:{callback:function(v){return v+'%'},font:{size:10}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+
+// Comparison table
+var bestPnl = D.reduce(function(b,d){return d.pnl>b.pnl?d:b},D[0]);
+var worstPnl = D.reduce(function(w,d){return d.pnl<w.pnl?d:w},D[0]);
+var bestWR = D.reduce(function(b,d){return d.wr>b.wr?d:b},D[0]);
+var worstWR = D.reduce(function(w,d){return d.wr<w.wr?d:w},D[0]);
+var bestRatio = D.reduce(function(b,d){return d.ratio>b.ratio?d:b},D[0]);
+
+function cls(monthNum, bestM, worstM, isLowerBetter){
+    if(isLowerBetter){
+        if(monthNum===worstM.m) return ' worst';
+        if(monthNum===bestM.m) return ' best';
+    }else{
+        if(monthNum===bestM.m) return ' best';
+        if(monthNum===worstM.m) return ' worst';
+    }
+    return '';
+}
+
+var bestMth = {pnl:bestPnl, wr:bestWR, ratio:bestRatio};
+var worstMth = {pnl:worstPnl, wr:worstWR};
+
+var h='<thead><tr><th>指标</th>';
+D.forEach(function(d){h+='<th>'+d.m+'月</th>';});
+h+='</tr></thead><tbody>';
+
+var rows = [
+    {label:'交易笔数', get:function(d){return d.total}, best:'higher'},
+    {label:'盈利笔数', get:function(d){return d.wins}, best:'higher'},
+    {label:'亏损笔数', get:function(d){return d.losses}, best:'lower'},
+    {label:'胜率', get:function(d){return d.wr.toFixed(1)+'%'}, best:'higher', bestM:bestWR},
+    {label:'净盈亏', get:function(d){return d.pnl.toFixed(1)+'U'}, best:'higher', bestM:bestPnl, worstM:worstPnl},
+    {label:'盈亏比', get:function(d){return d.ratio.toFixed(2)}, best:'higher', bestM:bestRatio},
+    {label:'均盈利%', get:function(d){return '+'+d.avgWin.toFixed(1)+'%'}, best:'higher'},
+    {label:'均亏损%', get:function(d){return d.avgLoss.toFixed(1)+'%'}, best:'higher'},
+];
+
+rows.forEach(function(row){
+    h+='<tr><td style="text-align:left;font-weight:700;color:var(--text);font-size:12px">'+row.label+'</td>';
+    D.forEach(function(d){
+        var c = '';
+        if(row.bestM && d.m===row.bestM.m && row.best==='higher') c=' class="best"';
+        else if(row.bestM && d.m===row.bestM.m && row.best==='lower') c=' class="worst"';
+        else if(row.worstM && d.m===row.worstM.m && row.best==='higher') c=' class="worst"';
+        else if(row.worstM && d.m===row.worstM.m && row.best==='lower') c=' class="best"';
+        h+='<td'+c+'>'+row.get(d)+'</td>';
+    });
+    h+='</tr>';
+});
+h+='</tbody>';
+document.getElementById('cmp').innerHTML=h;
+})();
+</script>
+</div></body></html>
