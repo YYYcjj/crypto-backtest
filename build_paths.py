@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""从 OKX 拉取 15m K线，为所有月份的已平仓交易生成真实走势数据 paths_data_XX.json
+"""从 OKX 拉取 15m K线，为最近月份的已平仓交易生成真实走势数据 paths_data_XX.json
 
 在 GitHub Actions 中运行（工作目录 = 仓库根）。依赖根目录的 data_fetcher.py 和 indicators.py。
 """
@@ -12,7 +12,7 @@ sys.path.insert(0, ROOT)
 from data_fetcher import fetch_historical
 from indicators import calc_stoch_rsi
 
-DAYS = 90
+DAYS = 60
 CACHE_DIR = os.path.join(ROOT, 'cache')
 
 
@@ -39,7 +39,6 @@ def generate_full_path(trade, candles, entry_idx):
     n = len(all_raw)
     if n < PRE_BARS + 10:
         return generate_minimal_path(trade)
-
     ep = all_raw[PRE_BARS]
     normalized = [round((p/ep-1)*100, 2) for p in all_raw]
     RS, ST, KS, DS = 20, 10, 3, 3; W = RS+ST+KS+DS
@@ -48,18 +47,15 @@ def generate_full_path(trade, candles, entry_idx):
         k, d = calc_stoch_rsi(all_raw[:j], RS, ST, KS, DS)
         kf.append(round(k, 1)); df.append(round(d, 1))
     while len(kf) < n: kf.append(None); df.append(None)
-
     xp = trade['exit_price']; exit_idx = PRE_BARS
     for j in range(PRE_BARS, min(PRE_BARS+300, n)):
         if abs(all_raw[j]-xp)/xp < 0.005:
             exit_idx = j; break
-
     hb = normalized[PRE_BARS:exit_idx+1] if exit_idx >= PRE_BARS else [0]
     hm, hx = min(hb), max(hb)
     ps = exit_idx+1; pe = min(n, ps+48)
     pb = normalized[ps:pe] if ps < pe else [0]
     pm, px = min(pb), max(pb)
-
     return {'b': normalized, 's': kf, 'd': df, 't': all_times,
             'ei': PRE_BARS, 'ex': exit_idx, 'hm': hm, 'hx': hx,
             'pm': pm, 'px': px, 'tf': '15m'}
@@ -114,17 +110,19 @@ def main():
     if not os.path.exists(journal_path):
         print('journal_trades.json 不存在，退出')
         return
-
     with open(journal_path) as f:
         trades = json.load(f)
-
     months = {}
     for t in trades:
         m = t['entry_time'][5:7]
         months.setdefault(m, []).append(t)
     print(f'月份: {sorted(months.keys())}')
-
-    coins = sorted({t['coin'] for t in trades})
+    month_keys = sorted(months.keys())
+    if len(month_keys) > 2:
+        month_keys = month_keys[-2:]
+    print(f'生成走势的月份: {month_keys}')
+    recent_trades = [t for t in trades if t['entry_time'][5:7] in month_keys]
+    coins = sorted({t['coin'] for t in recent_trades})
     print(f'涉及币种: {len(coins)} 个')
     for coin in coins:
         sym = f'{coin}-SWAP'
@@ -133,10 +131,9 @@ def main():
         except Exception as e:
             print(f'  ⚠️ {coin} 拉取失败: {e}')
         time.sleep(0.2)
-
     os.makedirs(os.path.join(ROOT, 'docs'), exist_ok=True)
     os.makedirs(os.path.join(ROOT, 'results'), exist_ok=True)
-    for m in sorted(months.keys()):
+    for m in month_keys:
         paths = process_month(months[m])
         data = json.dumps(paths, ensure_ascii=False)
         with open(os.path.join(ROOT, 'docs', f'paths_data_{m}.json'), 'w') as f:
@@ -145,7 +142,6 @@ def main():
             f.write(data)
         hits = sum(1 for p in paths if p.get('tf') == '15m')
         print(f'  {m}月: {len(paths)} 条 (真实K线 {hits} / 最小 {len(paths)-hits})')
-
     print('build_paths 完成')
 
 
