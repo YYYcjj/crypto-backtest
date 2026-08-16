@@ -62,6 +62,7 @@ tr.win td{background:#f0fdf4}tr.lose td{background:#fef2f2}
 </div>
 <div class="container">
 <div class="mtabs">
+<a class="mtab" href="entry_study.html?m=0">全部</a>
 <a class="mtab" href="entry_study.html?m=1">1月</a>
 <a class="mtab" href="entry_study.html?m=2">2月</a>
 <a class="mtab" href="entry_study.html?m=3">3月</a>
@@ -107,22 +108,23 @@ tr.win td{background:#f0fdf4}tr.lose td{background:#fef2f2}
 (function(){
 var M = (function(){
   var p = new URLSearchParams(location.search);
-  var m = parseInt(p.get('m')) || parseInt(localStorage.getItem('lastMonth')) || 8;
-  if(isNaN(m)||m<1||m>8) m=8;
+  var raw = p.get('m');
+  var m = (raw!==null && raw!=='') ? parseInt(raw) : (parseInt(localStorage.getItem('lastMonth')) || 8);
+  if(isNaN(m)||m<0||m>8) m=8;
   return m;
 })();
 
 // Setup tabs
 document.querySelectorAll('.mtab').forEach(function(t,i){
-  var mn = i+1;
+  var mn = i;  // 0=全部, 1-8=月份
   t.href = 'entry_study.html?m='+mn;
   t.onclick = function(e){e.preventDefault();localStorage.setItem('lastMonth',''+mn);location.href='entry_study.html?m='+mn;};
   if(mn===M) t.classList.add('act'); else t.classList.remove('act');
 });
 
-document.getElementById('pageTitle').textContent = M+'月入场指标分析';
+document.getElementById('pageTitle').textContent = (M===0?'全部月份':M+'月')+'入场指标分析';
 
-var T = RAW.filter(function(x){return x.m===M;});
+var T = M===0 ? RAW : RAW.filter(function(x){return x.m===M;});
 var W = T.filter(function(x){return x.pnl_usdt>0;});
 var L = T.filter(function(x){return x.pnl_usdt<0;});
 var total = T.length, wins = W.length, losses = L.length;
