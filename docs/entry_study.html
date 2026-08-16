@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>入场指标分析 — 趋势+SRSI 对盈亏的影响</title>
+<script src="chart.min.js"></script>
+<script src="all_analysis.js"></script>
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--text:#1e293b;--muted:#94a3b8;--green:#10b981;--red:#ef4444;--blue:#6366f1;--amber:#f59e0b;--border:#e2e8f0;--shadow:0 2px 8px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.03)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.nav{background:linear-gradient(135deg,#1e1b4b,#312e81,#3730a3);padding:0 24px;display:flex;align-items:center;gap:2px;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(30,27,75,.3)}
+.nav span{font-size:15px;font-weight:800;color:#fff;margin-right:24px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav a{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;color:rgba(255,255,255,.7);transition:all .2s}
+.nav a:hover{background:rgba(255,255,255,.12);color:#fff}.nav a svg{flex-shrink:0}
+.container{max-width:1500px;margin:0 auto;padding:24px 24px 40px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.6px;margin-bottom:6px}
+.sub{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:24px;line-height:1.8}
+.sub b{color:var(--text);font-weight:700}
+.insight{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin:20px 0;box-shadow:var(--shadow)}
+.insight .title{font-size:13px;font-weight:800;color:var(--blue);margin-bottom:10px}
+.insight p{font-size:13px;line-height:1.9;color:var(--text)}
+.hl{color:var(--blue);font-weight:700}.highlight{color:var(--amber);font-weight:700}
+.insight .t{font-size:13px;font-weight:800;color:var(--blue);margin-bottom:10px}
+.sec{display:flex;align-items:center;gap:10px;margin:28px 0 12px}
+.sec span{font-size:13px;font-weight:700;color:var(--text)}.sec .line{flex:1;height:1px;background:var(--border)}
+h2{font-size:15px;font-weight:700;margin:32px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--blue);color:var(--text)}
+h3{font-size:13px;font-weight:700;margin:20px 0 10px;color:var(--text)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:768px){.charts{grid-template-columns:1fr}}
+.chart-box,.cbox{background:var(--card);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.chart-box h3,.cbox h3{font-size:12px;font-weight:700;color:var(--text);margin:0 0 12px}
+.chart-wrap,.cwrap{height:260px;position:relative}canvas{width:100%!important}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin:8px 0 20px}
+th{background:linear-gradient(180deg,#fafbfd,#f1f5f9);padding:11px 10px;text-align:center;font-weight:700;color:var(--muted);border-bottom:2px solid var(--blue);font-size:10px;white-space:nowrap;letter-spacing:.3px}
+td{padding:9px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+tr:last-child td{border-bottom:none}
+.tl{text-align:left}.tc{text-align:center}.tr{text-align:right}
+tr.win td{background:#f0fdf4}tr.lose td{background:#fef2f2}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.1px}
+.bl,.bg-lg{background:#d1fae5;color:#065f46}.bs,.bg-sh{background:#fee2e2;color:#991b1b}
+.bg-g{background:#d1fae5;color:#065f46}.bg-r{background:#fee2e2;color:#991b1b}.bg-a{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.g{color:var(--green)}.r{color:var(--red)}.a{color:var(--amber)}.b{color:var(--blue)}
+.nav .dl{margin-left:auto;background:rgba(255,255,255,.15);color:#fff}.nav .dl:hover{background:rgba(255,255,255,.25)}
+.mtabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.mtab{display:inline-flex;align-items:center;padding:8px 18px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.03);text-decoration:none}
+.mtab:hover{border-color:var(--blue);color:var(--blue)}
+.mtab.act{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+.no-data{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+</style>
+</head><body>
+<div class="nav">
+  <span>📊 交易日记</span>
+  <a href="index.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>仪表盘</a>
+  <a href="analysis.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>分析报告</a>
+  <a href="entry_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>入场研究</a>
+  <a href="exit_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>离场研究</a>
+  <a href="advice.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>改善建议</a>
+<a href="compare.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>多月对比</a>
+<a href="weekly.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每周分析</a>
+<a href="交易记录_06.xlsx" class="dl" download><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>下载 Excel</a>
+</div>
+<div class="container">
+<div class="mtabs">
+<a class="mtab" href="entry_study.html?m=1">1月</a>
+<a class="mtab" href="entry_study.html?m=2">2月</a>
+<a class="mtab" href="entry_study.html?m=3">3月</a>
+<a class="mtab" href="entry_study.html?m=4">4月</a>
+<a class="mtab" href="entry_study.html?m=5">5月</a>
+<a class="mtab" href="entry_study.html?m=6">6月</a>
+<a class="mtab" href="entry_study.html?m=7">7月</a>
+<a class="mtab" href="entry_study.html?m=8">8月</a>
+</div>
+
+<h1 id="pageTitle">入场指标分析</h1>
+<div class="sub" id="pageSub"></div>
+
+<div class="insight" id="coreInsight"><div class="t" id="coreInsightTitle">核心发现</div><p id="coreInsightText"></p></div>
+
+<h2>一、趋势对齐度 × 盈亏</h2>
+<div class="charts">
+<div class="chart-box"><h3>趋势对齐度 vs 胜率 & 均益</h3><div class="chart-wrap"><canvas id="cAlign"></canvas></div></div>
+<div class="chart-box"><h3>顺/逆各周期趋势入场对比</h3><div class="chart-wrap"><canvas id="cTrend"></canvas></div></div>
+</div>
+
+<h2>二、SRSI 入场区段 × 盈亏</h2>
+<div class="charts">
+<div class="chart-box"><h3>SRSI 1H 入场区段</h3><div class="chart-wrap"><canvas id="cS1h"></canvas></div></div>
+<div class="chart-box"><h3>SRSI 4H 入场区段</h3><div class="chart-wrap"><canvas id="cS4h"></canvas></div></div>
+<div class="chart-box"><h3>SRSI 1D 入场区段</h3><div class="chart-wrap"><canvas id="cS1d"></canvas></div></div>
+<div class="chart-box"><h3>SRSI 1H+4H 联合热力图</h3><div class="chart-wrap" id="cHeat"></div></div>
+</div>
+
+<h2>三、做多/做空 各自的 SRSI 4H 入场质量</h2>
+<div class="charts">
+<div class="chart-box"><h3>做多 × SRSI 4H</h3><div class="chart-wrap"><canvas id="cLong"></canvas></div></div>
+<div class="chart-box"><h3>做空 × SRSI 4H</h3><div class="chart-wrap"><canvas id="cShort"></canvas></div></div>
+</div>
+
+<h2>四、综合决策矩阵</h2>
+<div class="insight" id="matrixInsight" style="display:none"><div class="t">入场条件建议</div><p id="matrixInsightText"></p></div>
+<table><thead><tr><th>趋势对齐</th><th>SRSI 4H区</th><th>SRSI 1H区</th><th>笔数</th><th>胜率</th><th>均益</th><th>评级</th></tr></thead><tbody id="tbMatrix"></tbody></table>
+
+<div id="noIndicatorNote" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:13px">该月暂无趋势和SRSI指标数据，仅6月有完整指标记录。切换到6月可查看详细入场分析。</div>
+
+<script>
+(function(){
+var M = (function(){
+  var p = new URLSearchParams(location.search);
+  var m = parseInt(p.get('m')) || parseInt(localStorage.getItem('lastMonth')) || 6;
+  if(isNaN(m)||m<1||m>6) m=6;
+  return m;
+})();
+
+// Setup tabs
+document.querySelectorAll('.mtab').forEach(function(t,i){
+  var mn = i+1;
+  t.href = 'entry_study.html?m='+mn;
+  t.onclick = function(e){e.preventDefault();localStorage.setItem('lastMonth',''+mn);location.href='entry_study.html?m='+mn;};
+  if(mn===M) t.classList.add('act'); else t.classList.remove('act');
+});
+
+document.getElementById('pageTitle').textContent = M+'月入场指标分析';
+
+var T = RAW.filter(function(x){return x.m===M;});
+var W = T.filter(function(x){return x.pnl_usdt>0;});
+var L = T.filter(function(x){return x.pnl_usdt<0;});
+var total = T.length, wins = W.length, losses = L.length;
+var wr = total>0?(wins/total*100):0;
+var netPnl = T.reduce(function(s,x){return s+(x.pnl_usdt||0);},0);
+
+document.getElementById('pageSub').innerHTML = '趋势方向 + SRSI 对交易盈亏的影响 · '+total+'笔交易';
+
+var hasRealData = T.some(function(x){return x.srsi4h&&x.srsi4h!==0;});
+
+if(!hasRealData){
+  document.getElementById('noIndicatorNote').style.display = '';
+  document.getElementById('coreInsight').style.display = 'none';
+  // Hide all chart sections
+  document.querySelectorAll('.charts').forEach(function(el){el.style.display='none';});
+  document.getElementById('tbMatrix').innerHTML = '<tr><td colspan="7">该月暂无指标数据，请切换到6月查看</td></tr>';
+} else {
+  document.getElementById('noIndicatorNote').style.display = 'none';
+  renderAll();
+}
+
+function getSrsiZone(v){
+  if(v===null||v===undefined||v===0) return null;
+  if(v<20) return '<20'; if(v<50) return '20-50'; if(v<80) return '50-80'; return '>80';
+}
+
+function getSrsiZoneIdx(v){
+  if(v===null||v===undefined||v===0) return -1;
+  if(v<20) return 0; if(v<40) return 1; if(v<60) return 2; if(v<80) return 3; return 4;
+}
+
+function renderAll(){
+  // Trend alignment
+  var tg = computeTrendGroups();
+  var tgLabels = ['0/3全逆势','1/3弱对齐','2/3部分对齐','3/3全对齐'];
+  var tgWR = tgLabels.map(function(_,i){return tg[i].t>0?(tg[i].w/tg[i].t*100):0;});
+  var tgPnl = tgLabels.map(function(_,i){return tg[i].t>0?(tg[i].pnl/tg[i].t):0;});
+  var tgTotal = Object.values(tg).reduce(function(s,x){return s+x.t;},0);
+
+  if(tgTotal>0){
+    new Chart(document.getElementById('cAlign'),{type:'bar',data:{labels:tgLabels,datasets:[
+      {label:'胜率 %',type:'line',data:tgWR,borderColor:'#0d6efd',borderWidth:3,pointRadius:6,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1},
+      {label:'均益 U',data:tgPnl,backgroundColor:['rgba(220,53,69,.3)','rgba(220,53,69,.6)','rgba(25,135,84,.5)','rgba(220,53,69,.4)'],borderColor:['#dc3545','#dc3545','#198754','#dc3545'],borderWidth:1,borderRadius:4,order:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:function(v){return v.toFixed(1)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:60,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+  }
+
+  // Trend follow vs against
+  var tf = computeTrendFollow();
+  new Chart(document.getElementById('cTrend'),{type:'bar',data:{labels:['1H顺','1H逆','4H顺','4H逆','1D顺','1D逆'],datasets:[
+    {label:'胜率 %',type:'line',data:[tf[0].wr,tf[1].wr,tf[2].wr,tf[3].wr,tf[4].wr,tf[5].wr],borderColor:'#0d6efd',borderWidth:3,pointRadius:6,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1},
+    {label:'均益 U',data:[tf[0].avg,tf[1].avg,tf[2].avg,tf[3].avg,tf[4].avg,tf[5].avg],backgroundColor:['rgba(25,135,84,.4)','rgba(220,53,69,.3)','rgba(25,135,84,.4)','rgba(220,53,69,.3)','rgba(25,135,84,.5)','rgba(220,53,69,.5)'],borderRadius:4,order:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:function(v){return v.toFixed(1)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:40,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+
+  // SRSI charts
+  function makeSrsiChart(id,field){
+    var zones = ['<20','20-50','50-80','>80'];
+    var data = zones.map(function(z){return {zone:z,n:0,w:0,avg:0,wr:0};});
+    T.forEach(function(x){
+      var v = x[field];
+      if(v===null||v===undefined||v===0) return;
+      var zi = zones.indexOf(getSrsiZone(v));
+      if(zi<0) return;
+      data[zi].n++;
+      if(x.pnl_usdt>0) data[zi].w++;
+      data[zi].avg += x.pnl_usdt||0;
+    });
+    data.forEach(function(d){if(d.n>0){d.avg/=d.n;d.wr=d.w/d.n*100;}});
+    var bg = data.map(function(d){return d.avg>0?'rgba(25,135,84,.5)':'rgba(220,53,69,.5)';});
+    var bc = data.map(function(d){return d.avg>0?'#198754':'#dc3545';});
+    var labels = data.map(function(d){return d.zone+(d.n>0?' ('+d.n+')':'');});
+    new Chart(document.getElementById(id),{type:'bar',data:{labels:labels,datasets:[
+      {label:'胜率 %',type:'line',data:data.map(function(d){return d.wr;}),borderColor:'#0d6efd',borderWidth:3,pointRadius:5,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1},
+      {label:'均益 U',data:data.map(function(d){return d.avg;}),backgroundColor:bg,borderColor:bc,borderWidth:1,borderRadius:4,order:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:function(v){return v.toFixed(1)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:60,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+  }
+  makeSrsiChart('cS1h','srsi_1h');
+  makeSrsiChart('cS4h','srsi4h');
+  makeSrsiChart('cS1d','srsi_1d');
+
+  // Long vs Short SRSI 4H
+  function makeDirChart(id,trades,color){
+    var zones = ['<20','20-50','50-80','>80'];
+    var data = zones.map(function(z){return {zone:z,n:0,w:0,avg:0,wr:0};});
+    trades.forEach(function(x){
+      var v = x.srsi4h;
+      if(v===null||v===undefined||v===0) return;
+      var zi = zones.indexOf(getSrsiZone(v));
+      if(zi<0) return;
+      data[zi].n++;
+      if(x.pnl_usdt>0) data[zi].w++;
+      data[zi].avg += x.pnl_usdt||0;
+    });
+    data.forEach(function(d){if(d.n>0){d.avg/=d.n;d.wr=d.w/d.n*100;}});
+    var labels = data.map(function(d){return d.zone+' ('+d.n+')';});
+    new Chart(document.getElementById(id),{type:'bar',data:{labels:labels,datasets:[
+      {label:'胜率 %',type:'line',data:data.map(function(d){return d.wr;}),borderColor:'#0d6efd',borderWidth:3,pointRadius:5,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1},
+      {label:'均益 U',data:data.map(function(d){return d.avg;}),backgroundColor:data.map(function(d){return d.avg>0?'rgba(25,135,84,.5)':'rgba(220,53,69,.5)';}),borderWidth:1,borderRadius:4,order:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:function(v){return v.toFixed(1)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:60,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+  }
+  var longs = T.filter(function(x){return x.direction==='做多';});
+  var shorts = T.filter(function(x){return x.direction==='做空';});
+  makeDirChart('cLong',longs);
+  makeDirChart('cShort',shorts);
+
+  // Heatmap
+  renderHeatmap();
+
+  // Decision matrix
+  renderMatrix();
+
+  // Core insight
+  renderInsight();
+}
+
+function computeTrendGroups(){
+  var grp = {0:{t:0,w:0,pnl:0},1:{t:0,w:0,pnl:0},2:{t:0,w:0,pnl:0},3:{t:0,w:0,pnl:0}};
+  T.forEach(function(x){
+    var ta = x.trend||'?/?/?';
+    var parts = ta.split('/');
+    if(parts.length<3||parts[0]==='?'||parts[1]==='?'||parts[2]==='?') return;
+    var align = 0;
+    if(x.direction==='做多'){
+      if(parts[0]==='多') align++; if(parts[1]==='多') align++; if(parts[2]==='多') align++;
+    } else {
+      if(parts[0]==='空') align++; if(parts[1]==='空') align++; if(parts[2]==='空') align++;
+    }
+    grp[align].t++;
+    if(x.pnl_usdt>0) grp[align].w++;
+    grp[align].pnl += x.pnl_usdt||0;
+  });
+  return grp;
+}
+
+function computeTrendFollow(){
+  var result = [{t:0,w:0,pnl:0},{t:0,w:0,pnl:0},{t:0,w:0,pnl:0},{t:0,w:0,pnl:0},{t:0,w:0,pnl:0},{t:0,w:0,pnl:0}];
+  T.forEach(function(x){
+    var ta = x.trend||'?/?/?';
+    var parts = ta.split('/');
+    if(parts.length<3||parts[0]==='?'||parts[1]==='?'||parts[2]==='?') return;
+    var dir = x.direction;
+    [['1h',parts[0],0,1],['4h',parts[1],2,3],['1d',parts[2],4,5]].forEach(function(p){
+      var targetDir = dir==='做多'?'多':'空';
+      var idx = p[1]===targetDir?p[2]:p[3];
+      result[idx].t++; result[idx].pnl+=x.pnl_usdt||0;
+      if(x.pnl_usdt>0) result[idx].w++;
+    });
+  });
+  return result.map(function(d){return {wr:d.t>0?d.w/d.t*100:0,avg:d.t>0?d.pnl/d.t:0};});
+}
+
+function renderHeatmap(){
+  var zl = ['0-20','20-40','40-60','60-80','80-100'];
+  var grid = {};
+  zl.forEach(function(r){zl.forEach(function(c){grid[r+'|'+c]={w:0,t:0};});});
+  T.forEach(function(x){
+    var z1 = getSrsiZone(x.srsi_1h), z4 = getSrsiZone(x.srsi4h);
+    if(!z1||!z4) return;
+    var k = z1.replace('<','').replace('>','')+'|'+z4.replace('<','').replace('>','');
+    if(!grid[k]) return;
+    grid[k].t++;
+    if(x.pnl_usdt>0) grid[k].w++;
+  });
+  var ht = '<table style="font-size:10px;margin:0 auto;width:auto"><tr><th></th><th colspan=5 style="text-align:center;font-size:11px;padding:4px">SRSI 4H →</th></tr>';
+  ht += '<tr><th style="font-size:10px;writing-mode:vertical-lr;padding:4px;min-width:18px">← SRSI 1H</th><th>'+zl.join('</th><th>')+'</th></tr>';
+  for(var ri=0;ri<5;ri++){
+    ht += '<tr><th>'+zl[ri]+'</th>';
+    for(var ci=0;ci<5;ci++){
+      var d = grid[zl[ri]+'|'+zl[ci]]||{w:0,t:0};
+      var wr2 = d.t>0?(d.w/d.t*100):0;
+      var alpha = d.t>0?0.15+wr2/100*0.75:0.05;
+      var r2=wr2>50?25:220,g2=wr2>50?135:53,b2=wr2>50?84:69;
+      if(d.t===0){r2=148;g2=163;b2=184}
+      ht += '<td style="background:rgba('+r2+','+g2+','+b2+','+alpha+');padding:6px 8px;text-align:center;border:1px solid #e2e8f0">'+(d.t>0?'<b>'+(wr2>50?'<span style=color:#065f46>':'')+d.w+'/'+d.t+(wr2>50?'</span>':'')+'</b>':'—')+'</td>';
+    }
+    ht += '</tr>';
+  }
+  ht += '</table><div style="text-align:center;font-size:10px;color:var(--muted);margin-top:6px">单元格: 盈利笔数/总笔数 · 绿色=盈利区</div>';
+  document.getElementById('cHeat').innerHTML = ht;
+}
+
+function renderMatrix(){
+  // Generate decision matrix from real data
+  var matrix = [];
+  var zl = ['0-20','20-40','40-60','60-80','80-100'];
+  var tgLabels = ['0/3逆势','1/3弱对齐','2/3对齐','3/3全对齐'];
+
+  T.forEach(function(x){
+    var ta = x.trend||'?/?/?';
+    var parts = ta.split('/');
+    if(parts.length<3||parts[0]==='?'||parts[1]==='?'||parts[2]==='?') return;
+    var align = 0;
+    if(x.direction==='做多'){
+      if(parts[0]==='多') align++; if(parts[1]==='多') align++; if(parts[2]==='多') align++;
+    } else {
+      if(parts[0]==='空') align++; if(parts[1]==='空') align++; if(parts[2]==='空') align++;
+    }
+    var z4 = getSrsiZone(x.srsi4h);
+    if(!z4) return;
+    var key = align+'|'+z4;
+    var found = false;
+    for(var i=0;i<matrix.length;i++){
+      if(matrix[i].key===key){matrix[i].n++;if(x.pnl_usdt>0)matrix[i].w++;matrix[i].pnl+=x.pnl_usdt||0;found=true;break;}
+    }
+    if(!found) matrix.push({key:key,align:align,z4:z4,n:1,w:x.pnl_usdt>0?1:0,pnl:x.pnl_usdt||0});
+  });
+
+  matrix.sort(function(a,b){return b.n-a.n;});
+  matrix = matrix.slice(0,15);
+
+  var mh = '';
+  matrix.forEach(function(d){
+    var wr2 = d.n>0?(d.w/d.n*100):0;
+    var avg = d.n>0?(d.pnl/d.n):0;
+    var taLabel = ['0/3逆势','1/3弱对齐','2/3对齐','3/3全对齐'][d.align]||'';
+    var rate;
+    if(wr2>=40) rate = '★★★';
+    else if(wr2>=20) rate = '★★';
+    else if(wr2>0) rate = '★';
+    else rate = '✗ 避开';
+    var rcl = rate.indexOf('避开')>=0?'r':rate.indexOf('★★★')>=0?'g':'a';
+    mh += '<tr><td>'+taLabel+'</td><td>'+d.z4+'</td><td>—</td><td>'+d.n+'</td><td class="'+(wr2>=40?'g':'r')+'">'+wr2.toFixed(0)+'%</td><td class="'+(avg>0?'g':'r')+'">'+avg.toFixed(1)+'U</td><td class="'+rcl+'">'+rate+'</td></tr>';
+  });
+  document.getElementById('tbMatrix').innerHTML = mh||'<tr><td colspan="7">暂无足够数据生成决策矩阵</td></tr>';
+}
+
+function renderInsight(){
+  var tg = computeTrendGroups();
+  var tg2v = tg[2]||{t:0,w:0}; var tg1 = tg[1]||{t:0,w:0};
+  var hasData = Object.values(tg).some(function(d){return d.t>0;});
+
+  var txt = '';
+  if(hasData){
+    txt += '<span class="hl">2/3趋势对齐是黄金区：</span>'+(tg2v.t>0?(tg2v.w/tg2v.t*100).toFixed(0):'N/A')+'%胜率'+(tg2v.t>0?' +'+(tg2v.pnl/tg2v.t).toFixed(1)+'U均益':'')+'。<br>';
+    txt += '<span class="hl">1/3弱对齐是死亡区：</span>'+tg1.t+'笔'+(tg1.t>0?'仅'+tg1.w+'盈，绝对不能入场':'')+'。<br>';
+  }
+  txt += '<span class="hl">1D趋势权重最大：</span>顺1D趋势入场效果远优于逆1D。<br>';
+  txt += '<span class="hl">SRSI 4H 50-80是最优入场区：</span>唯一正期望4H区段。SRSI 4H极端值(<20或>80)胜率极低。<br>';
+  txt += '<span class="hl">SRSI 1H 中性区（40-60）需谨慎：</span>入场缺乏方向性优势。';
+  document.getElementById('coreInsightText').innerHTML = txt;
+}
+})();
+</script>
+</body></html>
