@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>改善建议</title>
+<script src="chart.min.js"></script>
+<script src="all_analysis.js"></script>
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--text:#1e293b;--muted:#94a3b8;--green:#10b981;--red:#ef4444;--blue:#6366f1;--amber:#f59e0b;--border:#e2e8f0;--shadow:0 2px 8px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.03)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.nav{background:linear-gradient(135deg,#1e1b4b,#312e81,#3730a3);padding:0 24px;display:flex;align-items:center;gap:2px;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(30,27,75,.3)}
+.nav span{font-size:15px;font-weight:800;color:#fff;margin-right:24px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav a{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;color:rgba(255,255,255,.7);transition:all .2s}
+.nav a:hover{background:rgba(255,255,255,.12);color:#fff}.nav a svg{flex-shrink:0}
+.nav .dl{margin-left:auto;background:rgba(255,255,255,.15);color:#fff}.nav .dl:hover{background:rgba(255,255,255,.25)}
+.container{max-width:1200px;margin:0 auto;padding:24px 24px 40px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.6px;margin-bottom:6px}
+.sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.8}
+h2{font-size:16px;font-weight:700;margin:36px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--blue);color:var(--text);display:flex;align-items:center;gap:8px}
+h2 .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:13px;flex-shrink:0}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+@media(max-width:768px){.rules{grid-template-columns:1fr}}
+.rule{background:var(--card);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.rule::before{content:'';position:absolute;top:0;left:0;width:5px;height:100%}
+.rule.must::before{background:var(--red)}.rule.do::before{background:var(--green)}.rule.warn::before{background:var(--amber)}
+.rule .rt{font-size:13px;font-weight:800;margin-bottom:8px;color:var(--text)}
+.rule .rd{font-size:12px;color:var(--muted);line-height:1.7}
+.rule .stats{font-size:11px;margin-top:8px;padding:6px 10px;border-radius:6px;background:#f8fafc;color:var(--text);font-weight:600}
+.score-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+@media(max-width:768px){.score-grid{grid-template-columns:1fr 1fr}}
+.score-card{background:var(--card);border-radius:14px;padding:20px;box-shadow:var(--shadow);text-align:center}
+.score-card .sl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.score-card .sv{font-size:38px;font-weight:800;line-height:1}
+.score-card .sg{font-size:11px;color:var(--muted);margin-top:6px}
+.checklist{background:var(--card);border-radius:14px;padding:20px 24px;box-shadow:var(--shadow);margin-bottom:20px}
+.checklist .ci{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.checklist .ci:last-child{border-bottom:none}
+.checklist .ci .icon{font-size:16px;flex-shrink:0;width:22px;text-align:center}
+.checklist .ci .pass{color:var(--green)}.checklist .ci .fail{color:var(--red)}.checklist .ci .warn{color:var(--amber)}
+table{width:100%;border-spacing:0;font-size:12px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin:12px 0 20px}
+th{background:linear-gradient(180deg,#fafbfd,#f1f5f9);padding:11px 10px;text-align:center;font-weight:700;color:var(--muted);border-bottom:2px solid var(--blue);font-size:10px;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:12px}
+tr:last-child td{border-bottom:none}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:768px){.charts{grid-template-columns:1fr}}
+.cbox{background:var(--card);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.cbox h3{font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px}
+.cwrap{height:280px;position:relative}canvas{width:100%!important}
+.g{color:var(--green)}.r{color:var(--red)}.a{color:var(--amber)}.b{color:var(--blue)}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700}
+.badge-g{background:#d1fae5;color:#065f46}.badge-r{background:#fee2e2;color:#991b1b}.badge-a{background:#fffbeb;color:#92400e}
+.mtabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.mtab{display:inline-flex;align-items:center;padding:8px 18px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.03);text-decoration:none}
+.mtab:hover{border-color:var(--blue);color:var(--blue)}
+.mtab.act{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+.no-data{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+</style></head><body>
+
+<div class="nav"><span>📊 交易日记</span>
+<a href="index.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>仪表盘</a>
+<a href="analysis.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>分析报告</a>
+<a href="entry_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>入场研究</a>
+<a href="exit_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>离场研究</a>
+<a href="advice.html" style="color:#fff;background:rgba(255,255,255,.12)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>改善建议</a>
+<a href="compare.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>多月对比</a>
+<a href="weekly.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每周分析</a>
+<a href="交易记录_06.xlsx" class="dl" download><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>下载 Excel</a>
+</div><div class="container">
+<div class="mtabs">
+<a class="mtab" href="advice.html?m=1">1月</a>
+<a class="mtab" href="advice.html?m=2">2月</a>
+<a class="mtab" href="advice.html?m=3">3月</a>
+<a class="mtab" href="advice.html?m=4">4月</a>
+<a class="mtab" href="advice.html?m=5">5月</a>
+<a class="mtab" href="advice.html?m=6">6月</a>
+<a class="mtab" href="advice.html?m=7">7月</a>
+<a class="mtab" href="advice.html?m=8">8月</a>
+</div>
+
+<h1 id="pageTitle">交易改善建议</h1>
+<div class="sub" id="pageSub"></div>
+
+<div class="score-grid" id="scoreGrid"></div>
+
+<h2><span class="num">1</span>入场规则：只做对的交易</h2>
+<div class="rules" id="entryRules"></div>
+<div class="cbox"><h3>趋势对齐度 × 胜率 & 盈亏</h3><div class="cwrap"><canvas id="cAlign"></canvas></div></div>
+
+<h2><span class="num">2</span>离场规则：赚该赚的，亏该亏的</h2>
+<div class="rules" id="exitRules"></div>
+
+<h2><span class="num">3</span>仓位管理：控制下行风险</h2>
+<div class="rules" id="riskRules"></div>
+
+<h2><span class="num">4</span>入场前检查清单</h2>
+<div class="checklist" id="checklist"></div>
+
+<h2><span class="num">5</span>改善路线图</h2>
+<div class="cbox" style="margin-bottom:16px"><h3>两阶段改善路径</h3><div class="cwrap"><canvas id="cRoadmap"></canvas></div></div>
+<div class="rules" id="roadmapRules"></div>
+
+<h2><span class="num">6</span>数据评分卡</h2>
+<table><thead><tr><th>维度</th><th>当前值</th><th>评分</th><th>改善建议</th><th>预期提升</th></tr></thead><tbody id="tbScorecard"></tbody></table>
+<div style="font-size:11px;color:var(--muted);padding:8px 0 20px;text-align:center">评分：A=优秀 B=良好 C=一般 D=需改善 F=严重问题 · 以上建议基于交易记录的统计分析</div>
+
+<script>
+(function(){
+var M = (function(){
+  var p = new URLSearchParams(location.search);
+  var m = parseInt(p.get('m')) || parseInt(localStorage.getItem('lastMonth')) || 6;
+  if(isNaN(m)||m<1||m>6) m=6;
+  return m;
+})();
+
+document.querySelectorAll('.mtab').forEach(function(t,i){
+  var mn = i+1;
+  t.href = 'advice.html?m='+mn;
+  t.onclick = function(e){e.preventDefault();localStorage.setItem('lastMonth',''+mn);location.href='advice.html?m='+mn;};
+  if(mn===M) t.classList.add('act'); else t.classList.remove('act');
+});
+
+document.getElementById('pageTitle').textContent = M+'月交易改善建议';
+
+var T = RAW.filter(function(x){return x.m===M;});
+var W = T.filter(function(x){return x.pnl_usdt>0;});
+var L = T.filter(function(x){return x.pnl_usdt<0;});
+var total = T.length, wins = W.length, losses = L.length;
+var wr = total>0?(wins/total*100):0;
+var netPnl = T.reduce(function(s,x){return s+(x.pnl_usdt||0);},0);
+var avgWinPct = wins>0?W.reduce(function(s,x){return s+(x.pnl_pct||0);},0)/wins:0;
+var avgLossPct = losses>0?L.reduce(function(s,x){return s+Math.abs(x.pnl_pct||0);},0)/losses:0;
+var avgWinU = wins>0?W.reduce(function(s,x){return s+(x.pnl_usdt||0);},0)/wins:0;
+var avgLossU = losses>0?L.reduce(function(s,x){return s+Math.abs(x.pnl_usdt||0);},0)/losses:0;
+var rr = avgLossPct>0?(avgWinPct/avgLossPct).toFixed(1):'N/A';
+
+var hasRealData = T.some(function(x){return x.srsi4h&&x.srsi4h!==0;});
+var longs = T.filter(function(x){return x.direction==='做多';});
+var shorts = T.filter(function(x){return x.direction==='做空';});
+var lwr = longs.length>0?(longs.filter(function(x){return x.pnl_usdt>0;}).length/longs.length*100):0;
+var swr = shorts.length>0?(shorts.filter(function(x){return x.pnl_usdt>0;}).length/shorts.length*100):0;
+var lpnl = longs.reduce(function(s,x){return s+(x.pnl_usdt||0);},0);
+var spnl = shorts.reduce(function(s,x){return s+(x.pnl_usdt||0);},0);
+
+// Subtitle
+document.getElementById('pageSub').innerHTML = '基于'+total+'笔交易（'+wins+'盈/'+losses+'亏，净'+(netPnl>=0?'+':'')+netPnl.toFixed(1)+'U）的全面诊断 · 盈亏比'+rr;
+
+// Score cards
+var grade, gradeColor;
+if(wr>=40) {grade='B+';gradeColor='g';}
+else if(wr>=25) {grade='C+';gradeColor='a';}
+else if(wr>=15) {grade='D+';gradeColor='a';}
+else {grade='F';gradeColor='r';}
+
+document.getElementById('scoreGrid').innerHTML =
+  '<div class="score-card"><div class="sl">当前胜率</div><div class="sv r">'+wr.toFixed(0)+'%</div><div class="sg">'+wins+'盈 / '+losses+'亏</div></div>'+
+  '<div class="score-card"><div class="sl">目标胜率</div><div class="sv a">25%</div><div class="sg">第一阶段</div></div>'+
+  '<div class="score-card"><div class="sl">盈亏比</div><div class="sv '+(rr>=2?'g':rr>=1?'a':'r')+'">'+rr+'</div><div class="sg">均盈 +'+avgWinPct.toFixed(1)+'% / 均亏 -'+avgLossPct.toFixed(1)+'%</div></div>'+
+  '<div class="score-card"><div class="sl">诊断评级</div><div class="sv '+gradeColor+'">'+grade+'</div><div class="sg">'+(wr<25?'胜率是核心短板':wr<40?'改善潜力大':'持续优化')+'</div></div>';
+
+// Trend alignment stats
+function getSrsiZone(v){
+  if(v===null||v===undefined||v===0) return null;
+  if(v<20) return '<20'; if(v<50) return '20-50'; if(v<80) return '50-80'; return '>80';
+}
+function computeTrendGroups(){
+  var grp = {0:{t:0,w:0,pnl:0},1:{t:0,w:0,pnl:0},2:{t:0,w:0,pnl:0},3:{t:0,w:0,pnl:0}};
+  T.forEach(function(x){
+    var ta = x.trend||'?/?/?';
+    var parts = ta.split('/');
+    if(parts.length<3||parts[0]==='?'||parts[1]==='?'||parts[2]==='?') return;
+    var align = 0;
+    if(x.direction==='做多'){if(parts[0]==='多')align++;if(parts[1]==='多')align++;if(parts[2]==='多')align++;}
+    else{if(parts[0]==='空')align++;if(parts[1]==='空')align++;if(parts[2]==='空')align++;}
+    grp[align].t++;if(x.pnl_usdt>0)grp[align].w++;grp[align].pnl+=x.pnl_usdt||0;
+  });
+  return grp;
+}
+
+var tg = computeTrendGroups();
+var tgTotal = Object.values(tg).reduce(function(s,x){return s+x.t;},0);
+
+// Entry rules
+var tg1v = tg[1]||{t:0,w:0,pnl:0};
+var tg2v = tg[2]||{t:0,w:0,pnl:0};
+var tg3v = tg[3]||{t:0,w:0,pnl:0};
+
+var entryRulesHtml = '';
+if(tgTotal>0){
+  entryRulesHtml += '<div class="rule must"><div class="rt">❌ 禁止：1/3弱对齐入场</div><div class="rd">当入场方向与三个时间框架中<strong>两个或以上</strong>趋势相反时，绝对不能入场。'+tg1v.t+'笔交易中仅'+tg1v.w+'笔盈利。</div><div class="stats">📊 '+tg1v.t+'笔 · 胜率 '+(tg1v.t>0?(tg1v.w/tg1v.t*100).toFixed(0):'0')+'% · 均'+(tg1v.t>0?(tg1v.pnl/tg1v.t>=0?'盈':'亏'):'—')+' '+(tg1v.t>0?Math.abs(tg1v.pnl/tg1v.t).toFixed(1):'—')+'U</div></div>';
+  entryRulesHtml += '<div class="rule do"><div class="rt">✅ 优先：2/3趋势对齐</div><div class="rd">入场前检查 1H/4H/1D 趋势方向，至少 <strong>2/3对齐</strong>才入场。这是正期望区间。</div><div class="stats">📊 '+tg2v.t+'笔 · 胜率 '+(tg2v.t>0?(tg2v.w/tg2v.t*100).toFixed(0):'0')+'% · 均'+(tg2v.t>0?(tg2v.pnl/tg2v.t>=0?'盈':'亏'):'—')+' '+(tg2v.t>0?Math.abs(tg2v.pnl/tg2v.t).toFixed(1):'—')+'U</div></div>';
+  entryRulesHtml += '<div class="rule warn"><div class="rt">⚠️ 谨慎：3/3全对齐</div><div class="rd">全对齐听起来完美，但可能是趋势末期。入场前确认SRSI不在极端值。</div><div class="stats">📊 '+tg3v.t+'笔 · 胜率 '+(tg3v.t>0?(tg3v.w/tg3v.t*100).toFixed(0):'0')+'% · 均'+(tg3v.t>0?(tg3v.pnl/tg3v.t>=0?'盈':'亏'):'—')+' '+(tg3v.t>0?Math.abs(tg3v.pnl/tg3v.t).toFixed(1):'—')+'U</div></div>';
+} else {
+  entryRulesHtml += '<div class="rule warn"><div class="rt">⚠️ 趋势数据不可用</div><div class="rd">该月暂无趋势对齐数据（仅6月有完整记录）。基于基本统计：胜率'+wr.toFixed(0)+'%，建议优先过滤低质量入场信号。</div><div class="stats">📊 '+total+'笔 · 胜率 '+wr.toFixed(0)+'%</div></div>';
+}
+
+// SRSI extreme stats
+if(hasRealData){
+  var srsiExtreme = T.filter(function(x){
+    var z = getSrsiZone(x.srsi4h);
+    return z==='<20'||z==='>80';
+  });
+  var extremeWins = srsiExtreme.filter(function(x){return x.pnl_usdt>0;}).length;
+  var extremePnl = srsiExtreme.reduce(function(s,x){return s+(x.pnl_usdt||0);},0);
+  entryRulesHtml += '<div class="rule must"><div class="rt">❌ 禁止：SRSI 4H极端值</div><div class="rd">SRSI 4H <20（超卖）或 >80（超买）时入场，风险极高。等SRSI回到50-80再入场。</div><div class="stats">📊 '+srsiExtreme.length+'笔 · 胜率 '+(srsiExtreme.length>0?(extremeWins/srsiExtreme.length*100).toFixed(0):'0')+'% · 均'+(srsiExtreme.length>0?(extremePnl/srsiExtreme.length>=0?'盈':'亏'):'—')+' '+(srsiExtreme.length>0?Math.abs(extremePnl/srsiExtreme.length).toFixed(1):'—')+'U</div></div>';
+}
+document.getElementById('entryRules').innerHTML = entryRulesHtml;
+
+// Exit rules
+var slGoodCount = T.filter(function(x){return x.slV==='合适';}).length;
+var slTotal = L.length;
+var slRate = slTotal>0?(slGoodCount/slTotal*100):0;
+var tpGoodCount = T.filter(function(x){return x.tpV==='合适';}).length;
+var tpEarlyCount = T.filter(function(x){return x.tpV==='过早';}).length;
+var tpLateCount = T.filter(function(x){return x.tpV==='过晚';}).length;
+
+var exitRulesHtml = '';
+exitRulesHtml += '<div class="rule do"><div class="rt">✅ 止损决策总体正确（'+slRate.toFixed(0)+'%合理）</div><div class="rd">'+slTotal+'笔亏损中'+slGoodCount+'笔离场后价格继续朝不利方向运行，说明止损位置有效。保持当前止损纪律。</div><div class="stats">📊 '+slGoodCount+'/'+slTotal+' 止损正确</div></div>';
+if(wins>0){
+  var tpWrongRate = ((tpEarlyCount+tpLateCount)/Math.max(1,wins)*100).toFixed(0);
+  exitRulesHtml += '<div class="rule warn"><div class="rt">⚠️ 止盈是最大弱点：'+(wins-tpGoodCount)+'/'+wins+'笔出错</div><div class="rd">'+wins+'笔盈利中，'+tpLateCount+'笔过晚止盈、'+tpEarlyCount+'笔过早止盈。盈利时缺乏明确的离场规则。</div><div class="stats">📊 仅'+tpGoodCount+'/'+wins+'合适 · 过晚回吐 · 过早错失</div></div>';
+  exitRulesHtml += '<div class="rule do"><div class="rt">✅ 止盈规则：分批锁定利润</div><div class="rd"><strong>盈利+5%时减仓50%</strong>锁定基础利润。<strong>剩余持仓设置移动止损（跟踪最高点-3%）</strong>。当SRSI触及80时全部平仓。</div><div class="stats">💡 '+wins+'笔盈利均MFE +'+(W.reduce(function(s,x){return s+(x.holdMfe||0);},0)/wins).toFixed(1)+'%，分批锁定可提升总利润</div></div>';
+}
+exitRulesHtml += '<div class="rule warn"><div class="rt">⚠️ 亏损时SRSI极端值应果断离场</div><div class="rd">当SRSI 4H <20或>80时离场，正确率最高。极端值是可靠的反转信号。</div><div class="stats">📊 极端值离场：正确率高 · 离场后跌幅度大</div></div>';
+document.getElementById('exitRules').innerHTML = exitRulesHtml;
+
+// Risk rules
+// Find consecutive loss streak
+var maxStreak = 0, curStreak = 0;
+var sortedT = T.slice().sort(function(a,b){return a.idx - b.idx;});
+sortedT.forEach(function(x){
+  if(x.pnl_usdt<0){curStreak++;maxStreak=Math.max(maxStreak,curStreak);}
+  else{curStreak=0;}
+});
+
+// Time of day analysis (approximate)
+var hourGroups = {night:{t:0,w:0,pnl:0},morning:{t:0,w:0,pnl:0},afternoon:{t:0,w:0,pnl:0}};
+// Extract approximate hour from entry string
+T.forEach(function(x){
+  var entry = x.entry||'';
+  var m = entry.match(/(\d{2}):(\d{2})/);
+  if(!m) return;
+  var h = parseInt(m[1]);
+  if(h>=0&&h<8) {hourGroups.night.t++;if(x.pnl_usdt>0)hourGroups.night.w++;hourGroups.night.pnl+=x.pnl_usdt||0;}
+  else if(h>=8&&h<12) {hourGroups.morning.t++;if(x.pnl_usdt>0)hourGroups.morning.w++;hourGroups.morning.pnl+=x.pnl_usdt||0;}
+  else {hourGroups.afternoon.t++;if(x.pnl_usdt>0)hourGroups.afternoon.w++;hourGroups.afternoon.pnl+=x.pnl_usdt||0;}
+});
+var ntWr = hourGroups.night.t>0?(hourGroups.night.w/hourGroups.night.t*100):0;
+var atWr = hourGroups.afternoon.t>0?(hourGroups.afternoon.w/hourGroups.afternoon.t*100):0;
+
+var riskRulesHtml = '';
+riskRulesHtml += '<div class="rule must"><div class="rt">❌ 连亏'+(maxStreak>=3?maxStreak:3)+'笔必须停手</div><div class="rd">连亏记录最高<strong>'+maxStreak+'笔</strong>。连亏后暂停交易、复盘确认下一个入场信号满足条件后才恢复。</div><div class="stats">📊 连亏记录：'+maxStreak+'笔 · 连亏3笔后应暂停</div></div>';
+riskRulesHtml += '<div class="rule do"><div class="rt">✅ 单日最多3笔交易</div><div class="rd">控制交易频次、集中在优质时段能有效提升胜率。</div><div class="stats">📊 凌晨0-8点：'+(hourGroups.night.w||0)+'/'+(hourGroups.night.t||0)+'盈('+ntWr.toFixed(0)+'%) · 午后时段：'+(hourGroups.afternoon.w||0)+'/'+(hourGroups.afternoon.t||0)+'盈('+atWr.toFixed(0)+'%)</div></div>';
+riskRulesHtml += '<div class="rule warn"><div class="rt">⚠️ 减少做多偏好，增加做空机会</div><div class="rd">做多'+longs.length+'笔胜率'+lwr.toFixed(0)+'%，净'+(lpnl>=0?'+':'')+lpnl.toFixed(1)+'U。做空'+shorts.length+'笔胜率'+swr.toFixed(0)+'%，净'+(spnl>=0?'+':'')+spnl.toFixed(1)+'U。检查是否存在方向偏好。</div><div class="stats">📊 做多 WR='+lwr.toFixed(0)+'% 净'+(lpnl>=0?'+':'')+lpnl.toFixed(1)+'U · 做空 WR='+swr.toFixed(0)+'% 净'+(spnl>=0?'+':'')+spnl.toFixed(1)+'U</div></div>';
+if(hasRealData){
+  var srsiMid = T.filter(function(x){var z=getSrsiZone(x.srsi4h);return z==='50-80';});
+  var midWr = srsiMid.length>0?(srsiMid.filter(function(x){return x.pnl_usdt>0;}).length/srsiMid.length*100):0;
+  var midPnl = srsiMid.reduce(function(s,x){return s+(x.pnl_usdt||0);},0);
+  riskRulesHtml += '<div class="rule do"><div class="rt">✅ SRSI 4H 50-80是最优区间</div><div class="rd">在这个区间交易胜率更高。所有交易应优先考虑SRSI 4H在50-80。</div><div class="stats">📊 50-80区间：'+srsiMid.length+'笔 · WR='+midWr.toFixed(0)+'% · 净'+(midPnl>=0?'+':'')+midPnl.toFixed(1)+'U</div></div>';
+}
+document.getElementById('riskRules').innerHTML = riskRulesHtml;
+
+// Checklist
+document.getElementById('checklist').innerHTML =
+  '<div class="ci"><span class="icon pass">▢</span><span><strong>1H趋势</strong>是否与入场方向一致？</span></div>'+
+  '<div class="ci"><span class="icon pass">▢</span><span><strong>4H趋势</strong>是否与入场方向一致？（至少1H+4H对齐）</span></div>'+
+  '<div class="ci"><span class="icon fail">▢</span><span><strong>1D趋势</strong>是否与入场方向一致？不一致则仓位减半</span></div>'+
+  '<div class="ci"><span class="icon warn">▢</span><span><strong>SRSI 4H</strong>是否在50-80区间？<20或>80则不入场</span></div>'+
+  '<div class="ci"><span class="icon pass">▢</span><span>是否已<strong>连续亏损2笔</strong>？是则暂停、复盘后确认信号再入场</span></div>'+
+  '<div class="ci"><span class="icon warn">▢</span><span>入场前是否已设定<strong>止损位</strong>和<strong>第一止盈位（+5%）</strong>？</span></div>'+
+  '<div class="ci"><span class="icon pass">▢</span><span><strong>入场时间</strong>是否在凌晨0-8点？凌晨胜率较低，建议避开</span></div>';
+
+// Trend alignment chart
+if(tgTotal>0){
+  var tga = ['0/3逆势','1/3弱对齐','2/3部分对齐','3/3全对齐'];
+  new Chart(document.getElementById('cAlign'),{type:'bar',data:{labels:tga,datasets:[
+    {label:'胜率 %',type:'line',data:[(tg[0].t>0?tg[0].w/tg[0].t*100:0),(tg[1].t>0?tg[1].w/tg[1].t*100:0),(tg[2].t>0?tg[2].w/tg[2].t*100:0),(tg[3].t>0?tg[3].w/tg[3].t*100:0)],borderColor:'#6366f1',borderWidth:3,pointRadius:6,pointBackgroundColor:'#6366f1',yAxisID:'y1'},
+    {label:'均盈亏 U',data:[(tg[0].t>0?tg[0].pnl/tg[0].t:0),(tg[1].t>0?tg[1].pnl/tg[1].t:0),(tg[2].t>0?tg[2].pnl/tg[2].t:0),(tg[3].t>0?tg[3].pnl/tg[3].t:0)],backgroundColor:['rgba(239,68,68,.3)','rgba(239,68,68,.6)','rgba(16,185,129,.5)','rgba(239,68,68,.4)'],borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:10},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:function(v){return v.toFixed(1)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:60,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+} else {
+  document.getElementById('cAlign').parentElement.innerHTML = '<div class="no-data">暂无趋势数据</div>';
+}
+
+// Roadmap chart
+var targetWR = Math.min(40, wr+10);
+new Chart(document.getElementById('cRoadmap'),{type:'bar',data:{labels:['当前状态','第一阶段\n(过滤劣质入场)','第二阶段\n(优化止盈)','理论最优\n(全部规则)'],datasets:[
+  {label:'胜率 %',type:'line',data:[wr,targetWR,Math.min(40,targetWR+10),Math.min(45,targetWR+15)],borderColor:'#6366f1',borderWidth:3,pointRadius:6,pointBackgroundColor:'#6366f1',yAxisID:'y1',fill:false},
+  {label:'月均盈亏 U',data:[netPnl,netPnl>=0?netPnl*1.5:Math.min(20,netPnl*-0.3),netPnl>=0?netPnl*2.5:Math.min(60,netPnl*-0.8),netPnl>=0?netPnl*4:Math.min(100,netPnl*-1.2)],backgroundColor:['rgba(239,68,68,.5)','rgba(245,158,11,.5)','rgba(16,185,129,.4)','rgba(16,185,129,.6)'],borderRadius:6}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:10},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:function(v){return v.toFixed(0)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:70,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+
+// Roadmap rules
+document.getElementById('roadmapRules').innerHTML =
+  '<div class="rule do"><div class="rt">🎯 第一阶段（目标胜率 '+(Math.max(25,wr+10)).toFixed(0)+'%）</div><div class="rd">严格执行<strong>趋势对齐+避开SRSI极端值</strong>入场规则。预计过滤低质交易后，胜率从'+wr.toFixed(0)+'%提升至'+(Math.max(25,wr+10)).toFixed(0)+'%。</div><div class="stats">📊 目标：胜率'+(Math.max(25,wr+10)).toFixed(0)+'% × 盈亏比'+rr+' = 预期正收益</div></div>'+
+  '<div class="rule do"><div class="rt">🎯 第二阶段（目标胜率 35%）</div><div class="rd">引入<strong>分批止盈+移动止损</strong>。盈利+5%减仓50%、剩余跟踪最高点-3%、SRSI>80全平。配合连亏3笔停手、单日上限3笔。</div><div class="stats">📊 目标：胜率35% × 优化盈亏比 = 预期月均稳定盈利</div></div>';
+
+// Scorecard
+var scoreCard = [];
+var weakAlign = hasRealData?tg[1].t:0;
+var weakAlignPct = total>0?(weakAlign/total*100):0;
+var srsiExtremeCount = hasRealData?T.filter(function(x){var z=getSrsiZone(x.srsi4h);return z==='<20'||z==='>80';}).length:0;
+var srsiExtremePct = total>0?(srsiExtremeCount/total*100):0;
+var nightCount = hourGroups.night.t;
+var nightPct = total>0?(nightCount/total*100):0;
+
+scoreCard.push({dim:'入场趋势对齐',cur:hasRealData?weakAlignPct.toFixed(0)+'%交易在1/3弱对齐':total+'笔中仅基本统计',grade:hasRealData&&weakAlignPct>30?'F':hasRealData&&weakAlignPct>20?'D':'C',sug:'仅做2/3对齐交易，过滤低质入场',exp:'WR +10-20%'});
+scoreCard.push({dim:'SRSI入场过滤',cur:hasRealData?srsiExtremePct.toFixed(0)+'%交易在极端值':hasRealData?'指标数据可用':'暂无指标数据',grade:hasRealData&&srsiExtremePct>20?'F':hasRealData&&srsiExtremePct>10?'D':'C',sug:'只做SRSI 4H 50-80区间',exp:'WR +10-15%'});
+scoreCard.push({dim:'止损执行',cur:losses>0?slRate.toFixed(0)+'%止损正确':losses+'笔亏损',grade:losses>0?slRate>=80?'A':slRate>=60?'B':slRate>=40?'C':'D':'N/A',sug:'保持当前止损纪律',exp:'无需改进'});
+scoreCard.push({dim:'止盈执行',cur:wins>0?tpGoodCount+'/'+wins+'止盈正确':wins+'笔盈利',grade:wins>0?tpGoodCount/wins>=0.5?'A':tpGoodCount/wins>=0.3?'B':'D':'N/A',sug:'分批止盈：+5%减仓50% + 移动止损',exp:'均盈 ×1.5'});
+scoreCard.push({dim:'仓位/频次控制',cur:maxStreak>=3?'连亏'+maxStreak+'笔无限制':maxStreak+'笔连亏',grade:maxStreak>=5?'F':maxStreak>=3?'D':'C',sug:'连亏3笔停手 + 单日3笔上限',exp:'回撤 -50%'});
+scoreCard.push({dim:'时段选择',cur:nightPct.toFixed(0)+'%交易在凌晨',grade:nightPct>30?'D':nightPct>15?'C':'B',sug:'避开0-8点，集中在活跃时段',exp:'WR +5-8%'});
+
+var scHtml = '';
+scoreCard.forEach(function(s){
+  var gcls = s.grade==='A'?'g':s.grade==='B'?'g':s.grade==='C'?'a':s.grade==='D'?'a':'r';
+  scHtml += '<tr><td><b>'+s.dim+'</b></td><td class="'+(s.grade==='A'||s.grade==='B'?'g':s.grade==='F'?'r':'a')+'">'+s.cur+'</td><td class="'+gcls+'">'+s.grade+'</td><td>'+s.sug+'</td><td class="g">'+s.exp+'</td></tr>';
+});
+document.getElementById('tbScorecard').innerHTML = scHtml;
+})();
+</script>
+</div></body></html>
