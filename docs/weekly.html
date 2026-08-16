@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>每周分析 — 周度交易表现追踪</title>
+<script src="chart.min.js"></script>
+<script src="all_analysis.js"></script>
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--text:#1e293b;--muted:#94a3b8;--green:#10b981;--red:#ef4444;--blue:#6366f1;--amber:#f59e0b;--border:#e2e8f0;--shadow:0 2px 8px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.03)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.nav{background:linear-gradient(135deg,#1e1b4b,#312e81,#3730a3);padding:0 24px;display:flex;align-items:center;gap:2px;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(30,27,75,.3)}
+.nav span{font-size:15px;font-weight:800;color:#fff;margin-right:24px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav a{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;color:rgba(255,255,255,.7);transition:all .2s}
+.nav a:hover{background:rgba(255,255,255,.12);color:#fff}.nav a svg{flex-shrink:0}
+.nav .dl{margin-left:auto;background:rgba(255,255,255,.15);color:#fff}.nav .dl:hover{background:rgba(255,255,255,.25)}
+.container{max-width:1500px;margin:0 auto;padding:24px 24px 40px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.6px;margin-bottom:6px}
+.sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.8}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:24px}
+.card{background:var(--card);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .2s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.card::after{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.card{--accent:var(--blue)}.card.win{--accent:var(--green)}.card.lose{--accent:var(--red)}
+.card::after{background:var(--accent)}
+.card .lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.card .val{font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1}
+.card .d{font-size:11px;color:var(--muted);margin-top:4px}
+h2{font-size:16px;font-weight:700;margin:36px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--blue);color:var(--text);display:flex;align-items:center;gap:8px}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:900px){.charts{grid-template-columns:1fr}}
+.cbox{background:var(--card);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.cbox h3{font-size:12px;font-weight:700;color:var(--text);margin:0 0 12px}
+.cwrap{height:300px;position:relative}canvas{width:100%!important}
+.cwrap.sm{height:260px}
+table{width:100%;border-spacing:0;font-size:12px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin:8px 0 20px}
+th{background:linear-gradient(180deg,#fafbfd,#f1f5f9);padding:11px 10px;text-align:center;font-weight:700;color:var(--muted);border-bottom:2px solid var(--blue);font-size:10px;white-space:nowrap;letter-spacing:.3px}
+td{padding:9px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:12px}
+tr:last-child td{border-bottom:none}
+tr.win td{background:#f0fdf4}tr.lose td{background:#fef2f2}
+.g{color:var(--green)}.r{color:var(--red)}.a{color:var(--amber)}.b{color:var(--blue)}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700}
+.bg-g{background:#d1fae5;color:#065f46}.bg-r{background:#fee2e2;color:#991b1b}.bg-a{background:#fffbeb;color:#92400e}
+.mtabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.mtab{display:inline-flex;align-items:center;padding:8px 18px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.03);text-decoration:none}
+.mtab.act{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+.filter-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.filter-bar select{padding:6px 12px;border-radius:8px;border:1.5px solid var(--border);font-size:12px;background:var(--card);color:var(--text);cursor:pointer}
+.trend-up{color:var(--green);font-weight:700}.trend-down{color:var(--red);font-weight:700}
+.insight{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin:20px 0;box-shadow:var(--shadow)}
+.insight .t{font-size:13px;font-weight:800;color:var(--blue);margin-bottom:10px}
+.insight p{font-size:13px;line-height:1.9}
+</style>
+</head><body>
+<div class="nav">
+  <span>📊 交易日记</span>
+  <a href="index.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>仪表盘</a>
+  <a href="analysis.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>分析报告</a>
+  <a href="entry_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>入场研究</a>
+  <a href="exit_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>离场研究</a>
+  <a href="advice.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>改善建议</a>
+<a href="compare.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>多月对比</a>
+<a href="weekly.html" style="color:#fff;background:rgba(255,255,255,.12)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每周分析</a>
+<a href="#" class="dl" download><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>下载 Excel</a>
+</div>
+<div class="container">
+<h1>📅 周度交易分析</h1>
+<div class="sub">按周汇总 · 盈亏走势 · 决策质量追踪 · 覆盖1-8月全部交易</div>
+
+<div class="cards" id="statCards"></div>
+
+<div class="insight" style="margin-top:0"><div class="t">周度核心发现</div><p id="weeklyInsight"></p></div>
+
+<h2>🎯 周度改善建议</h2>
+<div id="weeklyAdvice" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+</div>
+
+<h2>一、每周净盈亏走势</h2>
+<div class="filter-bar">
+  <select id="monthFilter" onchange="updateAll()">
+    <option value="all">全部月份</option>
+    <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+    <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+  </select>
+</div>
+<div class="cbox" style="margin-bottom:14px"><h3>每周净盈亏 (USDT)</h3><div class="cwrap sm"><canvas id="cPnL"></canvas></div></div>
+<div class="charts">
+<div class="cbox"><h3>每周胜率趋势</h3><div class="cwrap sm"><canvas id="cWR"></canvas></div></div>
+<div class="cbox"><h3>每周交易笔数</h3><div class="cwrap sm"><canvas id="cCount"></canvas></div></div>
+</div>
+
+<h2>二、盈亏构成分析</h2>
+<div class="charts">
+<div class="cbox"><h3>每周盈利 vs 亏损金额</h3><div class="cwrap"><canvas id="cPnLStack"></canvas></div></div>
+<div class="cbox"><h3>每周盈亏笔数</h3><div class="cwrap"><canvas id="cWinStack"></canvas></div></div>
+</div>
+
+<h2>三、决策质量周度追踪</h2>
+<div class="charts">
+<div class="cbox"><h3>每周止损质量 (合适 vs 过早)</h3><div class="cwrap"><canvas id="cSL"></canvas></div></div>
+<div class="cbox"><h3>每周止盈质量 (合适 vs 过早/过晚)</h3><div class="cwrap"><canvas id="cTP"></canvas></div></div>
+</div>
+<div class="cbox" style="margin-bottom:14px"><h3>每周合理决策率 (合适止损+止盈 / 总笔数)</h3><div class="cwrap sm"><canvas id="cQuality"></canvas></div></div>
+
+<h2>四、周度评分卡</h2>
+<div class="cards" id="gradeCards"></div>
+
+<h2>五、周际对比（WoW）</h2>
+<div class="charts">
+<div class="cbox"><h3>周环比盈亏变化</h3><div class="cwrap sm"><canvas id="cWoW"></canvas></div></div>
+<div class="cbox"><h3>4周滚动均胜率 vs 滚动均盈亏</h3><div class="cwrap sm"><canvas id="cRolling"></canvas></div></div>
+</div>
+<div class="cbox" style="margin-bottom:20px"><h3>周际对比明细 (WoW Δ)</h3>
+<div style="overflow-x:auto">
+<table><thead><tr><th>周</th><th>净盈亏</th><th>Δ上周</th><th>胜率</th><th>Δ胜率</th><th>笔数</th><th>Δ笔数</th><th>趋势信号</th></tr></thead><tbody id="tbWow"></tbody></table>
+</div></div>
+
+<h2>六、趋势发现</h2>
+<div class="charts">
+<div class="cbox"><h3>盈利/亏损周交替模式</h3><div class="cwrap sm"><canvas id="cPattern"></canvas></div></div>
+<div class="cbox" id="patternBox"><h3>交易模式识别</h3><div id="patternInsight" style="padding:10px 0;font-size:13px;line-height:2"></div></div>
+</div>
+
+<h2>七、全部周明细</h2>
+<table><thead><tr><th>周</th><th>月份</th><th>笔数</th><th>盈</th><th>亏</th><th>胜率</th><th>净盈亏</th><th>均盈%</th><th>均亏%</th><th>合理决策</th><th>评分</th></tr></thead><tbody id="tbWeeks"></tbody></table>
+
+</div>
+
+<script>
+(function(){
+var M = (function(){
+  var p = new URLSearchParams(location.search);
+  var m = parseInt(p.get('m')) || 0;
+  if(isNaN(m)||m<1||m>6) m=0;
+  return m;
+})();
+
+if(M>0) document.getElementById('monthFilter').value = M;
+
+function getISOWeek(ts){
+  var d = new Date(ts);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate()+4-(d.getDay()||7));
+  var yearStart = new Date(d.getFullYear(),0,1);
+  return Math.ceil(((d-yearStart)/86400000+1)/7);
+}
+
+function getMonthFromTs(ts){
+  return new Date(ts).getMonth()+1;
+}
+
+// Parse entry_time to timestamp
+function parseEntryTs(entry){
+  var m = (entry||'').match(/(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);
+  if(!m) return null;
+  return new Date(2026, parseInt(m[1])-1, parseInt(m[2]), parseInt(m[3]), parseInt(m[4])).getTime();
+}
+
+// Group all trades by ISO week
+var weeks = {};
+RAW.forEach(function(x){
+  var ts = parseEntryTs(x.entry);
+  if(!ts) return;
+  var wk = getISOWeek(ts);
+  var mo = getMonthFromTs(ts);
+  var key = 'W'+wk;
+  if(!weeks[key]) weeks[key] = {wk:wk,mo:mo,total:0,wins:0,losses:0,
+    pnl:0,winPnl:0,lossPnl:0,winPctSum:0,lossPctSum:0,
+    slGood:0,slEarly:0,slNeutral:0,tpGood:0,tpEarly:0,tpLate:0,
+    label: 'W'+wk+' ('+mo+'月)'};
+  var d = weeks[key];
+  d.total++;
+  d.pnl += x.pnl_usdt||0;
+  if(x.pnl_usdt>0){
+    d.wins++; d.winPnl += x.pnl_usdt;
+    d.winPctSum += x.pnl_pct||0;
+    if(x.tpV){
+      if(x.tpV.indexOf('合适')>=0) d.tpGood++;
+      else if(x.tpV.indexOf('过早')>=0) d.tpEarly++;
+      else if(x.tpV.indexOf('过晚')>=0) d.tpLate++;
+    }
+  } else {
+    d.losses++; d.lossPnl += Math.abs(x.pnl_usdt||0);
+    d.lossPctSum += Math.abs(x.pnl_pct||0);
+    if(x.slV==='合适') d.slGood++;
+    else if(x.slV==='过早') d.slEarly++;
+    else d.slNeutral++;
+  }
+});
+
+// Sort weeks
+var wkKeys = Object.keys(weeks).sort(function(a,b){
+  return weeks[a].wk - weeks[b].wk;
+});
+var wkData = wkKeys.map(function(k){return weeks[k];});
+
+function filterWeeks(month){
+  if(!month||month===0) return wkData;
+  return wkData.filter(function(d){return d.mo===parseInt(month);});
+}
+
+function updateAll(){
+  var month = parseInt(document.getElementById('monthFilter').value)||0;
+  var data = filterWeeks(month);
+  renderCards(data, month);
+  renderCharts(data);
+  renderWow(data);
+  renderPattern(data);
+  renderAdvice(data);
+  renderTable(data, month);
+  renderInsight(data);
+}
+
+function renderCards(data, month){
+  if(data.length===0){
+    document.getElementById('statCards').innerHTML = '<div class="card"><div class="lbl">无数据</div><div class="val">—</div></div>';
+    return;
+  }
+  var totalWeeks = data.length;
+  var totalTrades = data.reduce(function(s,d){return s+d.total;},0);
+  var totalWins = data.reduce(function(s,d){return s+d.wins;},0);
+  var totalLosses = data.reduce(function(s,d){return s+d.losses;},0);
+  var totalPnl = data.reduce(function(s,d){return s+d.pnl;},0);
+  var avgWr = totalTrades>0?(totalWins/totalTrades*100):0;
+  
+  var best = data[0], worst = data[0];
+  data.forEach(function(d){
+    if(d.pnl > best.pnl) best = d;
+    if(d.pnl < worst.pnl) worst = d;
+  });
+  
+  var positiveWeeks = data.filter(function(d){return d.pnl>0;}).length;
+  var wrPct = totalWeeks>0?(positiveWeeks/totalWeeks*100):0;
+  var avgPnl = totalWeeks>0?(totalPnl/totalWeeks):0;
+  
+  // Best/worst streak
+  var curUp=0, maxUp=0, curDown=0, maxDown=0;
+  data.forEach(function(d){
+    if(d.pnl>0){curUp++;curDown=0;maxUp=Math.max(maxUp,curUp);}
+    else{curDown++;curUp=0;maxDown=Math.max(maxDown,curDown);}
+  });
+  
+  var cards = [
+    {lbl:'总周数',val:totalWeeks,d:'覆盖'+(month||'全部')+'月份'},
+    {lbl:'总交易',val:totalTrades,d:totalWins+'盈/'+totalLosses+'亏 · WR '+avgWr.toFixed(0)+'%'},
+    {lbl:'最佳周',val:(best.pnl>0?'+':'')+best.pnl.toFixed(0)+'U',d:best.label+' · '+best.wins+'/'+best.total+'盈',cls:best.pnl>0?'g':'r'},
+    {lbl:'最差周',val:worst.pnl.toFixed(0)+'U',d:worst.label+' · '+worst.losses+'/'+worst.total+'亏',cls:'r'},
+    {lbl:'周均盈亏',val:avgPnl.toFixed(1)+'U',d:positiveWeeks+'/'+totalWeeks+'正周 ('+wrPct.toFixed(0)+'%)',cls:avgPnl>0?'g':'r'},
+    {lbl:'最长连胜',val:maxUp+'周',d:'连续盈利周数'},
+    {lbl:'最长连亏',val:maxDown+'周',d:'连续亏损周数',cls:maxDown>=3?'r':''},
+    {lbl:'合理决策率',val:(totalWins+totalLosses>0?((data.reduce(function(s,d){return s+d.slGood+d.tpGood;},0))/(totalWins+totalLosses)*100).toFixed(0):0)+'%',d:'合适SL+TP / 总数',cls:'g'},
+  ];
+  document.getElementById('statCards').innerHTML = cards.map(function(c){
+    return '<div class="card"><div class="lbl">'+c.lbl+'</div><div class="val '+(c.cls||'')+'">'+c.val+'</div><div class="d">'+c.d+'</div></div>';
+  }).join('');
+  
+  // Grade cards
+  var avgQuality = data.reduce(function(s,d){return s+d.slGood+d.tpGood;},0)/Math.max(1,totalWins+totalLosses)*100;
+  var grade = avgQuality>=70?'A':(avgQuality>=55?'B':(avgQuality>=40?'C':'D'));
+  var gcl = grade==='A'?'g':grade==='B'?'g':grade==='C'?'a':'r';
+  document.getElementById('gradeCards').innerHTML =
+    '<div class="card"><div class="lbl">决策评分</div><div class="val '+gcl+'">'+grade+'</div><div class="d">止损+止盈合理率 '+(avgQuality).toFixed(0)+'%</div></div>'+
+    '<div class="card"><div class="lbl">盈周占比</div><div class="val '+(wrPct>=50?'g':'r')+'">'+wrPct.toFixed(0)+'%</div><div class="d">'+positiveWeeks+'/'+totalWeeks+'周盈利</div></div>'+
+    '<div class="card"><div class="lbl">最大回撤</div><div class="val r">'+(data.length>0?Math.min.apply(null,data.map(function(d){return d.pnl;})).toFixed(0):0)+'U</div><div class="d">单周最大亏损</div></div>'+
+    '<div class="card"><div class="lbl">盈亏比</div><div class="val '+(avgWr>=40?'g':'a')+'">'+(totalLosses>0?(totalWins/totalLosses).toFixed(2):'N/A')+'</div><div class="d">盈笔/亏笔</div></div>';
+}
+
+var allCharts = [];
+
+function renderCharts(data){
+  // Destroy old charts
+  allCharts.forEach(function(c){c.destroy();});
+  allCharts = [];
+  
+  if(data.length===0){
+    ['cPnL','cWR','cCount','cPnLStack','cWinStack','cSL','cTP','cQuality'].forEach(function(id){
+      document.getElementById(id).parentElement.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted)">无数据</div>';
+    });
+    return;
+  }
+  
+  var labels = data.map(function(d){return d.label;});
+  var pnls = data.map(function(d){return d.pnl;});
+  var bgPnL = data.map(function(d){return d.pnl>=0?'rgba(16,185,129,.5)':'rgba(239,68,68,.5)';});
+  var bcPnL = data.map(function(d){return d.pnl>=0?'#10b981':'#ef4444';});
+  
+  // PnL chart
+  var c1 = new Chart(document.getElementById('cPnL'),{type:'bar',data:{labels:labels,datasets:[
+    {label:'净盈亏 U',data:pnls,backgroundColor:bgPnL,borderColor:bcPnL,borderWidth:1,borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+    x:{grid:{display:false},ticks:{font:{size:9}}},
+    y:{ticks:{callback:function(v){return v.toFixed(0)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}
+  }}});allCharts.push(c1);
+  
+  // WR trend
+  var wrData = data.map(function(d){return d.total>0?(d.wins/d.total*100):0;});
+  var wrColors = data.map(function(d){return d.total>0&&(d.wins/d.total*100)>=50?'#10b981':'#ef4444';});
+  var c2 = new Chart(document.getElementById('cWR'),{type:'line',data:{labels:labels,datasets:[
+    {label:'胜率 %',data:wrData,borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.08)',borderWidth:2.5,fill:true,pointRadius:4,pointBackgroundColor:wrColors,tension:.3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+    x:{grid:{display:false},ticks:{font:{size:9}}},
+    y:{min:0,max:80,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}
+  }}});allCharts.push(c2);
+  
+  // Count chart
+  var counts = data.map(function(d){return d.total;});
+  var c3 = new Chart(document.getElementById('cCount'),{type:'bar',data:{labels:labels,datasets:[
+    {label:'交易笔数',data:counts,backgroundColor:'rgba(99,102,241,.4)',borderColor:'#6366f1',borderWidth:1,borderRadius:3},
+    {label:'盈利笔数',data:data.map(function(d){return d.wins;}),backgroundColor:'rgba(16,185,129,.5)',borderColor:'#10b981',borderWidth:1,borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:9},usePointStyle:true}}},scales:{
+    x:{grid:{display:false},ticks:{font:{size:9}}},
+    y:{stacked:false,ticks:{stepSize:5,font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}
+  }}});allCharts.push(c3);
+  
+  // PnL stack
+  var c4 = new Chart(document.getElementById('cPnLStack'),{type:'bar',data:{labels:labels,datasets:[
+    {label:'总盈利 U',data:data.map(function(d){return d.winPnl;}),backgroundColor:'rgba(16,185,129,.6)',borderColor:'#10b981',borderWidth:1,borderRadius:3,order:0},
+    {label:'总亏损 U',data:data.map(function(d){return -d.lossPnl;}),backgroundColor:'rgba(239,68,68,.4)',borderColor:'#ef4444',borderWidth:1,borderRadius:3,order:0},
+    {label:'净盈亏 U',type:'line',data:pnls,borderColor:'#6366f1',borderWidth:3,pointRadius:5,pointBackgroundColor:'#6366f1',yAxisID:'y1',order:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:9},usePointStyle:true}}},scales:{
+    x:{grid:{display:false},ticks:{font:{size:9}}},
+    y:{stacked:true,ticks:{callback:function(v){return v.toFixed(0)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},
+    y1:{position:'right',ticks:{callback:function(v){return v.toFixed(0)+'U'},font:{size:9}},grid:{drawOnChartArea:false}}
+  }}});allCharts.push(c4);
+  
+  // Win/loss stack
+  var c5 = new Chart(document.getElementById('cWinStack'),{type:'bar',data:{labels:labels,datasets:[
+    {label:'盈利笔数',data:data.map(function(d){return d.wins;}),backgroundColor:'rgba(16,185,129,.6)',borderColor:'#10b981',borderWidth:1,borderRadius:3},
+    {label:'亏损笔数',data:data.map(function(d){return d.losses;}),backgroundColor:'rgba(239,68,68,.4)',borderColor:'#ef4444',borderWidth:1,borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:9},usePointStyle:true}}},scales:{
+    x:{stacked:true,grid:{display:false},ticks:{font:{size:9}}},
+    y:{stacked:true,ticks:{stepSize:5,font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}
+  }}});allCharts.push(c5);
+  
+  // SL quality
+  var c6 = new Chart(document.getElementById('cSL'),{type:'bar',data:{labels:labels,datasets:[
+    {label:'✓ 合适止损',data:data.map(function(d){return d.slGood;}),backgroundColor:'rgba(16,185,129,.6)',borderColor:'#10b981',borderWidth:1,borderRadius:3},
+    {label:'✗ 过早止损',data:data.map(function(d){return d.slEarly;}),backgroundColor:'rgba(239,68,68,.4)',borderColor:'#ef4444',borderWidth:1,borderRadius:3},
+    {label:'— 中性',data:data.map(function(d){return d.slNeutral;}),backgroundColor:'rgba(148,163,184,.3)',borderColor:'#94a3b8',borderWidth:1,borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:9},usePointStyle:true}}},scales:{
+    x:{stacked:true,grid:{display:false},ticks:{font:{size:9}}},
+    y:{stacked:true,ticks:{stepSize:2,font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}
+  }}});allCharts.push(c6);
+  
+  // TP quality
+  var c7 = new Chart(document.getElementById('cTP'),{type:'bar',data:{labels:labels,datasets:[
+    {label:'✓ 合适止盈',data:data.map(function(d){return d.tpGood;}),backgroundColor:'rgba(16,185,129,.6)',borderColor:'#10b981',borderWidth:1,borderRadius:3},
+    {label:'✗ 过早止盈',data:data.map(function(d){return d.tpEarly;}),backgroundColor:'rgba(245,158,11,.4)',borderColor:'#f59f00',borderWidth:1,borderRadius:3},
+    {label:'✗ 过晚止盈',data:data.map(function(d){return d.tpLate;}),backgroundColor:'rgba(239,68,68,.4)',borderColor:'#ef4444',borderWidth:1,borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:9},usePointStyle:true}}},scales:{
+    x:{stacked:true,grid:{display:false},ticks:{font:{size:9}}},
+    y:{stacked:true,ticks:{stepSize:1,font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}
+  }}});allCharts.push(c7);
+  
+  // Quality rate
+  var qualityData = data.map(function(d){
+    var total = d.wins+d.losses;
+    return total>0?((d.slGood+d.tpGood)/total*100):0;
+  });
+  var c8 = new Chart(document.getElementById('cQuality'),{type:'line',data:{labels:labels,datasets:[
+    {label:'合理决策率 %',data:qualityData,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',borderWidth:2.5,fill:true,pointRadius:4,pointBackgroundColor:qualityData.map(function(v){return v>=60?'#10b981':v>=40?'#f59f00':'#ef4444';}),tension:.3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+    x:{grid:{display:false},ticks:{font:{size:9}}},
+    y:{min:0,max:100,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}
+  }}});allCharts.push(c8);
+}
+
+function renderTable(data, month){
+  if(data.length===0){
+    document.getElementById('tbWeeks').innerHTML = '<tr><td colspan="11">无数据</td></tr>';
+    return;
+  }
+  var totalData = data.reduce(function(s,d){
+    s.total+=d.total;s.wins+=d.wins;s.losses+=d.losses;
+    s.pnl+=d.pnl;s.winPct+=d.winPctSum;s.lossPct+=d.lossPctSum;
+    s.slGood+=d.slGood;s.tpGood+=d.tpGood;
+    return s;
+  },{total:0,wins:0,losses:0,pnl:0,winPct:0,lossPct:0,slGood:0,tpGood:0});
+  
+  var h = '';
+  data.forEach(function(d){
+    var wr = d.total>0?(d.wins/d.total*100):0;
+    var avgW = d.wins>0?(d.winPctSum/d.wins):0;
+    var avgL = d.losses>0?(d.lossPctSum/d.losses):0;
+    var reasonable = (d.total>0?((d.slGood+d.tpGood)/Math.max(1,d.wins+d.losses)*100):0).toFixed(0);
+    var gr = d.total>0&&(d.slGood+d.tpGood)/(d.wins+d.losses)>=0.6?'g':d.total>0&&(d.slGood+d.tpGood)/(d.wins+d.losses)>=0.4?'a':'r';
+    h += '<tr class="'+(d.pnl>0?'win':'lose')+'">';
+    h += '<td><b>'+d.label+'</b></td><td>'+d.mo+'月</td>';
+    h += '<td>'+d.total+'</td><td class="g">'+d.wins+'</td><td class="r">'+d.losses+'</td>';
+    h += '<td class="'+(wr>=40?'g':'r')+'">'+wr.toFixed(0)+'%</td>';
+    h += '<td class="'+(d.pnl>0?'g':'r')+'"><b>'+(d.pnl>0?'+':'')+d.pnl.toFixed(1)+'U</b></td>';
+    h += '<td class="g">+'+avgW.toFixed(1)+'%</td>';
+    h += '<td class="r">-'+avgL.toFixed(1)+'%</td>';
+    h += '<td>'+d.slGood+'/'+d.tpGood+'</td>';
+    h += '<td class="'+gr+'"><b>'+(d.total>0&&(d.wins+d.losses)>0?((d.slGood+d.tpGood)/(d.wins+d.losses)*100).toFixed(0):0)+'%</b></td>';
+    h += '</tr>';
+  });
+  
+  // Total row
+  var totalWr = totalData.total>0?(totalData.wins/totalData.total*100):0;
+  var totalAvgW = totalData.wins>0?(totalData.winPct/totalData.wins):0;
+  var totalAvgL = totalData.losses>0?(totalData.lossPct/totalData.losses):0;
+  h += '<tr style="font-weight:700;border-top:2px solid var(--blue)"><td>合计</td><td>'+(month||'全部')+'</td>';
+  h += '<td>'+totalData.total+'</td><td class="g">'+totalData.wins+'</td><td class="r">'+totalData.losses+'</td>';
+  h += '<td>'+totalWr.toFixed(0)+'%</td>';
+  h += '<td class="'+(totalData.pnl>0?'g':'r')+'">'+(totalData.pnl>0?'+':'')+totalData.pnl.toFixed(1)+'U</td>';
+  h += '<td class="g">+'+totalAvgW.toFixed(1)+'%</td>';
+  h += '<td class="r">-'+totalAvgL.toFixed(1)+'%</td>';
+  h += '<td>'+totalData.slGood+'/'+totalData.tpGood+'</td>';
+  h += '<td>—</td></tr>';
+  
+    document.getElementById('tbWeeks').innerHTML = h;
+}
+
+var wowCharts = [];
+
+function renderWow(data){
+  wowCharts.forEach(function(c){c.destroy();});
+  wowCharts = [];
+  
+  if(data.length<2){
+    document.getElementById('cWoW').parentElement.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted)">需要至少2周数据</div>';
+    document.getElementById('cRolling').parentElement.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted)">需要至少4周数据</div>';
+    document.getElementById('tbWow').innerHTML = '<tr><td colspan="8">数据不足</td></tr>';
+    return;
+  }
+  
+  // WoW PnL change
+  var labels = data.map(function(d){return d.label;});
+  var wowChanges = [];
+  for(var i=1;i<data.length;i++){
+    wowChanges.push(data[i].pnl - data[i-1].pnl);
+  }
+  var wowLabels = labels.slice(1);
+  
+  var bgWow = wowChanges.map(function(v){return v>=0?'rgba(16,185,129,.5)':'rgba(239,68,68,.5)';});
+  var c9 = new Chart(document.getElementById('cWoW'),{type:'bar',data:{labels:wowLabels,datasets:[
+    {label:'周环比盈亏变化 U',data:wowChanges,backgroundColor:bgWow,borderColor:bgWow.map(function(v,i){return wowChanges[i]>=0?'#10b981':'#ef4444';}),borderWidth:1,borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+    x:{grid:{display:false},ticks:{font:{size:9}}},
+    y:{ticks:{callback:function(v){return (v>=0?'+':'')+v.toFixed(0)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}
+  }}});wowCharts.push(c9);
+  
+  // 4-week rolling average
+  var rollingPnl = [], rollingWR = [];
+  var rollLabels = [];
+  for(var i=3;i<data.length;i++){
+    var slice = data.slice(i-3,i+1);
+    var avgP = slice.reduce(function(s,d){return s+d.pnl;},0)/4;
+    var wins = slice.reduce(function(s,d){return s+d.wins;},0);
+    var total = slice.reduce(function(s,d){return s+d.total;},0);
+    rollingPnl.push(avgP);
+    rollingWR.push(total>0?(wins/total*100):0);
+    rollLabels.push(slice[0].label+'→'+slice[3].label);
+  }
+  
+  if(rollingPnl.length>0){
+    var c10 = new Chart(document.getElementById('cRolling'),{type:'line',data:{labels:rollLabels,datasets:[
+      {label:'4周均盈亏 U',data:rollingPnl,borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,0)',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#6366f1',yAxisID:'y',tension:.3,fill:false,order:1},
+      {label:'4周均胜率 %',data:rollingWR,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.05)',borderWidth:2,dashed:true,borderDash:[5,3],pointRadius:4,pointBackgroundColor:'#10b981',yAxisID:'y1',tension:.3,fill:true,order:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,font:{size:9},usePointStyle:true}}},scales:{
+      x:{grid:{display:false},ticks:{font:{size:8}}},
+      y:{ticks:{callback:function(v){return v.toFixed(0)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},
+      y1:{position:'right',min:0,max:60,ticks:{callback:function(v){return v.toFixed(0)+'%'},font:{size:9}},grid:{drawOnChartArea:false}}
+    }}});wowCharts.push(c10);
+  }
+  
+  // WoW comparison table
+  var h = '';
+  for(var i=0;i<data.length;i++){
+    var d = data[i];
+    var wr = d.total>0?(d.wins/d.total*100):0;
+    var prev = i>0?data[i-1]:null;
+    var pnlDelta = prev?(d.pnl-prev.pnl):0;
+    var wrDelta = prev?(wr-(prev.total>0?prev.wins/prev.total*100:0)):0;
+    var cntDelta = prev?(d.total-prev.total):0;
+    
+    // Trend signal
+    var signal = '', sigCls = '';
+    if(i===0){signal='起始';sigCls='a';}
+    else if(d.pnl>0&&(prev?prev.pnl<0:false)){signal='🔄 转盈';sigCls='g';}
+    else if(d.pnl<0&&(prev?prev.pnl>0:false)){signal='⚠ 转亏';sigCls='r';}
+    else if(pnlDelta>5&&wrDelta>0){signal='📈 加速';sigCls='g';}
+    else if(pnlDelta<-10){signal='📉 恶化';sigCls='r';}
+    else if(d.pnl>0&&prev&&prev.pnl>0){signal='✓ 连盈';sigCls='g';}
+    else if(d.pnl<0&&prev&&prev.pnl<0){signal='✗ 连亏';sigCls='r';}
+    else{signal='→ 持平';sigCls='a';}
+    
+    h += '<tr class="'+(d.pnl>0?'win':'lose')+'">';
+    h += '<td><b>'+d.label+'</b></td>';
+    h += '<td class="'+(d.pnl>0?'g':'r')+'">'+(d.pnl>0?'+':'')+d.pnl.toFixed(1)+'U</td>';
+    h += '<td class="'+(pnlDelta>0?'g':'r')+'">'+(i>0?((pnlDelta>0?'+':'')+pnlDelta.toFixed(1)+'U'):'—')+'</td>';
+    h += '<td>'+wr.toFixed(0)+'%</td>';
+    h += '<td class="'+(wrDelta>0?'g':'r')+'">'+(i>0?((wrDelta>0?'+':'')+wrDelta.toFixed(0)+'pp'):'—')+'</td>';
+    h += '<td>'+d.total+'</td>';
+    h += '<td>'+(i>0?(cntDelta>0?'+'+cntDelta:cntDelta):'—')+'</td>';
+    h += '<td class="'+sigCls+'"><b>'+signal+'</b></td>';
+    h += '</tr>';
+  }
+  document.getElementById('tbWow').innerHTML = h;
+}
+
+function renderPattern(data){
+  if(data.length<3){return;}
+  
+  // Alternating pattern - 1=win, 0=loss
+  var pattern = data.map(function(d){return d.pnl>0?1:0;});
+  
+  // Count streaks
+  var streaks = [];
+  var cur = pattern[0], cnt = 1;
+  for(var i=1;i<pattern.length;i++){
+    if(pattern[i]===cur){cnt++;}
+    else{streaks.push({dir:cur,len:cnt});cur=pattern[i];cnt=1;}
+  }
+  streaks.push({dir:cur,len:cnt});
+  
+  // Pattern chart
+  var ptLabels = data.map(function(d){return d.label;});
+  var ptData = data.map(function(d){return d.pnl>0?1:0;});
+  
+  var c11 = new Chart(document.getElementById('cPattern'),{type:'bar',data:{labels:ptLabels,datasets:[
+    {label:'本周盈亏方向',data:ptData,backgroundColor:ptData.map(function(v){return v===1?'rgba(16,185,129,.6)':'rgba(239,68,68,.4)';}),borderColor:ptData.map(function(v){return v===1?'#10b981':'#ef4444';}),borderWidth:1,borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{
+    x:{grid:{display:false},ticks:{font:{size:9}}},
+    y:{min:0,max:1,ticks:{callback:function(v){return v===1?'盈利':'亏损';},stepSize:1,font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}
+  }}});
+  wowCharts.push(c11);
+  
+  // Pattern insight
+  var wins = pattern.reduce(function(s,v){return s+v;},0);
+  var losses = pattern.length - wins;
+  var winStreaks = streaks.filter(function(s){return s.dir===1;});
+  var lossStreaks = streaks.filter(function(s){return s.dir===0;});
+  var maxWinStreak = winStreaks.length>0?Math.max.apply(null,winStreaks.map(function(s){return s.len;})):0;
+  var maxLossStreak = lossStreaks.length>0?Math.max.apply(null,lossStreaks.map(function(s){return s.len;})):0;
+  var recentStreak = streaks[streaks.length-1];
+  var isAlternating = streaks.length > pattern.length*0.6;
+  
+  var txt = '<div style="font-size:12px;line-height:2.2">';
+  txt += '<b>盈亏周分布：</b>'+wins+'盈 / '+losses+'亏 · <b>'+Math.round(wins/pattern.length*100)+'%</b> 盈周比<br>';
+  txt += '<b>连盈周模式：</b>最长连盈 <b class="g">'+maxWinStreak+'周</b>，连盈段 <b>'+winStreaks.length+'段</b><br>';
+  txt += '<b>连亏周模式：</b>最长连亏 <b class="r">'+maxLossStreak+'周</b>，连亏段 <b>'+lossStreaks.length+'段</b><br>';
+  txt += '<b>当前状态：</b>处于 <b class="'+(recentStreak.dir===1?'g':'r')+'">'+(recentStreak.dir===1?'盈利':'亏损')+'</b>第 <b>'+recentStreak.len+'周</b><br>';
+  if(isAlternating) txt += '<b>⚠ 高交替率：</b>盈亏频繁交替，情绪和策略不稳定<br>';
+  if(maxLossStreak>=4) txt += '<b class="r">⚠ 长连亏周期：</b>需要连亏'+maxLossStreak+'周触发强制停手机制<br>';
+  if(maxWinStreak>=3) txt += '<b class="g">✓ 有稳定盈利段：</b>展现盈利潜力，复制该段策略<br>';
+  txt += '</div>';
+  document.getElementById('patternInsight').innerHTML = txt;
+}
+
+function renderAdvice(data){
+  if(data.length===0){
+    document.getElementById('weeklyAdvice').innerHTML = '<div class="insight"><div class="t">暂无建议</div><p>数据不足</p></div>';
+    return;
+  }
+  
+  var recent4 = data.slice(-4);
+  var recentPnl = recent4.reduce(function(s,d){return s+d.pnl;},0);
+  var recentWins = recent4.reduce(function(s,d){return s+d.wins;},0);
+  var recentTotal = recent4.reduce(function(s,d){return s+d.total;},0);
+  var recentWR = recentTotal>0?(recentWins/recentTotal*100):0;
+  
+  var slGood = data.reduce(function(s,d){return s+d.slGood;},0);
+  var slEarly = data.reduce(function(s,d){return s+d.slEarly;},0);
+  var tpGood = data.reduce(function(s,d){return s+d.tpGood;},0);
+  var tpEarly = data.reduce(function(s,d){return s+d.tpEarly;},0);
+  var tpLate = data.reduce(function(s,d){return s+d.tpLate;},0);
+  
+  var totalTrades2 = data.reduce(function(s,d){return s+d.wins+d.losses;},0);
+  var slRate = totalTrades2>0?(slGood/(slGood+slEarly+1)*100):0;
+  var tpRate = tpGood+tpEarly+tpLate>0?(tpGood/(tpGood+tpEarly+tpLate)*100):0;
+  
+  var lastWeek = data[data.length-1];
+  var prevWeek = data.length>1?data[data.length-2]:null;
+  var improving = prevWeek&&lastWeek?(lastWeek.pnl>prevWeek.pnl):false;
+  var wrTrend = prevWeek&&lastWeek?(lastWeek.total>0?lastWeek.wins/lastWeek.total:0)>(prevWeek.total>0?prevWeek.wins/prevWeek.total:0):false;
+  
+  var adviceRows = [];
+  
+  // Entry advice
+  var entryAdv = '';
+  if(recentWR<25){
+    entryAdv = '<span class="r"><b>🔴 紧急：</b></span>近期胜率仅'+recentWR.toFixed(0)+'%，严格过滤入场信号。只做2/3趋势对齐+ SRSI 4H在50-80区间的交易。';
+  } else if(recentWR<35){
+    entryAdv = '<span class="a"><b>🟡 改善：</b></span>胜率'+recentWR.toFixed(0)+'%偏低，建议增加入场前趋势对齐检查。连续出现SRSI极端值(<20或>80)的币种避开。';
+  } else {
+    entryAdv = '<span class="g"><b>🟢 稳定：</b></span>近期胜率'+recentWR.toFixed(0)+'%有一定改善，保持当前入场纪律，继续优化选币。';
+  }
+  
+  // Exit advice
+  var exitAdv = '';
+  if(tpEarly>tpGood+tpLate){
+    exitAdv = '<span class="a"><b>🟡 止盈过早：</b></span>'+tpEarly+'笔早期止盈 vs '+tpGood+'笔合适。建议盈利+5%减仓50%、剩余跟踪+3%不破就持有。';
+  } else if(tpLate>tpGood){
+    exitAdv = '<span class="r"><b>🔴 止盈过晚：</b></span>'+tpLate+'笔回吐利润。SRSI触及80或从高位回落5%时强制平仓。';
+  } else {
+    exitAdv = '<span class="g"><b>🟢 止盈合理：</b></span>'+tpGood+'笔合适止盈，保持现有出场逻辑。可在盈利+8%时额外锁利。';
+  }
+  
+  // Risk advice  
+  var pnlVolatility = 0;
+  if(data.length>1){
+    var avgPnl = data.reduce(function(s,d){return s+d.pnl;},0)/data.length;
+    pnlVolatility = Math.sqrt(data.reduce(function(s,d){return s+Math.pow(d.pnl-avgPnl,2);},0)/data.length);
+  }
+  
+  var riskAdv = '';
+  if(data.length>0){
+    var maxDrawdown = Math.min.apply(null,data.map(function(d){return d.pnl;}));
+    if(maxDrawdown<-30){
+      riskAdv = '<span class="r"><b>🔴 仓位过大：</b></span>单周最大亏损'+Math.abs(maxDrawdown).toFixed(0)+'U。建议每笔交易风险不超过总资金2%，出现连亏2笔当日休息。';
+    } else if(maxDrawdown<-15){
+      riskAdv = '<span class="a"><b>🟡 控制回撤：</b></span>单周最大亏损'+Math.abs(maxDrawdown).toFixed(0)+'U。亏损周减少交易笔数至≤5笔。';
+    } else {
+      riskAdv = '<span class="g"><b>🟢 回撤可控：</b></span>单周最大亏损'+Math.abs(maxDrawdown).toFixed(0)+'U，风险在可接受范围内。';
+    }
+  }
+  
+  // Frequency advice
+  var avgPerWeek = data.reduce(function(s,d){return s+d.total;},0)/data.length;
+  var freqAdv = '';
+  var lastFewCount = data.slice(-3).reduce(function(s,d){return s+d.total;},0)/Math.min(3,data.slice(-3).length);
+  if(lastFewCount>10){
+    freqAdv = '<span class="r"><b>🔴 交易过频：</b></span>近期周均'+lastFewCount.toFixed(0)+'笔。频繁交易增加手续费和噪音。建议每日≤3笔，选最强信号入场。';
+  } else if(lastFewCount>6){
+    freqAdv = '<span class="a"><b>🟡 适度减频：</b></span>近期周均'+lastFewCount.toFixed(0)+'笔，略高。聚焦确定性最高的2-3个信号。';
+  } else {
+    freqAdv = '<span class="g"><b>🟢 频次合理：</b></span>近期周均'+lastFewCount.toFixed(0)+'笔，精选信号入场。';
+  }
+  
+  // Build advice cards
+  var items = [
+    {title:'入场策略',content:entryAdv,cls:recentWR<25?'must':(recentWR<35?'warn':'do')},
+    {title:'出场优化',content:exitAdv,cls:tpEarly>tpGood?'warn':(tpLate>tpGood?'must':'do')},
+    {title:'风险控制',content:riskAdv,cls:data.length>0&&Math.min.apply(null,data.map(function(d){return d.pnl;}))<-30?'must':(data.length>0&&Math.min.apply(null,data.map(function(d){return d.pnl;}))<-15?'warn':'do')},
+    {title:'频率管理',content:freqAdv,cls:lastFewCount>10?'must':(lastFewCount>6?'warn':'do')},
+  ];
+  
+  var advHtml = '';
+  items.forEach(function(item){
+    var clr = item.cls==='must'?'var(--red)':(item.cls==='warn'?'var(--amber)':'var(--green)');
+    advHtml += '<div class="insight" style="margin:0;border-left:4px solid '+clr+'"><div class="t">'+item.title+'</div><p>'+item.content+'</p></div>';
+  });
+  document.getElementById('weeklyAdvice').innerHTML = advHtml;
+}
+
+function renderInsight(data){
+  if(data.length===0){
+    document.getElementById('weeklyInsight').innerHTML = '暂无数据';
+    return;
+  }
+  var totalPnl = data.reduce(function(s,d){return s+d.pnl;},0);
+  var best = data.reduce(function(a,b){return a.pnl>b.pnl?a:b;});
+  var worst = data.reduce(function(a,b){return a.pnl<b.pnl?a:b;});
+  var avgPerWeek = totalPnl/data.length;
+  var recent4 = data.slice(-4);
+  var recentPnl = recent4.reduce(function(s,d){return s+d.pnl;},0);
+  var recentWR = recent4.reduce(function(s,d){return s+d.wins;},0)/Math.max(1,recent4.reduce(function(s,d){return s+d.total;},0))*100;
+  
+  var qualityData = data.map(function(d){return d.total>0?((d.slGood+d.tpGood)/Math.max(1,d.wins+d.losses)*100):0;});
+  var improving = qualityData.length>=4 && 
+    qualityData.slice(-4).reduce(function(s,v){return s+v;},0)/4 > qualityData.slice(0,4).reduce(function(s,v){return s+v;},0)/4;
+  
+  var txt = '<span style="color:var(--blue);font-weight:700">全周期概览：</span><b>'+data.length+'</b>个交易周，净盈亏 <b class="'+(totalPnl>0?'g':'r')+'">'+(totalPnl>0?'+':'')+totalPnl.toFixed(1)+'U</b>，周均 <b>'+(avgPerWeek>=0?'+':'')+avgPerWeek.toFixed(1)+'U</b><br>';
+  txt += '<span style="color:var(--blue);font-weight:700">波动范围：</span>最佳周 <b class="g">'+best.label+' (+'+best.pnl.toFixed(1)+'U)</b> · 最差周 <b class="r">'+worst.label+' ('+worst.pnl.toFixed(1)+'U)</b><br>';
+  txt += '<span style="color:var(--blue);font-weight:700">近期趋势：</span>最近4周净 <b class="'+(recentPnl>0?'g':'r')+'">'+(recentPnl>0?'+':'')+recentPnl.toFixed(1)+'U</b>，胜率 <b>'+recentWR.toFixed(0)+'%</b><br>';
+  txt += '<span style="color:var(--blue);font-weight:700">决策质量：</span>'+(improving?'<span class="g">✓ 近期决策质量改善趋势</span>':'<span class="r">↓ 近期决策质量下降，需注意</span>')+'<br>';
+  txt += '<span style="color:var(--blue);font-weight:700">核心问题：</span>'+(recentWR<30?'胜率过低是主要瓶颈，需严格执行趋势对齐入场规则。':'改善潜力在于优化止盈时机，减少过早/过晚止盈。');
+  
+  document.getElementById('weeklyInsight').innerHTML = txt;
+}
+
+// Initial render
+updateAll();
+
+})();
+</script>
+</body></html>
