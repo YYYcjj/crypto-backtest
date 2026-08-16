@@ -190,11 +190,11 @@ def load_existing(path):
 
 
 def merge_trades(existing, new_trades):
-    """合并去重（按 entry_time + coin + entry_price 判断）"""
-    existing_keys = {(t["entry_time"], t["coin"], t["entry_price"]) for t in existing}
+    """合并去重（按 entry_ts 判断，避免时区变化导致重复）"""
+    existing_keys = {t["entry_ts"] for t in existing}
     added = []
     for t in new_trades:
-        key = (t["entry_time"], t["coin"], t["entry_price"])
+        key = t["entry_ts"]
         if key not in existing_keys:
             existing.append(t)
             existing_keys.add(key)
