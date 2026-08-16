@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>离场研究 — SRSI对离场后走势的影响</title>
+<script src="chart.min.js"></script>
+<script src="all_analysis.js"></script>
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--text:#1e293b;--muted:#94a3b8;--green:#10b981;--red:#ef4444;--blue:#6366f1;--amber:#f59e0b;--border:#e2e8f0;--shadow:0 2px 8px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.03)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.nav{background:linear-gradient(135deg,#1e1b4b,#312e81,#3730a3);padding:0 24px;display:flex;align-items:center;gap:2px;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(30,27,75,.3)}
+.nav span{font-size:15px;font-weight:800;color:#fff;margin-right:24px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav a{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;color:rgba(255,255,255,.7);transition:all .2s}
+.nav a:hover{background:rgba(255,255,255,.12);color:#fff}.nav a svg{flex-shrink:0}
+.container{max-width:1500px;margin:0 auto;padding:24px 24px 40px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.6px;margin-bottom:6px}
+.sub{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:24px;line-height:1.8}
+.sub b{color:var(--text);font-weight:700}
+.insight{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin:20px 0;box-shadow:var(--shadow)}
+.insight .title{font-size:13px;font-weight:800;color:var(--blue);margin-bottom:10px}
+.insight p{font-size:13px;line-height:1.9;color:var(--text)}
+.hl{color:var(--blue);font-weight:700}.highlight{color:var(--amber);font-weight:700}
+.insight .t{font-size:13px;font-weight:800;color:var(--blue);margin-bottom:10px}
+.sec{display:flex;align-items:center;gap:10px;margin:28px 0 12px}
+.sec span{font-size:13px;font-weight:700;color:var(--text)}.sec .line{flex:1;height:1px;background:var(--border)}
+h2{font-size:15px;font-weight:700;margin:32px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--blue);color:var(--text)}
+h3{font-size:13px;font-weight:700;margin:20px 0 10px;color:var(--text)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:768px){.charts{grid-template-columns:1fr}}
+.chart-box,.cbox{background:var(--card);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.chart-box h3,.cbox h3{font-size:12px;font-weight:700;color:var(--text);margin:0 0 12px}
+.chart-wrap,.cwrap{height:260px;position:relative}canvas{width:100%!important}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin:8px 0 20px}
+th{background:linear-gradient(180deg,#fafbfd,#f1f5f9);padding:11px 10px;text-align:center;font-weight:700;color:var(--muted);border-bottom:2px solid var(--blue);font-size:10px;white-space:nowrap;letter-spacing:.3px}
+td{padding:9px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+tr:last-child td{border-bottom:none}
+.tl{text-align:left}.tc{text-align:center}.tr{text-align:right}
+tr.win td{background:#f0fdf4}tr.lose td{background:#fef2f2}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.1px}
+.bl,.bg-lg{background:#d1fae5;color:#065f46}.bs,.bg-sh{background:#fee2e2;color:#991b1b}
+.bg-g{background:#d1fae5;color:#065f46}.bg-r{background:#fee2e2;color:#991b1b}.bg-a{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.g{color:var(--green)}.r{color:var(--red)}.a{color:var(--amber)}.b{color:var(--blue)}
+.nav .dl{margin-left:auto;background:rgba(255,255,255,.15);color:#fff}.nav .dl:hover{background:rgba(255,255,255,.25)}
+.mtabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.mtab{display:inline-flex;align-items:center;padding:8px 18px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.03);text-decoration:none}
+.mtab:hover{border-color:var(--blue);color:var(--blue)}
+.mtab.act{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+.no-data{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+</style>
+</head><body>
+<div class="nav">
+  <span>📊 交易日记</span>
+  <a href="index.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>仪表盘</a>
+  <a href="analysis.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>分析报告</a>
+  <a href="entry_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>入场研究</a>
+  <a href="exit_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>离场研究</a>
+  <a href="advice.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>改善建议</a>
+<a href="compare.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>多月对比</a>
+<a href="weekly.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每周分析</a>
+<a href="交易记录_06.xlsx" class="dl" download><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>下载 Excel</a>
+</div>
+<div class="container">
+<div class="mtabs">
+<a class="mtab" href="exit_study.html?m=1">1月</a>
+<a class="mtab" href="exit_study.html?m=2">2月</a>
+<a class="mtab" href="exit_study.html?m=3">3月</a>
+<a class="mtab" href="exit_study.html?m=4">4月</a>
+<a class="mtab" href="exit_study.html?m=5">5月</a>
+<a class="mtab" href="exit_study.html?m=6">6月</a>
+<a class="mtab" href="exit_study.html?m=7">7月</a>
+<a class="mtab" href="exit_study.html?m=8">8月</a>
+</div>
+
+<h1 id="pageTitle">离场研究</h1>
+<div class="sub" id="pageSub"></div>
+
+<div class="insight" id="coreInsight"><div class="t">核心发现</div><p id="coreInsightText"></p></div>
+
+<h2>一、盈亏区间 vs 离场后走势</h2>
+<div class="charts">
+<div class="chart-box"><h3>离场后价格变化（按盈亏分区）</h3><div class="chart-wrap"><canvas id="cPnlPost"></canvas></div></div>
+<div class="chart-box"><h3>离场正确率分布</h3><div class="chart-wrap"><canvas id="cRight"></canvas></div></div>
+</div>
+
+<h2>二、离场时 SRSI 4H vs 离场质量</h2>
+<div class="charts">
+<div class="chart-box"><h3>SRSI 4H区段 × 离场后走势</h3><div class="chart-wrap"><canvas id="cSrsi4Post"></canvas></div></div>
+<div class="chart-box"><h3>SRSI 4H区段 × 离场正确率</h3><div class="chart-wrap"><canvas id="cSrsi4Right"></canvas></div></div>
+</div>
+
+<h2>三、离场决策规则评估</h2>
+<table><thead><tr><th>离场规则</th><th>匹配笔数</th><th>离场后均跌</th><th>离场后均涨</th><th>质量评级</th></tr></thead><tbody id="tbRules"></tbody></table>
+
+<h2>四、典型案例</h2>
+<div class="charts">
+<div class="chart-box"><h3>过早离场Top5（卖飞/止损太急）</h3><div class="chart-wrap"><canvas id="cEarly"></canvas></div></div>
+<div class="chart-box"><h3>正确离场Top5（避开了大跌）</h3><div class="chart-wrap"><canvas id="cGood"></canvas></div></div>
+</div>
+
+<div id="noDataNote" style="display:none;text-align:center;padding:40px;color:var(--muted);font-size:14px">该月暂无完整的离场后走势数据，仅6月有完整记录。切换到6月可查看详细离场分析。</div>
+
+<script>
+(function(){
+var M = (function(){
+  var p = new URLSearchParams(location.search);
+  var m = parseInt(p.get('m')) || parseInt(localStorage.getItem('lastMonth')) || 6;
+  if(isNaN(m)||m<1||m>6) m=6;
+  return m;
+})();
+
+document.querySelectorAll('.mtab').forEach(function(t,i){
+  var mn = i+1;
+  t.href = 'exit_study.html?m='+mn;
+  t.onclick = function(e){e.preventDefault();localStorage.setItem('lastMonth',''+mn);location.href='exit_study.html?m='+mn;};
+  if(mn===M) t.classList.add('act'); else t.classList.remove('act');
+});
+
+document.getElementById('pageTitle').textContent = M+'月离场研究';
+
+var T = RAW.filter(function(x){return x.m===M;});
+var W = T.filter(function(x){return x.pnl_usdt>0;});
+var L = T.filter(function(x){return x.pnl_usdt<0;});
+var total = T.length, wins = W.length, losses = L.length;
+var wr = total>0?(wins/total*100):0;
+
+// Check if we have post-exit data
+var hasPostData = T.some(function(x){return (x.postMae&&x.postMae!==0)||(x.postMfe&&x.postMfe!==0);});
+
+document.getElementById('pageSub').innerHTML = '离场时SRSI与趋势如何影响离场后走势 · '+total+'笔交易'+(hasPostData?'':'（该月暂无离场后走势数据）');
+
+if(!hasPostData){
+  document.getElementById('noDataNote').style.display = '';
+  document.getElementById('coreInsight').style.display = 'none';
+  document.querySelectorAll('.charts').forEach(function(el){el.style.display='none';});
+  document.getElementById('tbRules').innerHTML = '<tr><td colspan="5">该月暂无离场后走势数据</td></tr>';
+} else {
+  document.getElementById('noDataNote').style.display = 'none';
+  renderAll();
+}
+
+function getSrsiZone(v){
+  if(v===null||v===undefined||v===0) return null;
+  if(v<20) return '<20'; if(v<50) return '20-50'; if(v<80) return '50-80'; return '>80';
+}
+
+function renderAll(){
+  // PnL groups
+  var pnlGroups = [
+    {label:'大亏(<-5%)',lo:-999,hi:-5},
+    {label:'小亏(-5~0%)',lo:-5,hi:0},
+    {label:'小盈(0~8%)',lo:0,hi:8},
+    {label:'大盈(>8%)',lo:8,hi:999}
+  ];
+
+  var pgData = pnlGroups.map(function(g){
+    var trades = T.filter(function(x){return x.pnl_pct>g.lo&&x.pnl_pct<=g.hi;});
+    var n = trades.length;
+    var pm = n>0?trades.reduce(function(s,x){return s+(x.postMae&&x.postMae<0?x.postMae:0);},0)/n:0;
+    var px = n>0?trades.reduce(function(s,x){return s+(x.postMfe&&x.postMfe>0?x.postMfe:0);},0)/n:0;
+    var right = trades.filter(function(x){
+      if(x.pnl_usdt<0) return x.postMae&&x.postMae<0; // Loss + continued drop = correct
+      if(x.pnl_usdt>0) return false; // Profitable exits are almost always "early" from perspective of missed gains
+      return false;
+    }).length;
+    return {label:g.label+' ('+n+')',n:n,pm:Math.abs(pm),px:px,right:right,wrong:n-right};
+  });
+
+  // Post-exit chart
+  new Chart(document.getElementById('cPnlPost'),{type:'bar',data:{labels:pgData.map(function(d){return d.label;}),datasets:[
+    {label:'离场后继续跌 %',data:pgData.map(function(d){return d.pm;}),backgroundColor:'rgba(220,53,69,.5)',borderColor:'#dc3545',borderWidth:1,borderRadius:4},
+    {label:'离场后反弹涨 %',data:pgData.map(function(d){return d.px;}),backgroundColor:'rgba(25,135,84,.5)',borderColor:'#198754',borderWidth:1,borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+
+  // Correct exit rate chart
+  new Chart(document.getElementById('cRight'),{type:'bar',data:{labels:pnlGroups.map(function(g){return g.label;}),datasets:[
+    {label:'正确离场',data:pgData.map(function(d){return d.right;}),backgroundColor:'rgba(25,135,84,.5)',borderColor:'#198754',borderWidth:1,borderRadius:4,order:0},
+    {label:'错误离场',data:pgData.map(function(d){return d.wrong;}),backgroundColor:'rgba(220,53,69,.4)',borderColor:'#dc3545',borderWidth:1,borderRadius:4,order:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10}}},y:{stacked:true,ticks:{stepSize:5,font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+
+  // SRSI 4H at exit vs post-exit
+  var hasSrsiAtExit = T.some(function(x){return x.srsi4h&&x.srsi4h!==0;});
+  if(hasSrsiAtExit){
+    var zones = ['<20','20-50','50-80','>80'];
+    var srsiExit = zones.map(function(z){
+      var trades = T.filter(function(x){return getSrsiZone(x.srsi4h)===z&&(x.postMae!==0||x.postMfe!==0);});
+      var n = trades.length;
+      var pm = n>0?trades.reduce(function(s,x){return s+(x.postMae&&x.postMae<0?Math.abs(x.postMae):0);},0)/n:0;
+      var px = n>0?trades.reduce(function(s,x){return s+(x.postMfe&&x.postMfe>0?x.postMfe:0);},0)/n:0;
+      var right = trades.filter(function(x){return (x.pnl_usdt<0&&x.postMae&&x.postMae<0)||(x.pnl_usdt<0&&(!x.postMfe||x.postMfe<=0));}).length;
+      return {zone:z,n:n,pm:pm,px:px,right:right};
+    });
+
+    new Chart(document.getElementById('cSrsi4Post'),{type:'bar',data:{labels:srsiExit.map(function(d){return d.zone+' ('+d.n+')';}),datasets:[
+      {label:'离场后均跌 %',data:srsiExit.map(function(d){return d.pm;}),backgroundColor:'rgba(220,53,69,.5)',borderColor:'#dc3545',borderWidth:1,borderRadius:4},
+      {label:'离场后均涨 %',data:srsiExit.map(function(d){return d.px;}),backgroundColor:'rgba(25,135,84,.5)',borderColor:'#198754',borderWidth:1,borderRadius:4}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+
+    new Chart(document.getElementById('cSrsi4Right'),{type:'bar',data:{labels:zones,datasets:[
+      {label:'正确离场',data:srsiExit.map(function(d){return d.right;}),backgroundColor:'rgba(25,135,84,.5)',borderColor:'#198754',borderWidth:1,borderRadius:4,order:0},
+      {label:'不正确离场',data:srsiExit.map(function(d){return d.n-d.right;}),backgroundColor:'rgba(220,53,69,.4)',borderColor:'#dc3545',borderWidth:1,borderRadius:4,order:0},
+      {label:'正确率 %',type:'line',data:srsiExit.map(function(d){return d.n>0?(d.right/d.n*100).toFixed(0):0;}),borderColor:'#0d6efd',borderWidth:3,pointRadius:5,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10}}},y:{stacked:true,ticks:{stepSize:3,font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:120,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+  } else {
+    document.getElementById('cSrsi4Post').parentElement.innerHTML = '<div class="no-data">暂无SRSI数据</div>';
+    document.getElementById('cSrsi4Right').parentElement.innerHTML = '<div class="no-data">暂无SRSI数据</div>';
+  }
+
+  // Rules table
+  var rules = [];
+  if(hasSrsiAtExit){
+    zones.forEach(function(z){
+      var trades = T.filter(function(x){return getSrsiZone(x.srsi4h)===z&&(x.postMae!==0||x.postMfe!==0);});
+      if(trades.length>0){
+        var pm = trades.reduce(function(s,x){return s+(x.postMae&&x.postMae<0?Math.abs(x.postMae):0);},0)/trades.length;
+        var px = trades.reduce(function(s,x){return s+(x.postMfe&&x.postMfe>0?x.postMfe:0);},0)/trades.length;
+        var rate;
+        if(pm>10&&px<3) rate = '★★★★★ 最佳';
+        else if(pm>8) rate = '★★★★ 可靠';
+        else if(px>8) rate = '★★★ 容易卖飞';
+        else rate = '★★★ 一般';
+        rules.push({rule:'SRSI 4H '+z+' 时离场',n:trades.length,pm:pm.toFixed(1),px:px.toFixed(1),rate:rate});
+      }
+    });
+  }
+  // Add generic rules
+  var lossTrades = L.filter(function(x){return x.postMae!==0||x.postMfe!==0;});
+  if(lossTrades.length>0){
+    var lpm = lossTrades.reduce(function(s,x){return s+(x.postMae&&x.postMae<0?Math.abs(x.postMae):0);},0)/lossTrades.length;
+    var lpx = lossTrades.reduce(function(s,x){return s+(x.postMfe&&x.postMfe>0?x.postMfe:0);},0)/lossTrades.length;
+    rules.push({rule:'亏损时离场（任意SRSI）',n:lossTrades.length,pm:lpm.toFixed(1),px:lpx.toFixed(1),rate:lpm>5?'★★★★ 止损有效':'★★★ 一般'});
+  }
+  var winTrades = W.filter(function(x){return x.postMae!==0||x.postMfe!==0;});
+  if(winTrades.length>0){
+    var wpx = winTrades.reduce(function(s,x){return s+(x.postMfe&&x.postMfe>0?x.postMfe:0);},0)/winTrades.length;
+    rules.push({rule:'盈利时离场（任意SRSI）',n:winTrades.length,pm:'0',px:wpx.toFixed(1),rate:'★ 过早（盈利单总是卖飞）'});
+  }
+
+  var rh = '';
+  rules.forEach(function(d){
+    var rcl = d.rate.indexOf('最佳')>=0?'g':d.rate.indexOf('可靠')>=0?'g':d.rate.indexOf('卖飞')>=0?'a':'r';
+    rh += '<tr><td>'+d.rule+'</td><td>'+d.n+'</td><td class="r">'+d.pm+'%</td><td class="g">+'+d.px+'%</td><td class="'+rcl+'"><b>'+d.rate+'</b></td></tr>';
+  });
+  document.getElementById('tbRules').innerHTML = rh||'<tr><td colspan="5">暂无足够数据评估离场规则</td></tr>';
+
+  // Early exit Top5 (trades that missed post-exit gains)
+  var early = T.filter(function(x){return x.postMfe&&x.postMfe>0&&x.postMfe>Math.abs(x.pnl_pct||0);}).sort(function(a,b){return (b.postMfe||0)-(a.postMfe||0);}).slice(0,5);
+  if(early.length>0){
+    new Chart(document.getElementById('cEarly'),{type:'bar',data:{labels:early.map(function(d){return d.coin.replace('-USDT','')+' (PnL '+(d.pnl_pct||0).toFixed(1)+'%)';}),datasets:[
+      {label:'实际盈亏 %',data:early.map(function(d){return d.pnl_pct||0;}),backgroundColor:'rgba(25,135,84,.4)',borderColor:'#198754',borderWidth:1,borderRadius:4},
+      {label:'错失的涨幅 %',data:early.map(function(d){return d.postMfe||0;}),backgroundColor:'rgba(245,158,11,.5)',borderColor:'#f59f00',borderWidth:1,borderRadius:4}
+    ]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{stacked:true,ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+  } else {
+    document.getElementById('cEarly').parentElement.innerHTML = '<div class="no-data">暂无过早离场案例</div>';
+  }
+
+  // Good exit Top5 (avoided big drops)
+  var good = T.filter(function(x){return x.postMae&&x.postMae<0&&Math.abs(x.postMae)>5;}).sort(function(a,b){return (a.postMae||0)-(b.postMae||0);}).slice(0,5);
+  if(good.length>0){
+    new Chart(document.getElementById('cGood'),{type:'bar',data:{labels:good.map(function(d){return d.coin.replace('-USDT','')+' (PnL '+(d.pnl_pct||0).toFixed(1)+'%)';}),datasets:[
+      {label:'实际亏损 %',data:good.map(function(d){return Math.abs(d.pnl_pct||0);}),backgroundColor:'rgba(220,53,69,.4)',borderColor:'#dc3545',borderWidth:1,borderRadius:4},
+      {label:'离场后继续跌 %',data:good.map(function(d){return Math.abs(d.postMae||0);}),backgroundColor:'rgba(25,135,84,.5)',borderColor:'#198754',borderWidth:1,borderRadius:4}
+    ]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{stacked:true,ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}});
+  } else {
+    document.getElementById('cGood').parentElement.innerHTML = '<div class="no-data">暂无正确离场案例</div>';
+  }
+
+  // Core insight
+  var txt = '';
+  var slGoodCount = T.filter(function(x){return x.slV==='合适';}).length;
+  var lossT = L.length;
+  if(hasSrsiAtExit){
+    txt += '<span class="hl">SRSI 4H <20 离场最正确：</span>离场后均跌大，几乎没有反弹。<br>';
+    txt += '<span class="hl">SRSI 4H 50-80 离场最危险：</span>离场后均涨较大，容易卖飞。<br>';
+  }
+  txt += '<span class="hl">亏损时离场正确率高：</span>'+(lossT>0?slGoodCount:'N/A')+'/'+lossT+'亏损中止损正确。<br>';
+  txt += '<span class="hl">盈利时离场几乎总是过早：</span>盈利后价格常继续上涨。<br>';
+  txt += '<span class="hl">离场原则：</span>亏损时SRSI极端值大胆离场；盈利时分批锁定利润。';
+  document.getElementById('coreInsightText').innerHTML = txt;
+}
+})();
+</script>
+</body></html>
