@@ -67,11 +67,13 @@ jobs:
           PYEOF
       - name: 生成走势数据
         run: python3 build_paths.py || true
+      - name: 生成分析数据
+        run: python3 build_analysis.py || true
       - name: 提交推送
         run: |
           git config user.name "Trading Bot"
           git config user.email "bot@trading.example.com"
-          git add docs/data_*.js docs/paths_data_*.json results/journal_trades.json results/paths_data_*.json
+          git add docs/data_*.js docs/paths_data_*.json docs/all_analysis.js results/journal_trades.json results/paths_data_*.json results/all_analysis.js
           if git diff --staged --quiet; then
             echo "No changes"
           else
