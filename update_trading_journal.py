@@ -109,8 +109,9 @@ def fetch_trades(start_ts, end_ts):
 
             if ec > 0:
                 ep = ep_sum / ec
-                et = datetime.fromtimestamp(min(ots) / 1000, tz=timezone.utc)
-                xt = datetime.fromtimestamp(ts / 1000, tz=timezone.utc)
+                CST = timezone(timedelta(hours=8))
+                et = datetime.fromtimestamp(min(ots) / 1000, tz=timezone.utc).astimezone(CST)
+                xt = datetime.fromtimestamp(ts / 1000, tz=timezone.utc).astimezone(CST)
                 coin = inst.replace("-SWAP", "")
                 direction = "做多" if side == "sell" else "做空"
                 px_chg = (px / ep - 1) if direction == "做多" else (ep / px - 1)
