@@ -11,7 +11,7 @@ on:
 jobs:
   fetch-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     permissions:
       contents: write
     steps:
@@ -65,11 +65,13 @@ jobs:
           total = sum(len(v) for v in months.values())
           print('Total: '+str(total)+' trades, '+str(len(months))+' months')
           PYEOF
+      - name: 生成走势数据
+        run: python3 build_paths.py || true
       - name: 提交推送
         run: |
           git config user.name "Trading Bot"
           git config user.email "bot@trading.example.com"
-          git add docs/data_*.js results/journal_trades.json
+          git add docs/data_*.js docs/paths_data_*.json results/journal_trades.json results/paths_data_*.json
           if git diff --staged --quiet; then
             echo "No changes"
           else
