@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>交易分析报告 — 止损止盈合理性评估</title>
+<script src="chart.min.js"></script>
+<script src="all_analysis.js"></script>
+<style>
+:root{--bg:#f5f6fa;--card:#fff;--text:#1e293b;--muted:#94a3b8;--green:#10b981;--red:#ef4444;--blue:#6366f1;--amber:#f59e0b;--border:#e2e8f0;--shadow:0 2px 8px rgba(0,0,0,.06),0 0 0 1px rgba(0,0,0,.03)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.nav{background:linear-gradient(135deg,#1e1b4b,#312e81,#3730a3);padding:0 24px;display:flex;align-items:center;gap:2px;height:52px;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(30,27,75,.3)}
+.nav span{font-size:15px;font-weight:800;color:#fff;margin-right:24px;background:linear-gradient(135deg,#c7d2fe,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav a{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:8px;font-size:12.5px;font-weight:600;text-decoration:none;color:rgba(255,255,255,.7);transition:all .2s}
+.nav a:hover{background:rgba(255,255,255,.12);color:#fff}.nav a svg{flex-shrink:0}
+.container{max-width:1500px;margin:0 auto;padding:24px 24px 40px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.6px;margin-bottom:6px}
+.sub{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:24px;line-height:1.8}
+.sub b{color:var(--text);font-weight:700}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:28px}
+.card{background:var(--card);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .2s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.card::after{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.card{--accent:var(--blue)}.card.win{--accent:var(--green)}.card.lose{--accent:var(--red)}
+.card::after{background:var(--accent)}
+.card .lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.card .val{font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1}
+.card .d{font-size:11px;color:var(--muted);margin-top:4px}
+.insight{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 22px;margin:20px 0;box-shadow:var(--shadow)}
+.insight .title{font-size:13px;font-weight:800;color:var(--blue);margin-bottom:10px}
+.insight p{font-size:13px;line-height:1.9;color:var(--text)}
+.hl{color:var(--blue);font-weight:700}.highlight{color:var(--amber);font-weight:700}
+.sec{display:flex;align-items:center;gap:10px;margin:28px 0 12px}
+.sec span{font-size:13px;font-weight:700;color:var(--text)}.sec .line{flex:1;height:1px;background:var(--border)}
+h2{font-size:15px;font-weight:700;margin:32px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--blue);color:var(--text)}
+h3{font-size:13px;font-weight:700;margin:20px 0 10px;color:var(--text)}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:768px){.charts{grid-template-columns:1fr}}
+.chart-box,.cbox{background:var(--card);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.chart-box h3,.cbox h3{font-size:12px;font-weight:700;color:var(--text);margin:0 0 12px}
+.chart-wrap,.cwrap{height:260px;position:relative}canvas{width:100%!important}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin:8px 0 20px}
+th{background:linear-gradient(180deg,#fafbfd,#f1f5f9);padding:11px 10px;text-align:center;font-weight:700;color:var(--muted);border-bottom:2px solid var(--blue);font-size:10px;white-space:nowrap;letter-spacing:.3px}
+td{padding:9px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:12px;overflow:hidden;text-overflow:ellipsis}
+tr:last-child td{border-bottom:none}
+.tl{text-align:left}.tc{text-align:center}.tr{text-align:right}
+tr.win td{background:#f0fdf4}tr.lose td{background:#fef2f2}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:.1px}
+.bl,.bg-lg{background:#d1fae5;color:#065f46}.bs,.bg-sh{background:#fee2e2;color:#991b1b}
+.bg-g{background:#d1fae5;color:#065f46}.bg-r{background:#fee2e2;color:#991b1b}.bg-a{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.g{color:var(--green)}.r{color:var(--red)}.a{color:var(--amber)}.b{color:var(--blue)}
+.nav .dl{margin-left:auto;background:rgba(255,255,255,.15);color:#fff}.nav .dl:hover{background:rgba(255,255,255,.25)}
+.mtabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.mtab{display:inline-flex;align-items:center;padding:8px 18px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(0,0,0,.03);text-decoration:none}
+.mtab:hover{border-color:var(--blue);color:var(--blue)}
+.mtab.act{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(99,102,241,.3)}
+.no-data{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div class="nav">
+  <span>📊 交易日记</span>
+  <a href="index.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>仪表盘</a>
+  <a href="analysis.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>分析报告</a>
+  <a href="entry_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>入场研究</a>
+  <a href="exit_study.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>离场研究</a>
+  <a href="advice.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/></svg>改善建议</a>
+<a href="compare.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>多月对比</a>
+<a href="weekly.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>每周分析</a>
+<a href="交易记录_06.xlsx" class="dl" download><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>下载 Excel</a>
+</div>
+<div class="container">
+<div class="mtabs">
+<a class="mtab" href="analysis.html?m=1">1月</a>
+<a class="mtab" href="analysis.html?m=2">2月</a>
+<a class="mtab" href="analysis.html?m=3">3月</a>
+<a class="mtab" href="analysis.html?m=4">4月</a>
+<a class="mtab" href="analysis.html?m=5">5月</a>
+<a class="mtab" href="analysis.html?m=6">6月</a>
+<a class="mtab" href="analysis.html?m=7">7月</a>
+<a class="mtab" href="analysis.html?m=8">8月</a>
+</div>
+
+<h1 id="pageTitle">交易分析报告</h1>
+<div class="sub" id="pageSub"></div>
+
+<div class="cards" id="statCards"></div>
+
+<div class="insight" id="coreFindings"></div>
+
+<h2>一、止损合理性分析（亏损交易）</h2>
+
+<div class="charts">
+<div class="chart-box"><h3>止损分类占比</h3><div class="chart-wrap"><canvas id="cSlClass"></canvas></div></div>
+<div class="chart-box"><h3>离场后价格走势 vs 止损决策</h3><div class="chart-wrap"><canvas id="cSlPost"></canvas></div></div>
+</div>
+
+<h3>✅ 合适止损 — 离场后继续下跌，止损在正确位置</h3>
+<table><thead><tr><th>#</th><th>币种</th><th>方向</th><th>盈亏</th><th class="tl">入场→离场</th><th>持仓MAE</th><th>离场后MAE</th><th>额外跌幅</th><th>趋势</th><th>SRSI 4H</th></tr></thead><tbody id="tbGoodSL"></tbody></table>
+
+<h3>⚠️ 过早止损 — 离场后价格反弹，本可盈亏持平或盈利</h3>
+<table><thead><tr><th>#</th><th>币种</th><th>方向</th><th>盈亏</th><th class="tl">入场→离场</th><th>持仓MAE</th><th>离场后MFE</th><th>反弹幅度</th><th>趋势</th><th>SRSI 4H</th></tr></thead><tbody id="tbBadSL"></tbody></table>
+
+<h2>二、止盈合理性分析（盈利交易）</h2>
+
+<div class="charts">
+<div class="chart-box"><h3>止盈分类</h3><div class="chart-wrap"><canvas id="cTpClass"></canvas></div></div>
+<div class="chart-box"><h3>实际盈利 vs 错失盈利</h3><div class="chart-wrap"><canvas id="cTpMiss"></canvas></div></div>
+</div>
+
+<table><thead><tr><th>#</th><th>币种</th><th>方向</th><th>盈亏</th><th class="tl">入场→离场</th><th>持仓MFE</th><th>离场后MFE</th><th>错失利润</th><th>评估</th><th>SRSI 4H</th></tr></thead><tbody id="tbTp"></tbody></table>
+
+<h2>三、指标关联深度分析</h2>
+<div id="indicatorDataNote" style="display:none;text-align:center;padding:30px;color:var(--muted);font-size:13px">该月暂无指标数据（趋势/SRSI），仅显示基本统计</div>
+
+<div class="charts" id="indicatorCharts">
+<div class="chart-box"><h3>趋势对齐度 vs 胜率 & 均盈亏</h3><div class="chart-wrap"><canvas id="cTrend"></canvas></div></div>
+<div class="chart-box"><h3>SRSI(4H)入场区段 vs 胜率</h3><div class="chart-wrap"><canvas id="cSrsi4h"></canvas></div></div>
+<div class="chart-box"><h3>SRSI(1H)入场区段 vs 胜率</h3><div class="chart-wrap"><canvas id="cSrsi1h"></canvas></div></div>
+<div class="chart-box"><h3>SRSI 1H/4H 入场热力图</h3><div class="chart-wrap" id="cSrsiHeat"></div></div>
+</div>
+
+<div class="insight" id="indicatorInsight"><div class="title">指标使用建议</div><p id="indicatorInsightText"></p></div>
+
+<h2>四、 指标与持仓/离场后最高最低点关联</h2>
+<div class="charts" id="pathCharts">
+<div class="chart-box"><h3>SRSI 4H 区段 × 持仓期间 MAE/MFE</h3><div class="chart-wrap"><canvas id="cSrsiHold"></canvas></div></div>
+<div class="chart-box"><h3>SRSI 4H 区段 × 离场后 MAE/MFE</h3><div class="chart-wrap"><canvas id="cSrsiPost"></canvas></div></div>
+<div class="chart-box"><h3>盈利 vs 亏损交易：路径特征对比</h3><div class="chart-wrap"><canvas id="cWinLoss"></canvas></div></div>
+<div class="chart-box"><h3>趋势对齐度 × 持仓MAE/MFE</h3><div class="chart-wrap"><canvas id="cTrendPath"></canvas></div></div>
+</div>
+
+<div class="insight" id="pathInsight"><div class="title">指标与路径的核心发现</div><p id="pathInsightText"></p></div>
+
+<h2>五、 每周止盈止损质量追踪</h2>
+<div class="charts" id="weeklyCharts">
+<div class="chart-box"><h3>每周止损质量 — 合理 vs 过早</h3><div class="chart-wrap"><canvas id="cWkSl"></canvas></div></div>
+<div class="chart-box"><h3>每周止盈质量 — 合理 vs 过早/过晚</h3><div class="chart-wrap"><canvas id="cWkTp"></canvas></div></div>
+<div class="chart-box" style="grid-column:1/-1"><h3>每周决策质量总览</h3><div class="chart-wrap" style="height:200px"><canvas id="cWkAll"></canvas></div></div>
+</div>
+
+<table><thead><tr><th>周</th><th>总笔数</th><th>盈亏(净)</th><th>止损 ✓合适</th><th>止损 ✗过早</th><th>止损 中性</th><th>止盈 ✓合适</th><th>止盈 ✗过早</th><th>止盈 ✗过晚</th><th>合理决策率</th></tr></thead><tbody id="tbWeekly"></tbody></table>
+<div style="font-size:12px;color:#64748b;padding:8px 0 20px" id="weeklyNote"></div>
+
+<script>
+// ========== CORE: Month detection & filtering ==========
+(function(){
+var M = (function(){
+  var p = new URLSearchParams(location.search);
+  var m = parseInt(p.get('m')) || parseInt(localStorage.getItem('lastMonth')) || 6;
+  if(isNaN(m)||m<1||m>6) m=6;
+  return m;
+})();
+
+// Setup month tabs
+var tabs = document.querySelectorAll('.mtab');
+tabs.forEach(function(t,i){
+  var mn = i+1;
+  t.href = 'analysis.html?m=' + mn;
+  t.onclick = function(e){
+    e.preventDefault();
+    localStorage.setItem('lastMonth',''+mn);
+    location.href = 'analysis.html?m='+mn;
+  };
+  if(mn===M) t.classList.add('act');
+  else t.classList.remove('act');
+});
+
+// Update title
+document.getElementById('pageTitle').textContent = M+'月交易分析报告';
+
+// Filter trades
+var T = RAW.filter(function(x){return x.m===M;});
+var W = T.filter(function(x){return x.pnl_usdt>0;});
+var L = T.filter(function(x){return x.pnl_usdt<0;});
+
+var total = T.length, wins = W.length, losses = L.length;
+var wr = total>0?(wins/total*100):0;
+var netPnl = T.reduce(function(s,x){return s+(x.pnl_usdt||0);},0);
+var avgWinPct = wins>0?W.reduce(function(s,x){return s+(x.pnl_pct||0);},0)/wins:0;
+var avgLossPct = losses>0?L.reduce(function(s,x){return s+Math.abs(x.pnl_pct||0);},0)/losses:0;
+var avgWinU = wins>0?W.reduce(function(s,x){return s+(x.pnl_usdt||0);},0)/wins:0;
+var avgLossU = losses>0?L.reduce(function(s,x){return s+Math.abs(x.pnl_usdt||0);},0)/losses:0;
+
+// SL/TP verdicts
+var slGood = T.filter(function(x){return x.slV==='合适';});
+var slEarly = T.filter(function(x){return x.slV==='过早';});
+var slNeutral = T.filter(function(x){return x.slV==='中性';});
+var tpGood = T.filter(function(x){return x.tpV==='合适';});
+var tpEarly = T.filter(function(x){return x.tpV==='过早';});
+var tpLate = T.filter(function(x){return x.tpV==='过晚';});
+var tpNeutral = T.filter(function(x){return x.tpV==='中性';});
+
+// Has real indicator data?
+var hasRealData = T.some(function(x){return x.srsi4h && x.srsi4h!==0;});
+
+// ========== PAGE SUBTITLE ==========
+var subParts = [total+'笔交易'];
+if(hasRealData) subParts.push('止损止盈合理性 · 指标关联 · 综合评估');
+else subParts.push('基本统计（该月暂无指标数据）');
+document.getElementById('pageSub').textContent = subParts.join(' · ');
+
+// ========== STAT CARDS ==========
+var cards = [
+  {lbl:'总交易',val:total,d:wins+'盈 / '+losses+'亏 · 胜率 '+wr.toFixed(0)+'%'},
+  {lbl:'净盈亏',val:netPnl.toFixed(1)+'U',d:'均盈 +'+avgWinPct.toFixed(1)+'% / 均亏 -'+avgLossPct.toFixed(1)+'%',cls:netPnl>0?'g':netPnl<0?'r':''},
+  {lbl:'合适止损',val:slGood.length+'/'+losses,d:(losses>0?(slGood.length/losses*100).toFixed(0):'0')+'% 止损决策正确',cls:'g'},
+  {lbl:'过早止损',val:slEarly.length+'/'+losses,d:(losses>0?(slEarly.length/losses*100).toFixed(0):'0')+'% 止损过早',cls:'r'},
+  {lbl:'过早止盈',val:tpEarly.length+'/'+wins,d:wins>0?'卖在起涨点前':'无盈利交易',cls:'a'},
+  {lbl:'过晚止盈',val:tpLate.length+'/'+wins,d:wins>0?'回吐大量利润':'',cls:'r'},
+];
+var cardHtml = '';
+cards.forEach(function(c){
+  cardHtml += '<div class="card"><div class="lbl">'+c.lbl+'</div><div class="val '+(c.cls||'')+'">'+c.val+'</div><div class="d">'+c.d+'</div></div>';
+});
+document.getElementById('statCards').innerHTML = cardHtml;
+
+// ========== CORE FINDINGS INSIGHT ==========
+var findingsHtml = '<div class="title">核心发现</div><p>';
+if(hasRealData){
+  var tg2 = computeTrendGroups();
+  var tg1 = tg2[1]||{t:0,w:0};
+  var tg2v = tg2[2]||{t:0,w:0};
+  var srsi4g = computeSrsiGroups('srsi4h');
+  var e80 = srsi4g['>80']||{t:0,w:0}; var l20 = srsi4g['<20']||{t:0,w:0};
+  var mid = srsi4g['50-80']||{t:0,w:0};
+  findingsHtml += '1. <span class="highlight">'+(losses>0?(slGood.length/losses*100).toFixed(0):'0')+'%的止损是合理的</span>——离场后价格继续下跌，止损有效<br>';
+  findingsHtml += '2. <span class="highlight">趋势对齐度是关键因子</span>——2/3对齐时胜率'+((tg2v.t>0?(tg2v.w/tg2v.t*100).toFixed(0):'N/A'))+'%；1/3弱对齐时仅'+(tg1.t>0?tg1.w:0)+'/'+tg1.t+'盈<br>';
+  findingsHtml += '3. <span class="highlight">SRSI极端值陷阱</span>——4H SRSI在超卖(<20)或超买(>80)入场，胜率低<br>';
+  findingsHtml += '4. <span class="highlight">止盈时机问题</span>——'+wins+'笔盈利中仅'+tpGood.length+'笔合适止盈<br>';
+  findingsHtml += '5. <span class="highlight">SRSI 4H在50-80区间做多入场效果最好</span>——'+(mid.t||0)+'笔中'+(mid.w||0)+'笔盈利';
+} else {
+  findingsHtml += '该月暂无趋势和SRSI指标数据，以下为基于交易记录的基本分析。<br>';
+  findingsHtml += '胜率 <b>'+wr.toFixed(0)+'%</b>，净盈亏 <b>'+netPnl.toFixed(1)+'U</b>。<br>';
+  var rr = avgLossPct>0?(avgWinPct/Math.max(0.01,avgLossPct)).toFixed(1):'N/A';
+  findingsHtml += '均盈 +'+avgWinPct.toFixed(1)+'% / 均亏 -'+avgLossPct.toFixed(1)+'%，盈亏比 '+rr;
+}
+findingsHtml += '</p>';
+document.getElementById('coreFindings').innerHTML = findingsHtml;
+
+// ========== SECTION 1: SL CHARTS ==========
+// Pie chart
+if(losses>0){
+  new Chart(document.getElementById('cSlClass'),{type:'doughnut',data:{labels:['合适止损 ('+slGood.length+'笔)','过早止损 ('+slEarly.length+'笔)',slNeutral.length>0?'中性 ('+slNeutral.length+'笔)':''].filter(Boolean),datasets:[{data:[slGood.length,slEarly.length].concat(slNeutral.length>0?[slNeutral.length]:[]),backgroundColor:['#198754','#f59f00','#94a3b8'].slice(0,slNeutral.length>0?3:2),borderColor:'#fff',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{padding:14,usePointStyle:true,font:{size:11}}}}}});
+} else {
+  document.getElementById('cSlClass').parentElement.innerHTML = '<div class="no-data">本月无亏损交易</div>';
+}
+
+// Post-exit bar chart
+var slAll = L.slice().sort(function(a,b){return (a.pnl_pct||0)-(b.pnl_pct||0);});
+var slLabels = slAll.map(function(x){return '#'+x.idx+' '+x.coin.replace('-USDT','');});
+var slPnlPct = slAll.map(function(x){return Math.abs(x.pnl_pct||0);});
+var slPostMae = slAll.map(function(x){return Math.abs(x.postMae||0);});
+var slPostMfe = slAll.map(function(x){return x.postMfe||0;});
+
+if(slAll.length>0){
+  new Chart(document.getElementById('cSlPost'),{type:'bar',data:{labels:slLabels,datasets:[
+    {label:'止损亏损幅度 %',data:slPnlPct,backgroundColor:'rgba(220,53,69,.6)',borderColor:'#dc3545',borderWidth:1,borderRadius:2},
+    {label:'离场后继续下跌%',data:slPostMae,backgroundColor:'rgba(25,135,84,.5)',borderColor:'#198754',borderWidth:1,borderRadius:2},
+    {label:'离场后反弹幅度%',data:slPostMfe,backgroundColor:'rgba(245,158,11,.5)',borderColor:'#f59f00',borderWidth:1,borderRadius:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{ticks:{font:{size:7},maxRotation:90,autoSkip:false},grid:{display:false}},y:{ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+}
+
+// ========== SECTION 1: SL TABLES ==========
+function fmtVal(v,dec){
+  if(v===null||v===undefined||v===0) return '—';
+  return (v>0?'+':'')+v.toFixed(dec||1)+'%';
+}
+function renderSLRow(x,isGood){
+  var h = '<tr class="lose">';
+  h += '<td><b>#'+x.idx+'</b></td>';
+  h += '<td><b>'+x.coin.replace('-USDT','')+'</b></td>';
+  h += '<td><span class="badge '+(x.direction==='做多'?'bg-lg':'bg-sh')+'">'+x.direction+'</span></td>';
+  h += '<td class="r"><b>'+(x.pnl_pct>0?'+':'')+(x.pnl_pct||0).toFixed(1)+'%</b></td>';
+  h += '<td class="tl">'+x.entry+'</td>';
+  h += '<td class="r">'+fmtVal(x.holdMae?Math.abs(x.holdMae):null)+'</td>';
+  if(isGood){
+    h += '<td class="r">'+fmtVal(x.postMae?Math.abs(x.postMae):null)+'</td>';
+    var ed = x.postMae&&x.holdMae?Math.abs(x.postMae-x.holdMae):null;
+    h += '<td class="r">'+fmtVal(ed)+'</td>';
+  } else {
+    h += '<td class="g">'+fmtVal(x.postMfe)+'</td>';
+    h += '<td class="a">'+fmtVal(x.postMfe||0)+'</td>';
+  }
+  h += '<td>'+(x.trend||'?')+'</td>';
+  h += '<td>'+(typeof x.srsi4h==='number'&&x.srsi4h!==0?x.srsi4h.toFixed(1):'—')+'</td>';
+  h += '</tr>';
+  return h;
+}
+
+var slgSorted = slGood.slice().sort(function(a,b){return (a.pnl_pct||0)-(b.pnl_pct||0);});
+var slbSorted = slEarly.slice().sort(function(a,b){return (a.pnl_pct||0)-(b.pnl_pct||0);});
+document.getElementById('tbGoodSL').innerHTML = slgSorted.length>0?slgSorted.map(function(x){return renderSLRow(x,true);}).join(''):'<tr><td colspan="10">本月无合适止损记录</td></tr>';
+document.getElementById('tbBadSL').innerHTML = slbSorted.length>0?slbSorted.map(function(x){return renderSLRow(x,false);}).join(''):'<tr><td colspan="10">本月无过早止损记录</td></tr>';
+
+// ========== SECTION 2: TP CHARTS & TABLE ==========
+var tpAll = T.filter(function(x){return x.tpV;}).sort(function(a,b){return (b.pnl_pct||0)-(a.pnl_pct||0);});
+
+if(tpAll.length>0){
+  new Chart(document.getElementById('cTpClass'),{type:'doughnut',data:{labels:['合适止盈 ('+tpGood.length+'笔)','过早止盈 ('+tpEarly.length+'笔)','过晚止盈 ('+tpLate.length+'笔)'],datasets:[{data:[tpGood.length,tpEarly.length,tpLate.length],backgroundColor:['#198754','#f59f00','#dc3545'],borderColor:'#fff',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{padding:14,usePointStyle:true,font:{size:11}}}}}});
+
+  new Chart(document.getElementById('cTpMiss'),{type:'bar',data:{labels:tpAll.map(function(x){return '#'+x.idx+' '+x.coin.replace('-USDT','');}),datasets:[
+    {label:'实际盈利%',data:tpAll.map(function(x){return x.pnl_pct||0;}),backgroundColor:'rgba(25,135,84,.6)',borderColor:'#198754',borderWidth:1,borderRadius:2},
+    {label:'错失盈利%',data:tpAll.map(function(x){return Math.max(0,(x.postMfe||0)-(x.pnl_pct||0));}),backgroundColor:'rgba(245,158,11,.5)',borderColor:'#f59f00',borderWidth:1,borderRadius:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{ticks:{font:{size:9}},grid:{display:false}},y:{ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+
+  var tpRows = '';
+  tpAll.forEach(function(x){
+    var missed = Math.max(0,(x.postMfe||0)-(x.pnl_pct||0));
+    var giveback = x.tpV&&x.tpV.indexOf('过晚')>=0?(x.holdMfe||0)-(x.pnl_pct||0):0;
+    var missText = giveback>0?'回吐 '+giveback.toFixed(1)+'%':missed>0?'+'+missed.toFixed(1)+'%':'—';
+    tpRows += '<tr class="win"><td><b>#'+x.idx+'</b></td><td><b>'+x.coin.replace('-USDT','')+'</b></td>';
+    tpRows += '<td><span class="badge '+(x.direction==='做多'?'bg-lg':'bg-sh')+'">'+x.direction+'</span></td>';
+    tpRows += '<td class="g"><b>+'+(x.pnl_pct||0).toFixed(1)+'%</b></td>';
+    tpRows += '<td class="tl">'+x.entry+'</td>';
+    tpRows += '<td class="g">'+(x.holdMfe?'+'+x.holdMfe.toFixed(1)+'%':'—')+'</td>';
+    tpRows += '<td class="g">'+(x.postMfe?'+'+x.postMfe.toFixed(1)+'%':'—')+'</td>';
+    tpRows += '<td class="'+(x.tpV&&x.tpV.indexOf('过晚')>=0?'r':'a')+'">'+missText+'</td>';
+    tpRows += '<td><span class="badge '+(x.tpV==='合适'?'bg-g':x.tpV&&x.tpV.indexOf('过晚')>=0?'bg-r':'bg-a')+'">'+(x.tpV||'未知')+'</span></td>';
+    tpRows += '<td>'+(typeof x.srsi4h==='number'&&x.srsi4h!==0?x.srsi4h.toFixed(1):'—')+'</td></tr>';
+  });
+  document.getElementById('tbTp').innerHTML = tpRows;
+} else {
+  document.getElementById('cTpClass').parentElement.innerHTML = '<div class="no-data">本月无盈利交易</div>';
+  document.getElementById('cTpMiss').parentElement.innerHTML = '<div class="no-data">本月无盈利交易</div>';
+  document.getElementById('tbTp').innerHTML = '<tr><td colspan="10">本月无盈利交易</td></tr>';
+}
+
+// ========== SECTION 3: INDICATOR ANALYSIS ==========
+if(hasRealData){
+  document.getElementById('indicatorDataNote').style.display = 'none';
+  document.getElementById('indicatorCharts').style.display = '';
+  renderIndicatorCharts();
+} else {
+  document.getElementById('indicatorDataNote').style.display = '';
+  document.getElementById('indicatorCharts').style.display = 'none';
+  document.getElementById('indicatorInsight').style.display = 'none';
+}
+
+// ========== SECTION 4: PATH ANALYSIS ==========
+var hasPathData = T.some(function(x){return (x.holdMae&&x.holdMae!==0)||(x.holdMfe&&x.holdMfe!==0)||(x.postMae&&x.postMae!==0)||(x.postMfe&&x.postMfe!==0);});
+if(hasPathData && hasRealData){
+  document.getElementById('pathCharts').style.display = '';
+  document.getElementById('pathInsight').style.display = '';
+  renderPathCharts();
+} else {
+  document.getElementById('pathCharts').innerHTML = '<div class="no-data" style="grid-column:1/-1">该月暂无持仓路径数据（MAE/MFE），仅6月有完整路径记录</div>';
+  document.getElementById('pathInsight').style.display = 'none';
+}
+
+// ========== SECTION 5: WEEKLY ==========
+renderWeekly();
+
+// ========== HELPER FUNCTIONS ==========
+function getSrsiZone(v){
+  if(v===null||v===undefined||v===0) return null;
+  if(v<20) return '<20';
+  if(v<50) return '20-50';
+  if(v<80) return '50-80';
+  return '>80';
+}
+
+function computeTrendGroups(){
+  var grp = {0:{t:0,w:0,pnl:0},1:{t:0,w:0,pnl:0},2:{t:0,w:0,pnl:0},3:{t:0,w:0,pnl:0}};
+  T.forEach(function(x){
+    var ta = x.trend||'?/?/?';
+    var parts = ta.split('/');
+    if(parts.length<3||parts[0]==='?'||parts[1]==='?'||parts[2]==='?') return;
+    var align = 0;
+    if(x.direction==='做多'){
+      if(parts[0]==='多') align++;
+      if(parts[1]==='多') align++;
+      if(parts[2]==='多') align++;
+    } else {
+      if(parts[0]==='空') align++;
+      if(parts[1]==='空') align++;
+      if(parts[2]==='空') align++;
+    }
+    grp[align].t++;
+    if(x.pnl_usdt>0) grp[align].w++;
+    grp[align].pnl += x.pnl_usdt||0;
+  });
+  return grp;
+}
+
+function computeSrsiGroups(field){
+  var zl = ['<20','20-50','50-80','>80'];
+  var grp = {};
+  zl.forEach(function(z){grp[z]={t:0,w:0,pnl:0,holdMae:0,holdMaeN:0,holdMfe:0,holdMfeN:0,postMae:0,postMaeN:0,postMfe:0,postMfeN:0};});
+  T.forEach(function(x){
+    var v = x[field];
+    if(v===null||v===undefined||v===0) return;
+    var z = getSrsiZone(v);
+    if(!z||!grp[z]) return;
+    grp[z].t++;
+    if(x.pnl_usdt>0) grp[z].w++;
+    grp[z].pnl += x.pnl_usdt||0;
+    if(x.holdMae&&x.holdMae!==0){grp[z].holdMae+=Math.abs(x.holdMae);grp[z].holdMaeN++;}
+    if(x.holdMfe&&x.holdMfe!==0){grp[z].holdMfe+=x.holdMfe;grp[z].holdMfeN++;}
+    if(x.postMae&&x.postMae!==0){grp[z].postMae+=Math.abs(x.postMae);grp[z].postMaeN++;}
+    if(x.postMfe&&x.postMfe!==0){grp[z].postMfe+=x.postMfe;grp[z].postMfeN++;}
+  });
+  return grp;
+}
+
+function renderIndicatorCharts(){
+  var tg = computeTrendGroups();
+  var tgLabels = ['0/3全逆势','1/3弱对齐','2/3部分对齐','3/3全对齐'];
+  var tgWR = tgLabels.map(function(_,i){return tg[i].t>0?(tg[i].w/tg[i].t*100):0;});
+  var tgPnl = tgLabels.map(function(_,i){return tg[i].t>0?(tg[i].pnl/tg[i].t):0;});
+  var tgTotal = tgLabels.map(function(_,i){return tg[i].t;});
+
+  if(tgTotal.reduce(function(a,b){return a+b;},0)>0){
+    new Chart(document.getElementById('cTrend'),{type:'bar',data:{labels:tgLabels,datasets:[
+      {label:'胜率 %',type:'line',data:tgWR,borderColor:'#0d6efd',backgroundColor:'rgba(13,110,253,0)',borderWidth:3,pointRadius:6,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1},
+      {label:'均盈亏 U',data:tgPnl,backgroundColor:['rgba(220,53,69,.5)','rgba(220,53,69,.5)','rgba(25,135,84,.5)','rgba(220,53,69,.3)'],borderColor:['#dc3545','#dc3545','#198754','#dc3545'],borderWidth:1,borderRadius:4,order:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{position:'left',ticks:{callback:function(v){return v.toFixed(1)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:60,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+  } else {
+    document.getElementById('cTrend').parentElement.innerHTML = '<div class="no-data">暂无趋势数据</div>';
+  }
+
+  // SRSI 4H
+  var s4 = computeSrsiGroups('srsi4h');
+  var s4zones = ['<20','20-50','50-80','>80'];
+  var s4WR = s4zones.map(function(z){return s4[z].t>0?(s4[z].w/s4[z].t*100):0;});
+  var s4Pnl = s4zones.map(function(z){return s4[z].t>0?(s4[z].pnl/s4[z].t):0;});
+  var s4Total = s4zones.map(function(z){return s4[z].t;});
+  var s4Labels = s4zones.map(function(z,i){return s4Total[i]>0?z+' ('+s4Total[i]+')':z;});
+
+  if(s4Total.reduce(function(a,b){return a+b;},0)>0){
+    new Chart(document.getElementById('cSrsi4h'),{type:'bar',data:{labels:s4Labels,datasets:[
+      {label:'胜率 %',type:'line',data:s4WR,borderColor:'#0d6efd',borderWidth:3,pointRadius:6,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1},
+      {label:'均盈亏 U',data:s4Pnl,backgroundColor:['rgba(220,53,69,.6)','rgba(220,53,69,.4)','rgba(25,135,84,.5)','rgba(220,53,69,.6)'],borderColor:['#dc3545','#dc3545','#198754','#dc3545'],borderWidth:1,borderRadius:4,order:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{position:'left',ticks:{callback:function(v){return v.toFixed(1)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:60,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+  } else {
+    document.getElementById('cSrsi4h').parentElement.innerHTML = '<div class="no-data">暂无SRSI数据</div>';
+  }
+
+  // SRSI 1H
+  var s1 = computeSrsiGroups('srsi_1h');
+  var s1WR = s4zones.map(function(z){return s1[z].t>0?(s1[z].w/s1[z].t*100):0;});
+  var s1Pnl = s4zones.map(function(z){return s1[z].t>0?(s1[z].pnl/s1[z].t):0;});
+  var s1Total = s4zones.map(function(z){return s1[z].t;});
+  var s1Labels = s4zones.map(function(z,i){return s1Total[i]>0?z+' ('+s1Total[i]+')':z;});
+
+  if(s1Total.reduce(function(a,b){return a+b;},0)>0){
+    new Chart(document.getElementById('cSrsi1h'),{type:'bar',data:{labels:s1Labels,datasets:[
+      {label:'胜率 %',type:'line',data:s1WR,borderColor:'#0d6efd',borderWidth:3,pointRadius:6,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1},
+      {label:'均盈亏 U',data:s1Pnl,backgroundColor:['rgba(220,53,69,.5)','rgba(147,197,253,.5)','rgba(220,53,69,.4)','rgba(220,53,69,.3)'],borderColor:['#dc3545','#93c5fd','#dc3545','#dc3545'],borderWidth:1,borderRadius:4,order:0}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{position:'left',ticks:{callback:function(v){return v.toFixed(1)+'U'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',min:0,max:60,ticks:{callback:function(v){return v+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+  } else {
+    document.getElementById('cSrsi1h').parentElement.innerHTML = '<div class="no-data">暂无SRSI数据</div>';
+  }
+
+  // Heatmap
+  renderHeatmap();
+
+  // Indicator insight text
+  var txt = '';
+  txt += '<strong>趋势对齐是底线：</strong>至少需要2/3时间框架对齐才入场。<br>';
+  txt += '<strong>SRSI 4H中性区最优：</strong>50-80区间入场效果最好。极端值（<20或>80）是陷阱区。<br>';
+  txt += '<strong>SRSI 1H参考价值有限：</strong>1H SRSI在极端值时提供的反转信号不可靠。<br>';
+  var rr = avgLossPct>0?(avgWinPct/avgLossPct).toFixed(1):'N/A';
+  txt += '<strong>盈亏比：</strong>均盈 +'+avgWinPct.toFixed(1)+'% vs 均亏 -'+avgLossPct.toFixed(1)+'%。';
+  document.getElementById('indicatorInsightText').innerHTML = txt;
+}
+
+function renderHeatmap(){
+  var zl = ['0-20','20-40','40-60','60-80','80-100'];
+  var grid = {};
+  zl.forEach(function(r){zl.forEach(function(c){grid[r+'|'+c]={w:0,t:0};});});
+
+  T.forEach(function(x){
+    var z1h = getSrsiZone(x.srsi_1h);
+    var z4h = getSrsiZone(x.srsi4h);
+    if(!z1h||!z4h) return;
+    var key = z1h.replace('<','').replace('>','')+'|'+z4h.replace('<','').replace('>','');
+    if(!grid[key]) return;
+    grid[key].t++;
+    if(x.pnl_usdt>0) grid[key].w++;
+  });
+
+  var ht = '<table style="font-size:10px;margin:0 auto;width:auto"><tr><th style="border:none"></th><th colspan=5 style="text-align:center;font-size:11px;padding:4px">SRSI 4H →</th></tr>';
+  ht += '<tr><th style="border:none;font-size:10px;writing-mode:vertical-lr;padding:4px;min-width:18px">← SRSI 1H</th><th>'+zl.join('</th><th>')+'</th></tr>';
+  for(var ri=0;ri<5;ri++){
+    ht += '<tr><th>'+zl[ri]+'</th>';
+    for(var ci=0;ci<5;ci++){
+      var k = zl[ri]+'|'+zl[ci];
+      var d = grid[k]||{w:0,t:0};
+      var wr2 = d.t>0?(d.w/d.t*100):0;
+      var alpha = d.t>0?0.15+wr2/100*0.75:0.05;
+      var r2 = wr2>50?25:220, g2 = wr2>50?135:53, b2 = wr2>50?84:69;
+      if(d.t===0){r2=148;g2=163;b2=184}
+      ht += '<td style="background:rgba('+r2+','+g2+','+b2+','+alpha+');padding:6px 8px;text-align:center;border:1px solid #e2e8f0">'+(d.t>0?'<b>'+(wr2>50?'<span style=color:#065f46>':'')+d.w+'/'+d.t+(wr2>50?'</span>':'')+'</b>':'—')+'</td>';
+    }
+    ht += '</tr>';
+  }
+  ht += '</table><div style="text-align:center;font-size:10px;color:#94a3b8;margin-top:8px">单元格: 盈利笔数/总笔数 · 绿色=盈利区 红色=亏损区 · 样本量有限仅供参考</div>';
+  document.getElementById('cSrsiHeat').innerHTML = ht;
+}
+
+function renderPathCharts(){
+  var zl = ['<20','20-50','50-80','>80'];
+  var s4 = computeSrsiGroups('srsi4h');
+
+  var holdMaeData = zl.map(function(z){return s4[z].holdMaeN>0?s4[z].holdMae/s4[z].holdMaeN:0;});
+  var holdMfeData = zl.map(function(z){return s4[z].holdMfeN>0?s4[z].holdMfe/s4[z].holdMfeN:0;});
+  var postMaeData = zl.map(function(z){return s4[z].postMaeN>0?s4[z].postMae/s4[z].postMaeN:0;});
+  var postMfeData = zl.map(function(z){return s4[z].postMfeN>0?s4[z].postMfe/s4[z].postMfeN:0;});
+
+  // SRSI 4H vs Hold
+  if(holdMaeData.some(function(v){return v>0;})||holdMfeData.some(function(v){return v>0;})){
+    new Chart(document.getElementById('cSrsiHold'),{type:'bar',data:{labels:zl,datasets:[
+      {label:'均MAE (回调%)',data:holdMaeData,backgroundColor:['rgba(220,53,69,.6)','rgba(220,53,69,.4)','rgba(25,135,84,.4)','rgba(220,53,69,.6)'],borderColor:['#dc3545','#dc3545','#198754','#dc3545'],borderWidth:1,borderRadius:4,order:0},
+      {label:'均MFE (盈利潜力%)',type:'line',data:holdMfeData,borderColor:'#0d6efd',backgroundColor:'rgba(13,110,253,.1)',borderWidth:3,fill:true,pointRadius:6,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{position:'left',reverse:true,ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+  } else {
+    document.getElementById('cSrsiHold').parentElement.innerHTML = '<div class="no-data">暂无持仓路径数据</div>';
+  }
+
+  // SRSI 4H vs Post
+  if(postMaeData.some(function(v){return v>0;})||postMfeData.some(function(v){return v>0;})){
+    new Chart(document.getElementById('cSrsiPost'),{type:'bar',data:{labels:zl,datasets:[
+      {label:'离场后均跌 %',data:postMaeData,backgroundColor:['rgba(220,53,69,.6)','rgba(220,53,69,.4)','rgba(25,135,84,.4)','rgba(220,53,69,.5)'],borderColor:['#dc3545','#dc3545','#198754','#dc3545'],borderWidth:1,borderRadius:4,order:0},
+      {label:'离场后均涨 %',type:'line',data:postMfeData,borderColor:'#f59f00',backgroundColor:'rgba(245,158,11,.1)',borderWidth:3,fill:true,pointRadius:6,pointBackgroundColor:'#f59f00',yAxisID:'y1',order:1}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{reverse:true,ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+  } else {
+    document.getElementById('cSrsiPost').parentElement.innerHTML = '<div class="no-data">暂无离场后路径数据</div>';
+  }
+
+  // Win vs Loss
+  var wMae = wins>0?W.reduce(function(s,x){return s+(x.holdMae?Math.abs(x.holdMae):0);},0)/wins:0;
+  var wMfe = wins>0?W.reduce(function(s,x){return s+(x.holdMfe||0);},0)/wins:0;
+  var lMae = losses>0?L.reduce(function(s,x){return s+(x.holdMae?Math.abs(x.holdMae):0);},0)/losses:0;
+  var lMfe = losses>0?L.reduce(function(s,x){return s+(x.holdMfe||0);},0)/losses:0;
+
+  new Chart(document.getElementById('cWinLoss'),{type:'bar',data:{labels:['盈利('+wins+'笔)','亏损('+losses+'笔)'],datasets:[
+    {label:'均MAE (最大回调%)',data:[wMae,lMae],backgroundColor:'rgba(220,53,69,.5)',borderColor:'#dc3545',borderWidth:1,borderRadius:4},
+    {label:'均MFE (盈利潜力%)',data:[wMfe,lMfe],backgroundColor:'rgba(25,135,84,.5)',borderColor:'#198754',borderWidth:1,borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+
+  // Trend vs Path
+  var tg = computeTrendGroups();
+  var tgLabels2 = ['3/3全对齐','2/3部分对齐','1/3弱对齐','0/3全逆势'];
+  var tgMae = tgLabels2.map(function(_,i){
+    var trades = T.filter(function(x){
+      var parts = (x.trend||'?/?/?').split('/');
+      if(parts.length<3||parts[0]==='?'||parts[1]==='?'||parts[2]==='?') return false;
+      var a=0;
+      if(x.direction==='做多'){if(parts[0]==='多')a++;if(parts[1]==='多')a++;if(parts[2]==='多')a++;}
+      else{if(parts[0]==='空')a++;if(parts[1]==='空')a++;if(parts[2]==='空')a++;}
+      return a===i;
+    });
+    var n=trades.length;
+    var sum=trades.reduce(function(s,x){return s+(x.holdMae?Math.abs(x.holdMae):0);},0);
+    return n>0?sum/n:0;
+  });
+  var tgMfe = tgLabels2.map(function(_,i){
+    var trades = T.filter(function(x){
+      var parts = (x.trend||'?/?/?').split('/');
+      if(parts.length<3||parts[0]==='?'||parts[1]==='?'||parts[2]==='?') return false;
+      var a=0;
+      if(x.direction==='做多'){if(parts[0]==='多')a++;if(parts[1]==='多')a++;if(parts[2]==='多')a++;}
+      else{if(parts[0]==='空')a++;if(parts[1]==='空')a++;if(parts[2]==='空')a++;}
+      return a===i;
+    });
+    var n=trades.length;
+    var sum=trades.reduce(function(s,x){return s+(x.holdMfe||0);},0);
+    return n>0?sum/n:0;
+  });
+
+  new Chart(document.getElementById('cTrendPath'),{type:'bar',data:{labels:tgLabels2,datasets:[
+    {label:'均MAE %',data:tgMae,backgroundColor:['rgba(220,53,69,.5)','rgba(220,53,69,.3)','rgba(25,135,84,.3)','rgba(25,135,84,.5)'],borderColor:['#dc3545','#dc3545','#198754','#198754'],borderWidth:1,borderRadius:4,order:0},
+    {label:'均MFE %',type:'line',data:tgMfe,borderColor:'#0d6efd',backgroundColor:'rgba(13,110,253,.1)',borderWidth:3,fill:true,pointRadius:6,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{reverse:true,ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',ticks:{callback:function(v){return v.toFixed(1)+'%'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+}
+
+function renderWeekly(){
+  // Group trades by ISO week
+  var weeks = {};
+  T.forEach(function(x){
+    // Parse date from entry string like "06-01 23:13→06-02 14:22" or "01-08 05:41→15:35"
+    var entryStr = x.entry||'';
+    var parts = entryStr.split('→');
+    var datePart = parts[0]||'';
+    var m = M;
+    // Try to extract month-day
+    var md = datePart.match(/(\d{2})-(\d{2})/);
+    if(!md) return;
+    var month = parseInt(md[1])||M;
+    var day = parseInt(md[2]);
+    // Find which week of the month
+    var wk = Math.ceil(day/7);
+    var key = month+'-'+wk;
+    if(!weeks[key]) weeks[key] = {total:0,wins:0,pnl:0,slGood:0,slEarly:0,slNeutral:0,tpGood:0,tpEarly:0,tpLate:0,firstDay:day};
+    weeks[key].total++;
+    if(x.pnl_usdt>0) weeks[key].wins++;
+    weeks[key].pnl += x.pnl_usdt||0;
+    if(x.slV==='合适') weeks[key].slGood++;
+    else if(x.slV==='过早') weeks[key].slEarly++;
+    else if(x.slV==='中性') weeks[key].slNeutral++;
+    if(x.tpV==='合适') weeks[key].tpGood++;
+    else if(x.tpV==='过早') weeks[key].tpEarly++;
+    else if(x.tpV==='过晚') weeks[key].tpLate++;
+  });
+
+  var wkKeys = Object.keys(weeks).sort();
+  if(wkKeys.length===0){
+    document.getElementById('weeklyCharts').innerHTML = '<div class="no-data" style="grid-column:1/-1">该月暂无交易数据</div>';
+    document.getElementById('tbWeekly').innerHTML = '<tr><td colspan="10">暂无数据</td></tr>';
+    return;
+  }
+
+  var wkData = wkKeys.map(function(k){return weeks[k];});
+  var wkLabels = wkKeys.map(function(k){return M+'月第'+k.split('-')[1]+'周';});
+
+  // SL chart
+  new Chart(document.getElementById('cWkSl'),{type:'bar',data:{labels:wkLabels,datasets:[
+    {label:'✓ 合适止损',data:wkData.map(function(d){return d.slGood;}),backgroundColor:'rgba(25,135,84,.7)',borderColor:'#198754',borderWidth:1},
+    {label:'✗ 过早止损',data:wkData.map(function(d){return d.slEarly;}),backgroundColor:'rgba(220,53,69,.5)',borderColor:'#dc3545',borderWidth:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9}}},y:{stacked:true,ticks:{stepSize:5,font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+
+  // TP chart
+  new Chart(document.getElementById('cWkTp'),{type:'bar',data:{labels:wkLabels,datasets:[
+    {label:'✓ 合适止盈',data:wkData.map(function(d){return d.tpGood;}),backgroundColor:'rgba(25,135,84,.7)',borderColor:'#198754',borderWidth:1},
+    {label:'✗ 过早止盈',data:wkData.map(function(d){return d.tpEarly;}),backgroundColor:'rgba(245,158,11,.5)',borderColor:'#f59f00',borderWidth:1},
+    {label:'✗ 过晚止盈',data:wkData.map(function(d){return d.tpLate;}),backgroundColor:'rgba(220,53,69,.5)',borderColor:'#dc3545',borderWidth:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9}}},y:{stacked:true,ticks:{stepSize:1,font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}}}}});
+
+  // Combined
+  new Chart(document.getElementById('cWkAll'),{type:'bar',data:{labels:wkLabels,datasets:[
+    {label:'净盈亏 U',type:'line',data:wkData.map(function(d){return d.pnl;}),borderColor:'#0d6efd',backgroundColor:'rgba(13,110,253,0)',borderWidth:3,pointRadius:6,pointBackgroundColor:'#0d6efd',yAxisID:'y1',order:1},
+    {label:'合理决策',data:wkData.map(function(d){return d.slGood+d.tpGood;}),backgroundColor:'rgba(25,135,84,.7)',borderColor:'#198754',borderWidth:1,borderRadius:4,order:0},
+    {label:'不合理决策',data:wkData.map(function(d){return d.slEarly+d.tpEarly+d.tpLate;}),backgroundColor:'rgba(220,53,69,.5)',borderColor:'#dc3545',borderWidth:1,borderRadius:4,order:0},
+    {label:'中性',data:wkData.map(function(d){return d.slNeutral;}),backgroundColor:'rgba(148,163,184,.3)',borderColor:'#94a3b8',borderWidth:1,borderRadius:4,order:0}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:9},usePointStyle:true}}},scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9}}},y:{stacked:true,ticks:{stepSize:5,font:{size:9}},grid:{color:'rgba(0,0,0,.03)'}},y1:{position:'right',ticks:{callback:function(v){return v.toFixed(1)+'U'},font:{size:9}},grid:{drawOnChartArea:false}}}}});
+
+  // Weekly table
+  var wh = '';
+  wkKeys.forEach(function(k,i){
+    var d = weeks[k];
+    var reasonable = d.slGood+d.tpGood;
+    var rate = d.total>0?(reasonable/d.total*100).toFixed(0):'0';
+    wh += '<tr>';
+    wh += '<td><b>第'+k.split('-')[1]+'周</b></td>';
+    wh += '<td>'+d.total+'</td>';
+    wh += '<td class="'+(d.pnl>0?'g':'r')+'"><b>'+d.pnl.toFixed(1)+'U</b></td>';
+    wh += '<td class="g">'+d.slGood+'</td>';
+    wh += '<td class="r">'+(d.slEarly>0?d.slEarly:'—')+'</td>';
+    wh += '<td>'+(d.slNeutral>0?d.slNeutral:'—')+'</td>';
+    wh += '<td class="g">'+(d.tpGood>0?d.tpGood:'—')+'</td>';
+    wh += '<td class="a">'+(d.tpEarly>0?d.tpEarly:'—')+'</td>';
+    wh += '<td class="r">'+(d.tpLate>0?d.tpLate:'—')+'</td>';
+    wh += '<td><b>'+(rate>=60?'<span class=g>':rate>=40?'<span class=a>':'<span class=r>')+rate+'%</span></b></td>';
+    wh += '</tr>';
+  });
+  document.getElementById('tbWeekly').innerHTML = wh;
+
+  document.getElementById('weeklyNote').innerHTML = '合理决策率 = (合适止损 + 合适止盈) / 总笔数 × 100%<br>基于该月交易的每周统计分析';
+}
+
+})();
+</script>
+
+</body></html>
