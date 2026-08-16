@@ -105,8 +105,8 @@ tr:last-child td{border-bottom:none}
 (function(){
 var M = (function(){
   var p = new URLSearchParams(location.search);
-  var m = parseInt(p.get('m')) || parseInt(localStorage.getItem('lastMonth')) || 6;
-  if(isNaN(m)||m<1||m>6) m=6;
+  var m = parseInt(p.get('m')) || parseInt(localStorage.getItem('lastMonth')) || 8;
+  if(isNaN(m)||m<1||m>8) m=8;
   return m;
 })();
 
