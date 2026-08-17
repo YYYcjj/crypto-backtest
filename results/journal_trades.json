@@ -6610,5 +6610,24 @@
     "srsi_4h": 82.5,
     "trend_1d": "空",
     "srsi_1d": 30.2
+  },
+  {
+    "coin": "USELESS-USDT",
+    "direction": "做多",
+    "entry_price": 0.0415,
+    "exit_price": 0.040138,
+    "pnl_usdt": -5.49,
+    "pnl_pct": -3.28,
+    "entry_time": "2026-08-16 23:26",
+    "exit_time": "2026-08-17 05:32",
+    "entry_ts": 1786893981725,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 86.7,
+    "trend_4h": "多",
+    "srsi_4h": 75.2,
+    "trend_1d": "空",
+    "srsi_1d": 86.0
   }
 ]
