@@ -6686,5 +6686,24 @@
     "srsi_4h": 79.4,
     "trend_1d": "多",
     "srsi_1d": 29.9
+  },
+  {
+    "coin": "NEAR-USDT",
+    "direction": "做多",
+    "entry_price": 1.64,
+    "exit_price": 1.591,
+    "pnl_usdt": -5.29,
+    "pnl_pct": -2.99,
+    "entry_time": "2026-08-18 15:15",
+    "exit_time": "2026-08-19 05:43",
+    "entry_ts": 1787037333762,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 67.9,
+    "trend_4h": "多",
+    "srsi_4h": 77.0,
+    "trend_1d": "空",
+    "srsi_1d": 85.5
   }
 ]
