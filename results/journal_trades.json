@@ -6878,6 +6878,25 @@
     "srsi_1d": 100.0
   },
   {
+    "coin": "ZAMA-USDT",
+    "direction": "做多",
+    "entry_price": 0.0459,
+    "exit_price": 0.054487,
+    "pnl_usdt": 11.59,
+    "pnl_pct": 18.71,
+    "entry_time": "2026-08-21 10:56",
+    "exit_time": "2026-08-22 10:56",
+    "entry_ts": 1787281002070,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 76.1,
+    "trend_4h": "多",
+    "srsi_4h": 33.4,
+    "trend_1d": "多",
+    "srsi_1d": 91.1
+  },
+  {
     "coin": "WLD-USDT",
     "direction": "做多",
     "entry_price": 0.371,
@@ -6895,5 +6914,24 @@
     "srsi_4h": 61.1,
     "trend_1d": "多",
     "srsi_1d": 66.2
+  },
+  {
+    "coin": "PEOPLE-USDT",
+    "direction": "做空",
+    "entry_price": 0.0103,
+    "exit_price": 0.010747,
+    "pnl_usdt": -6.35,
+    "pnl_pct": -4.16,
+    "entry_time": "2026-08-22 17:17",
+    "exit_time": "2026-08-23 00:26",
+    "entry_ts": 1787390260818,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 2.8,
+    "trend_4h": "多",
+    "srsi_4h": 1.8,
+    "trend_1d": "多",
+    "srsi_1d": 86.1
   }
 ]
