@@ -7085,5 +7085,43 @@
     "srsi_4h": 5.9,
     "trend_1d": "多",
     "srsi_1d": 95.6
+  },
+  {
+    "coin": "WLD-USDT",
+    "direction": "做多",
+    "entry_price": 0.404,
+    "exit_price": 0.3889,
+    "pnl_usdt": -6.63,
+    "pnl_pct": -3.74,
+    "entry_time": "2026-08-24 07:07",
+    "exit_time": "2026-08-24 09:56",
+    "entry_ts": 1787526423348,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 14.4,
+    "trend_4h": "多",
+    "srsi_4h": 65.1,
+    "trend_1d": "多",
+    "srsi_1d": 57.4
+  },
+  {
+    "coin": "PEOPLE-USDT",
+    "direction": "做多",
+    "entry_price": 0.01045,
+    "exit_price": 0.010313,
+    "pnl_usdt": -2.01,
+    "pnl_pct": -1.31,
+    "entry_time": "2026-08-24 07:09",
+    "exit_time": "2026-08-24 11:52",
+    "entry_ts": 1787526544197,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 73.2,
+    "trend_4h": "多",
+    "srsi_4h": 97.8,
+    "trend_1d": "多",
+    "srsi_1d": 76.3
   }
 ]
