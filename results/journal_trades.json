@@ -6650,6 +6650,25 @@
     "srsi_1d": 74.3
   },
   {
+    "coin": "ORDI-USDT",
+    "direction": "做多",
+    "entry_price": 3.893557,
+    "exit_price": 4.080783,
+    "pnl_usdt": -6.46,
+    "pnl_pct": 4.81,
+    "entry_time": "2026-08-13 20:47",
+    "exit_time": "2026-08-28 13:19",
+    "entry_ts": 1786625233262,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 33.7,
+    "trend_4h": "空",
+    "srsi_4h": 63.6,
+    "trend_1d": "多",
+    "srsi_1d": 53.8
+  },
+  {
     "coin": "USELESS-USDT",
     "direction": "做多",
     "entry_price": 0.0415,
@@ -7220,6 +7239,25 @@
     "srsi_1d": 84.8
   },
   {
+    "coin": "BIO-USDT",
+    "direction": "做空",
+    "entry_price": 0.02898,
+    "exit_price": 0.029106,
+    "pnl_usdt": -0.89,
+    "pnl_pct": -0.43,
+    "entry_time": "2026-08-27 08:51",
+    "exit_time": "2026-08-27 21:11",
+    "entry_ts": 1787791916160,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 91.2,
+    "trend_4h": "空",
+    "srsi_4h": 40.2,
+    "trend_1d": "多",
+    "srsi_1d": 48.8
+  },
+  {
     "coin": "AZTEC-USDT",
     "direction": "做空",
     "entry_price": 0.0147,
@@ -7237,5 +7275,24 @@
     "srsi_4h": 27.5,
     "trend_1d": "多",
     "srsi_1d": 89.4
+  },
+  {
+    "coin": "PEOPLE-USDT",
+    "direction": "做多",
+    "entry_price": 0.00821,
+    "exit_price": 0.00786,
+    "pnl_usdt": -6.65,
+    "pnl_pct": -4.26,
+    "entry_time": "2026-08-28 08:57",
+    "exit_time": "2026-08-28 10:31",
+    "entry_ts": 1787878640619,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 0.0,
+    "trend_4h": "空",
+    "srsi_4h": 94.6,
+    "trend_1d": "多",
+    "srsi_1d": 49.6
   }
 ]
