@@ -7296,6 +7296,25 @@
     "srsi_1d": 89.4
   },
   {
+    "coin": "AZTEC-USDT",
+    "direction": "做空",
+    "entry_price": 0.0147,
+    "exit_price": 0.01362,
+    "pnl_usdt": 4.75,
+    "pnl_pct": 7.93,
+    "entry_time": "2026-08-27 11:55",
+    "exit_time": "2026-08-29 13:44",
+    "entry_ts": 1787802921336,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 68.3,
+    "trend_4h": "多",
+    "srsi_4h": 31.3,
+    "trend_1d": "多",
+    "srsi_1d": 90.0
+  },
+  {
     "coin": "BIO-USDT",
     "direction": "做多",
     "entry_price": 0.0286,
