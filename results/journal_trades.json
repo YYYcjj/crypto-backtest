@@ -7446,5 +7446,24 @@
     "srsi_4h": 29.2,
     "trend_1d": "多",
     "srsi_1d": 6.1
+  },
+  {
+    "coin": "BOME-USDT",
+    "direction": "做多",
+    "entry_price": 0.000862,
+    "exit_price": 0.000859,
+    "pnl_usdt": -0.8,
+    "pnl_pct": -0.39,
+    "entry_time": "2026-09-02 00:34",
+    "exit_time": "2026-09-03 01:18",
+    "entry_ts": 1788280457599,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 45.6,
+    "trend_4h": "空",
+    "srsi_4h": 76.2,
+    "trend_1d": "多",
+    "srsi_1d": 8.4
   }
 ]
