@@ -7467,6 +7467,25 @@
     "srsi_1d": 8.4
   },
   {
+    "coin": "ONE-USDT",
+    "direction": "做空",
+    "entry_price": 0.000716,
+    "exit_price": 0.000699,
+    "pnl_usdt": 6.56,
+    "pnl_pct": 2.37,
+    "entry_time": "2026-09-02 10:05",
+    "exit_time": "2026-09-08 10:11",
+    "entry_ts": 1788314754214,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 98.3,
+    "trend_4h": "多",
+    "srsi_4h": 60.2,
+    "trend_1d": "空",
+    "srsi_1d": 42.0
+  },
+  {
     "coin": "RESOLV-USDT",
     "direction": "做多",
     "entry_price": 0.0167,
@@ -7674,5 +7693,24 @@
     "srsi_4h": 67.3,
     "trend_1d": "多",
     "srsi_1d": 65.1
+  },
+  {
+    "coin": "HUMA-USDT",
+    "direction": "做多",
+    "entry_price": 0.0224,
+    "exit_price": 0.022293,
+    "pnl_usdt": -1.38,
+    "pnl_pct": -0.48,
+    "entry_time": "2026-09-07 10:38",
+    "exit_time": "2026-09-07 23:40",
+    "entry_ts": 1788748713841,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 85.3,
+    "trend_4h": "多",
+    "srsi_4h": 49.7,
+    "trend_1d": "多",
+    "srsi_1d": 33.3
   }
 ]
