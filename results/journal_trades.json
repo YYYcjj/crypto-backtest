@@ -8206,5 +8206,43 @@
     "srsi_4h": 85.7,
     "trend_1d": "空",
     "srsi_1d": 27.3
+  },
+  {
+    "coin": "CORE-USDT",
+    "direction": "做空",
+    "entry_price": 0.0192,
+    "exit_price": 0.019748,
+    "pnl_usdt": -6.37,
+    "pnl_pct": -2.77,
+    "entry_time": "2026-09-14 08:32",
+    "exit_time": "2026-09-15 04:16",
+    "entry_ts": 1789345927148,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 28.9,
+    "trend_4h": "空",
+    "srsi_4h": 8.0,
+    "trend_1d": "空",
+    "srsi_1d": 27.1
+  },
+  {
+    "coin": "PEOPLE-USDT",
+    "direction": "做空",
+    "entry_price": 0.00786,
+    "exit_price": 0.00808,
+    "pnl_usdt": -5.86,
+    "pnl_pct": -2.72,
+    "entry_time": "2026-09-14 08:32",
+    "exit_time": "2026-09-14 13:42",
+    "entry_ts": 1789345978063,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 20.7,
+    "trend_4h": "空",
+    "srsi_4h": 18.7,
+    "trend_1d": "多",
+    "srsi_1d": 40.7
   }
 ]
