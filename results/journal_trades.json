@@ -8360,6 +8360,25 @@
     "srsi_1d": 6.8
   },
   {
+    "coin": "PUMP-USDT",
+    "direction": "做空",
+    "entry_price": 0.00363,
+    "exit_price": 0.003596,
+    "pnl_usdt": 1.56,
+    "pnl_pct": 0.95,
+    "entry_time": "2026-09-15 14:11",
+    "exit_time": "2026-09-16 17:39",
+    "entry_ts": 1789452662935,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 9.6,
+    "trend_4h": "空",
+    "srsi_4h": 89.7,
+    "trend_1d": "多",
+    "srsi_1d": 29.5
+  },
+  {
     "coin": "ONE-USDT",
     "direction": "做多",
     "entry_price": 0.00067,
@@ -8379,6 +8398,25 @@
     "srsi_1d": 61.3
   },
   {
+    "coin": "PEOPLE-USDT",
+    "direction": "做空",
+    "entry_price": 0.00789,
+    "exit_price": 0.007504,
+    "pnl_usdt": 11.08,
+    "pnl_pct": 5.14,
+    "entry_time": "2026-09-15 21:30",
+    "exit_time": "2026-09-17 02:05",
+    "entry_ts": 1789479044489,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 82.5,
+    "trend_4h": "空",
+    "srsi_4h": 40.9,
+    "trend_1d": "多",
+    "srsi_1d": 7.5
+  },
+  {
     "coin": "ONE-USDT",
     "direction": "做多",
     "entry_price": 0.000647,
@@ -8396,5 +8434,24 @@
     "srsi_4h": 9.2,
     "trend_1d": "空",
     "srsi_1d": 61.3
+  },
+  {
+    "coin": "PUMP-USDT",
+    "direction": "做空",
+    "entry_price": 0.00361,
+    "exit_price": 0.003719,
+    "pnl_usdt": -5.67,
+    "pnl_pct": -2.93,
+    "entry_time": "2026-09-16 21:18",
+    "exit_time": "2026-09-17 02:04",
+    "entry_ts": 1789564738074,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 84.8,
+    "trend_4h": "空",
+    "srsi_4h": 32.6,
+    "trend_1d": "多",
+    "srsi_1d": 16.9
   }
 ]
