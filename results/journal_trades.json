@@ -8776,5 +8776,24 @@
     "srsi_4h": 12.1,
     "trend_1d": "空",
     "srsi_1d": 94.6
+  },
+  {
+    "coin": "PEOPLE-USDT",
+    "direction": "做多",
+    "entry_price": 0.00873,
+    "exit_price": 0.008993,
+    "pnl_usdt": 2.57,
+    "pnl_pct": 3.01,
+    "entry_time": "2026-09-21 00:21",
+    "exit_time": "2026-09-22 19:10",
+    "entry_ts": 1789921307931,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 94.7,
+    "trend_4h": "多",
+    "srsi_4h": 22.3,
+    "trend_1d": "多",
+    "srsi_1d": 94.0
   }
 ]
