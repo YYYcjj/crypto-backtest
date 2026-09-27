@@ -8949,6 +8949,25 @@
     "srsi_1d": 79.4
   },
   {
+    "coin": "F-USDT",
+    "direction": "做多",
+    "entry_price": 0.003707,
+    "exit_price": 0.003786,
+    "pnl_usdt": 1.34,
+    "pnl_pct": 2.13,
+    "entry_time": "2026-09-24 23:21",
+    "exit_time": "2026-09-27 04:09",
+    "entry_ts": 1790263316123,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 56.5,
+    "trend_4h": "空",
+    "srsi_4h": 32.5,
+    "trend_1d": "多",
+    "srsi_1d": 51.3
+  },
+  {
     "coin": "ORDI-USDT",
     "direction": "做多",
     "entry_price": 4.6,
