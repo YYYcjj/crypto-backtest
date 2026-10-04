@@ -9348,6 +9348,25 @@
     "srsi_1d": 5.5
   },
   {
+    "coin": "RLS-USDT",
+    "direction": "做多",
+    "entry_price": 0.002228,
+    "exit_price": 0.002217,
+    "pnl_usdt": -1.54,
+    "pnl_pct": -0.5,
+    "entry_time": "2026-10-02 13:06",
+    "exit_time": "2026-10-03 14:56",
+    "entry_ts": 1790917572296,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 100.0,
+    "trend_4h": "空",
+    "srsi_4h": 100.0,
+    "trend_1d": "多",
+    "srsi_1d": 12.1
+  },
+  {
     "coin": "ORDI-USDT",
     "direction": "做多",
     "entry_price": 4.583,
