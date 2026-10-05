@@ -9403,5 +9403,43 @@
     "srsi_4h": 65.7,
     "trend_1d": "多",
     "srsi_1d": 18.2
+  },
+  {
+    "coin": "SAHARA-USDT",
+    "direction": "做空",
+    "entry_price": 0.00918,
+    "exit_price": 0.009292,
+    "pnl_usdt": -1.92,
+    "pnl_pct": -1.2,
+    "entry_time": "2026-10-03 07:28",
+    "exit_time": "2026-10-04 15:48",
+    "entry_ts": 1790983706301,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 29.2,
+    "trend_4h": "空",
+    "srsi_4h": 42.0,
+    "trend_1d": "多",
+    "srsi_1d": 7.2
+  },
+  {
+    "coin": "RLS-USDT",
+    "direction": "做多",
+    "entry_price": 0.00218,
+    "exit_price": 0.002126,
+    "pnl_usdt": -3.71,
+    "pnl_pct": -2.5,
+    "entry_time": "2026-10-05 08:42",
+    "exit_time": "2026-10-05 09:45",
+    "entry_ts": 1791160951055,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 16.8,
+    "trend_4h": "空",
+    "srsi_4h": 11.7,
+    "trend_1d": "空",
+    "srsi_1d": 19.1
   }
 ]
