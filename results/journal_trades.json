@@ -9405,6 +9405,25 @@
     "srsi_1d": 18.2
   },
   {
+    "coin": "HMSTR-USDT",
+    "direction": "做多",
+    "entry_price": 0.000171,
+    "exit_price": 0.000171,
+    "pnl_usdt": -0.69,
+    "pnl_pct": 0.0,
+    "entry_time": "2026-10-03 07:22",
+    "exit_time": "2026-10-05 12:30",
+    "entry_ts": 1790983324142,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 10.1,
+    "trend_4h": "多",
+    "srsi_4h": 37.3,
+    "trend_1d": "多",
+    "srsi_1d": 18.4
+  },
+  {
     "coin": "SAHARA-USDT",
     "direction": "做空",
     "entry_price": 0.00918,
@@ -9424,6 +9443,25 @@
     "srsi_1d": 7.2
   },
   {
+    "coin": "BTC-USDT",
+    "direction": "做多",
+    "entry_price": 84763.4,
+    "exit_price": 86088.3,
+    "pnl_usdt": 7.82,
+    "pnl_pct": 1.56,
+    "entry_time": "2026-10-04 09:01",
+    "exit_time": "2026-10-05 11:57",
+    "entry_ts": 1791075681400,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 19.0,
+    "trend_4h": "多",
+    "srsi_4h": 11.2,
+    "trend_1d": "多",
+    "srsi_1d": 63.9
+  },
+  {
     "coin": "RLS-USDT",
     "direction": "做多",
     "entry_price": 0.00218,
@@ -9441,5 +9479,24 @@
     "srsi_4h": 11.7,
     "trend_1d": "空",
     "srsi_1d": 19.1
+  },
+  {
+    "coin": "PEOPLE-USDT",
+    "direction": "做多",
+    "entry_price": 0.00886,
+    "exit_price": 0.008653,
+    "pnl_usdt": -3.5,
+    "pnl_pct": -2.34,
+    "entry_time": "2026-10-05 14:18",
+    "exit_time": "2026-10-06 01:03",
+    "entry_ts": 1791181133129,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 13.9,
+    "trend_4h": "多",
+    "srsi_4h": 89.8,
+    "trend_1d": "多",
+    "srsi_1d": 9.7
   }
 ]
