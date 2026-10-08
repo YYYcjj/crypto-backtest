@@ -9574,5 +9574,24 @@
     "srsi_4h": 0.3,
     "trend_1d": "空",
     "srsi_1d": 20.4
+  },
+  {
+    "coin": "HOME-USDT",
+    "direction": "做空",
+    "entry_price": 0.0059,
+    "exit_price": 0.005634,
+    "pnl_usdt": 7.3,
+    "pnl_pct": 4.71,
+    "entry_time": "2026-10-07 08:03",
+    "exit_time": "2026-10-08 02:47",
+    "entry_ts": 1791331430269,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 7.7,
+    "trend_4h": "空",
+    "srsi_4h": 69.2,
+    "trend_1d": "空",
+    "srsi_1d": 42.0
   }
 ]
