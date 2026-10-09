@@ -9593,5 +9593,43 @@
     "srsi_4h": 69.2,
     "trend_1d": "空",
     "srsi_1d": 42.0
+  },
+  {
+    "coin": "GPS-USDT",
+    "direction": "做多",
+    "entry_price": 0.01028,
+    "exit_price": 0.010194,
+    "pnl_usdt": -1.67,
+    "pnl_pct": -0.83,
+    "entry_time": "2026-10-08 07:29",
+    "exit_time": "2026-10-08 23:23",
+    "entry_ts": 1791415748829,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 96.8,
+    "trend_4h": "空",
+    "srsi_4h": 7.2,
+    "trend_1d": "空",
+    "srsi_1d": 34.8
+  },
+  {
+    "coin": "GPS-USDT",
+    "direction": "做多",
+    "entry_price": 0.0102,
+    "exit_price": 0.009954,
+    "pnl_usdt": -3.1,
+    "pnl_pct": -2.41,
+    "entry_time": "2026-10-08 23:27",
+    "exit_time": "2026-10-09 01:21",
+    "entry_ts": 1791473269124,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 30.5,
+    "trend_4h": "空",
+    "srsi_4h": 47.7,
+    "trend_1d": "空",
+    "srsi_1d": 57.4
   }
 ]
