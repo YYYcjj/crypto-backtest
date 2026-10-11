@@ -9631,5 +9631,24 @@
     "srsi_4h": 47.7,
     "trend_1d": "空",
     "srsi_1d": 57.4
+  },
+  {
+    "coin": "RLS-USDT",
+    "direction": "做空",
+    "entry_price": 0.0022,
+    "exit_price": 0.002292,
+    "pnl_usdt": -4.88,
+    "pnl_pct": -4.0,
+    "entry_time": "2026-10-09 12:31",
+    "exit_time": "2026-10-10 16:11",
+    "entry_ts": 1791520308947,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 81.7,
+    "trend_4h": "多",
+    "srsi_4h": 100.0,
+    "trend_1d": "多",
+    "srsi_1d": 68.6
   }
 ]
