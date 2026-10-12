@@ -9650,5 +9650,24 @@
     "srsi_4h": 100.0,
     "trend_1d": "多",
     "srsi_1d": 68.6
+  },
+  {
+    "coin": "BONK-USDT",
+    "direction": "做空",
+    "entry_price": 3e-06,
+    "exit_price": 3e-06,
+    "pnl_usdt": -0.57,
+    "pnl_pct": -0.5,
+    "entry_time": "2026-10-09 14:55",
+    "exit_time": "2026-10-11 20:03",
+    "entry_ts": 1791528958341,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 95.2,
+    "trend_4h": "空",
+    "srsi_4h": 84.9,
+    "trend_1d": "空",
+    "srsi_1d": 7.8
   }
 ]
