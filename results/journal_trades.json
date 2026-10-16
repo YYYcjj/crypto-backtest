@@ -9745,5 +9745,24 @@
     "srsi_4h": 61.4,
     "trend_1d": "空",
     "srsi_1d": 82.0
+  },
+  {
+    "coin": "SHIB-USDT",
+    "direction": "做空",
+    "entry_price": 5e-06,
+    "exit_price": 5e-06,
+    "pnl_usdt": 6.85,
+    "pnl_pct": 2.57,
+    "entry_time": "2026-10-13 13:16",
+    "exit_time": "2026-10-15 23:03",
+    "entry_ts": 1791868570604,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 100.0,
+    "trend_4h": "空",
+    "srsi_4h": 3.5,
+    "trend_1d": "空",
+    "srsi_1d": 23.9
   }
 ]
