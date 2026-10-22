@@ -9859,5 +9859,24 @@
     "srsi_4h": 22.4,
     "trend_1d": "空",
     "srsi_1d": 7.8
+  },
+  {
+    "coin": "HUMA-USDT",
+    "direction": "做空",
+    "entry_price": 0.0289,
+    "exit_price": 0.030099,
+    "pnl_usdt": -3.12,
+    "pnl_pct": -3.98,
+    "entry_time": "2026-10-19 18:35",
+    "exit_time": "2026-10-21 14:06",
+    "entry_ts": 1792406132434,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 20.7,
+    "trend_4h": "多",
+    "srsi_4h": 89.5,
+    "trend_1d": "多",
+    "srsi_1d": 6.0
   }
 ]
