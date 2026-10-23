@@ -9878,5 +9878,43 @@
     "srsi_4h": 89.5,
     "trend_1d": "多",
     "srsi_1d": 6.0
+  },
+  {
+    "coin": "CHIP-USDT",
+    "direction": "做多",
+    "entry_price": 0.0449,
+    "exit_price": 0.04671,
+    "pnl_usdt": 7.96,
+    "pnl_pct": 4.03,
+    "entry_time": "2026-10-20 19:10",
+    "exit_time": "2026-10-22 11:32",
+    "entry_ts": 1792494629355,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 57.2,
+    "trend_4h": "多",
+    "srsi_4h": 76.3,
+    "trend_1d": "多",
+    "srsi_1d": 9.0
+  },
+  {
+    "coin": "HUMA-USDT",
+    "direction": "做多",
+    "entry_price": 0.03,
+    "exit_price": 0.029269,
+    "pnl_usdt": -3.07,
+    "pnl_pct": -2.44,
+    "entry_time": "2026-10-22 11:48",
+    "exit_time": "2026-10-22 14:42",
+    "entry_ts": 1792640914849,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 100.0,
+    "trend_4h": "多",
+    "srsi_4h": 65.0,
+    "trend_1d": "多",
+    "srsi_1d": 9.5
   }
 ]
