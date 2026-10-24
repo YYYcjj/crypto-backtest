@@ -9916,5 +9916,24 @@
     "srsi_4h": 65.0,
     "trend_1d": "多",
     "srsi_1d": 9.5
+  },
+  {
+    "coin": "CHIP-USDT",
+    "direction": "做多",
+    "entry_price": 0.0436,
+    "exit_price": 0.04295,
+    "pnl_usdt": -1.69,
+    "pnl_pct": -1.49,
+    "entry_time": "2026-10-22 21:32",
+    "exit_time": "2026-10-24 06:47",
+    "entry_ts": 1792675968913,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 77.9,
+    "trend_4h": "空",
+    "srsi_4h": 1.4,
+    "trend_1d": "多",
+    "srsi_1d": 34.5
   }
 ]
