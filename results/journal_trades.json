@@ -10011,5 +10011,24 @@
     "srsi_4h": 13.8,
     "trend_1d": "多",
     "srsi_1d": 73.4
+  },
+  {
+    "coin": "BTC-USDT",
+    "direction": "做空",
+    "entry_price": 80622.615385,
+    "exit_price": 80769.1,
+    "pnl_usdt": -0.95,
+    "pnl_pct": -0.18,
+    "entry_time": "2026-10-25 08:46",
+    "exit_time": "2026-10-26 23:21",
+    "entry_ts": 1792889200968,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 97.2,
+    "trend_4h": "空",
+    "srsi_4h": 94.9,
+    "trend_1d": "空",
+    "srsi_1d": 32.6
   }
 ]
