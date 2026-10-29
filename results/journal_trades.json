@@ -10030,5 +10030,43 @@
     "srsi_4h": 94.9,
     "trend_1d": "空",
     "srsi_1d": 32.6
+  },
+  {
+    "coin": "BTC-USDT",
+    "direction": "做空",
+    "entry_price": 80800.0,
+    "exit_price": 81142.8,
+    "pnl_usdt": -1.47,
+    "pnl_pct": -0.42,
+    "entry_time": "2026-10-26 23:24",
+    "exit_time": "2026-10-28 16:15",
+    "entry_ts": 1793028259498,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "空",
+    "srsi_1h": 30.3,
+    "trend_4h": "空",
+    "srsi_4h": 23.8,
+    "trend_1d": "空",
+    "srsi_1d": 39.1
+  },
+  {
+    "coin": "BTC-USDT",
+    "direction": "做多",
+    "entry_price": 81212.734615,
+    "exit_price": 80250.8,
+    "pnl_usdt": -5.0,
+    "pnl_pct": -1.18,
+    "entry_time": "2026-10-28 16:22",
+    "exit_time": "2026-10-29 09:48",
+    "entry_ts": 1793175768792,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 31.2,
+    "trend_4h": "多",
+    "srsi_4h": 96.7,
+    "trend_1d": "空",
+    "srsi_1d": 21.8
   }
 ]
