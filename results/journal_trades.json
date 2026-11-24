@@ -10334,5 +10334,24 @@
     "srsi_4h": 65.8,
     "trend_1d": "空",
     "srsi_1d": 31.2
+  },
+  {
+    "coin": "ETH-USDT",
+    "direction": "做多",
+    "entry_price": 1715.44,
+    "exit_price": 1676.45,
+    "pnl_usdt": -2.34,
+    "pnl_pct": -2.27,
+    "entry_time": "2026-11-24 07:32",
+    "exit_time": "2026-11-24 11:05",
+    "entry_ts": 1795476761250,
+    "mae_pct": 0,
+    "mfe_pct": 0,
+    "trend_1h": "多",
+    "srsi_1h": 0.2,
+    "trend_4h": "多",
+    "srsi_4h": 6.0,
+    "trend_1d": "空",
+    "srsi_1d": 95.7
   }
 ]
